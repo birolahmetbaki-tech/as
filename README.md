@@ -59,6 +59,7 @@ sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
 - **Bölümler** — ekleme, düzenleme, pasife alma
 - **Enerji türleri** — ad, birim, birim fiyat, aktiflik
 - **Sayaçlar** — ad, enerji türü, bölüm, seri no, çarpan, ana/alt sayaç, aktiflik
+- **Okumalar** — sayaç endeksi girişi; son okumalar ve sayaç bazında geçmiş
 
 Tanım kayıtları silinmez; kullanılmayan tanımlar pasife alınır. Böylece geçmiş
 veriler her zaman anlamlı kalır.
@@ -85,7 +86,8 @@ app/
   models.py     veri modeli
   main.py       giriş/çıkış ve panel rotaları
   definitions.py  tanım ekranları (bölüm, enerji türü, sayaç)
-  web.py        şablon, bildirim ve sayı biçimi yardımcıları
+  readings.py   sayaç okuma girişi
+  web.py        şablon, bildirim, sayı/tarih biçimi ve doğrulama yardımcıları
   templates/  static/
 migrations/     Alembic şema geçişleri
 scripts/        parola ve anahtar üretme yardımcıları

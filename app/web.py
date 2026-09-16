@@ -1,5 +1,6 @@
-"""Sayfa olusturma icin ortak yardimcilar: sablonlar, bildirimler, sayi bicimi."""
+"""Sayfa olusturma icin ortak yardimcilar: sablonlar, bildirimler, sayi/tarih bicimi."""
 
+from datetime import date
 from pathlib import Path
 
 from fastapi import Request
@@ -71,3 +72,21 @@ def render(
     return templates.TemplateResponse(
         request, template_name, context, status_code=status_code
     )
+
+
+def parse_date(raw: str | None, field_label: str) -> date:
+    """Tarih metnini cozer. 2026-01-31 ve 31.01.2026 bicimleri kabul edilir."""
+    text = (raw or "").strip()
+    if not text:
+        raise ValueError(f"{field_label} alanı boş bırakılamaz.")
+    for parser in (date.fromisoformat, _parse_dotted_date):
+        try:
+            return parser(text)
+        except ValueError:
+            continue
+    raise ValueError(f"{field_label} geçerli bir tarih olmalıdır (örnek: 31.01.2026).")
+
+
+def _parse_dotted_date(text: str) -> date:
+    day, month, year = (int(part) for part in text.split("."))
+    return date(year, month, day)

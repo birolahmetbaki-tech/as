@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import config, definitions, security
+from app import config, definitions, readings, security
 from app.db import get_session
 from app.web import render
 
@@ -84,6 +84,7 @@ def create_app() -> FastAPI:
         return render(request, "dashboard.html", db)
 
     app.include_router(definitions.router)
+    app.include_router(readings.router)
 
     # Oturum ara katmani en son eklenir; boylece en distaki katman olur ve
     # yukaridaki giris kontrolu request.session'a erisebilir.

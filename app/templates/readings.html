@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Sayaç Okumaları{% endblock %}
+{% block content %}
+<h1>Sayaç Okumaları</h1>
+
+{% if meters %}
+<form class="row-form wrap" method="post" action="/okumalar">
+  <div class="field grow">
+    <label for="meter_id">Sayaç</label>
+    {% set selected_meter_id = form.meter_id if form else (selected_meter.id|string if selected_meter and selected_meter.is_active else "") %}
+    <select id="meter_id" name="meter_id" required onchange="sonEndeksiGoster(this)">
+      <option value="">Seçiniz</option>
+      {% for meter in meters %}
+      {% set last = last_readings.get(meter.id) %}
+      <option value="{{ meter.id }}"
+              data-son-endeks="{{ last.index_value|sayi if last else '' }}"
+              data-son-tarih="{{ last.reading_date.strftime('%d.%m.%Y') if last else '' }}"
+              {{ "selected" if selected_meter_id == meter.id|string }}>
+        {{ meter.name }}{% if meter.department %} — {{ meter.department.name }}{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="reading_date">Tarih</label>
+    <input id="reading_date" name="reading_date" type="date"
+           value="{{ form.reading_date if form else today }}" required>
+  </div>
+  <div class="field">
+    <label for="index_value">Endeks</label>
+    <input id="index_value" name="index_value" inputmode="decimal"
+           value="{{ form.index_value if form else '' }}" required>
+  </div>
+  <div class="field grow">
+    <label for="note">Açıklama</label>
+    <input id="note" name="note" maxlength="500"
+           value="{{ form.note if form else '' }}">
+  </div>
+  <button type="submit">Kaydet</button>
+  <p id="son-endeks" class="muted small full"></p>
+</form>
+{% else %}
+<p class="notice">Okuma girebilmek için önce en az bir aktif
+  <a href="/tanimlar/sayaclar">sayaç</a> tanımlayın.</p>
+{% endif %}
+
+{% if all_meters %}
+<form class="filter" method="get" action="/okumalar">
+  <label for="sayac">Geçmişi görüntüle</label>
+  <select id="sayac" name="sayac" onchange="this.form.submit()">
+    <option value="">Tüm sayaçlar (son {{ readings|length }} kayıt)</option>
+    {% for meter in all_meters %}
+    <option value="{{ meter.id }}" {{ "selected" if selected_meter and selected_meter.id == meter.id }}>
+      {{ meter.name }}{{ " (pasif)" if not meter.is_active }}
+    </option>
+    {% endfor %}
+  </select>
+  <noscript><button type="submit">Göster</button></noscript>
+</form>
+{% endif %}
+
+{% if readings %}
+<table>
+  <thead>
+    <tr><th>Tarih</th><th>Sayaç</th><th class="right">Endeks</th><th>Açıklama</th></tr>
+  </thead>
+  <tbody>
+    {% for reading in readings %}
+    <tr>
+      <td>{{ reading.reading_date.strftime('%d.%m.%Y') }}</td>
+      <td>{{ reading.meter.name }}</td>
+      <td class="right">{{ reading.index_value|sayi }}</td>
+      <td class="muted">{{ reading.note or "" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">
+  Burada sayacın o tarihteki endeksi tutulur. Dönem tüketimi bu okumalardan
+  hesaplanacaktır.
+</p>
+{% else %}
+<p class="muted">
+  {{ "Bu sayaç için henüz okuma girilmedi." if selected_meter else "Henüz okuma girilmedi." }}
+</p>
+{% endif %}
+
+<script>
+  function sonEndeksiGoster(select) {
+    const option = select.options[select.selectedIndex];
+    const bilgi = document.getElementById("son-endeks");
+    const endeks = option.dataset.sonEndeks;
+    bilgi.textContent = endeks
+      ? `Son okuma: ${option.dataset.sonTarih} — ${endeks}`
+      : (select.value ? "Bu sayaç için ilk okuma." : "");
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("meter_id");
+    if (select) { sonEndeksiGoster(select); }
+  });
+</script>
+{% endblock %}
