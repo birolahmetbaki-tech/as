@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Enerji İzleme{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  {% block layout %}
+  <header class="topbar">
+    <a class="brand" href="/">{{ factory_name|default("Fabrika") }} · Enerji İzleme</a>
+    <form method="post" action="/cikis"><button class="link" type="submit">Çıkış</button></form>
+  </header>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+  {% endblock %}
+</body>
+</html>

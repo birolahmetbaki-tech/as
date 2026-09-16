@@ -1,0 +1,81 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #1c2024;
+  --muted: #6b7280;
+  --line: #e3e6ea;
+  --accent: #16643f;
+  --error: #b42318;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { font-weight: 600; color: var(--text); text-decoration: none; }
+
+.content { max-width: 1040px; margin: 0 auto; padding: 24px 20px; }
+
+h1 { font-size: 20px; margin: 0 0 12px; }
+
+.muted { color: var(--muted); }
+
+.error { color: var(--error); margin: 8px 0 0; }
+
+button {
+  font: inherit;
+  padding: 9px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+button.link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 4px;
+  text-decoration: underline;
+}
+
+.login {
+  max-width: 320px;
+  margin: 12vh auto;
+  padding: 28px 24px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.login h1 { margin-bottom: 20px; }
+
+.login form { display: flex; flex-direction: column; gap: 6px; }
+
+label { font-size: 13px; color: var(--muted); }
+
+input {
+  font: inherit;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.login button { margin-top: 14px; }
