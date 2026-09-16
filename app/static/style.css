@@ -197,7 +197,7 @@ a { color: var(--accent); }
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -213,7 +213,7 @@ a { color: var(--accent); }
 
 .card-value {
   margin: 0;
-  font-size: 26px;
+  font-size: 21px;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
@@ -280,7 +280,7 @@ a { color: var(--accent); }
 .chart .bar.selected { fill: var(--accent); }
 .chart g:hover .bar { fill: var(--accent); }
 .chart .hit { fill: transparent; }
-.chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.chart .grid { stroke: #e9edf0; stroke-width: 1; }
 .chart .tick { fill: var(--muted); font-size: 12px; text-anchor: middle; }
 .chart .tick.left { text-anchor: start; }
 .chart .value {
@@ -289,3 +289,7 @@ a { color: var(--accent); }
   text-anchor: middle;
   font-variant-numeric: tabular-nums;
 }
+
+.chart .series { stroke: var(--accent); stroke-width: 2; fill: none; }
+.chart .dot { fill: #7fb49a; stroke: var(--panel); stroke-width: 2; }
+.chart .dot.selected { fill: var(--accent); }

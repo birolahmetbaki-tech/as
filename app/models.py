@@ -100,9 +100,14 @@ class MeterReading(Base):
 
 
 class Production(Base):
-    """Uretim kaydi. Birim kayit basina secilir (ton, adet vb.)."""
+    """Uretim kaydi. Birim kayit basina secilir (ton, adet vb.).
+
+    Ayni tarih ve ayni birim icin tek kayit tutulur; boylece uretim
+    yanlislikla iki kez girilmez.
+    """
 
     __tablename__ = "production"
+    __table_args__ = (UniqueConstraint("production_date", "unit"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     production_date: Mapped[Date] = mapped_column(Date, index=True)

@@ -13,6 +13,7 @@ from app.db import SessionLocal
 from tests.factories import department as _department
 from tests.factories import energy_type as _energy_type
 from tests.factories import meter as _meter
+from tests.factories import production as _production
 from tests.factories import readings as _readings
 
 
@@ -388,3 +389,109 @@ def test_veri_yokken_bos_sonuc_doner(db):
     assert calc.total([]) == 0
     assert calc.group_by_period([]) == {}
     assert calc.group_by_department([]) == {}
+
+
+# --------------------------------------------------------------------------- #
+# Uretim ve EnPI
+# --------------------------------------------------------------------------- #
+
+
+def test_donem_uretim_toplami(db):
+    _production(
+        db,
+        {
+            "2026-01-10": (120, "ton"),
+            "2026-01-20": (135, "ton"),
+            "2026-02-05": (100, "ton"),
+        },
+    )
+
+    assert calc.production_total(
+        db, "ton", start=date(2026, 1, 1), end=date(2026, 1, 31)
+    ) == pytest.approx(255)
+    assert calc.production_total(db, "ton") == pytest.approx(355)
+
+
+def test_uretim_birimleri_karismaz(db):
+    _production(db, {"2026-01-10": (100, "ton"), "2026-01-11": (2000, "adet")})
+
+    assert calc.production_total(db, "ton") == pytest.approx(100)
+    assert calc.production_total(db, "adet") == pytest.approx(2000)
+    # Toplam 2.100 gibi anlamsiz bir deger uretilmez.
+    assert calc.production_units(db) == ["adet", "ton"]
+
+
+def test_bilinmeyen_birimde_uretim_sifirdir(db):
+    _production(db, {"2026-01-10": (100, "ton")})
+    assert calc.production_total(db, "m³") == pytest.approx(0)
+
+
+def test_enpi_hesabi(db):
+    """10.000 kWh / 100 ton = 100 kWh/ton"""
+    assert calc.enpi(10_000, 100) == pytest.approx(100)
+
+
+def test_uretim_yokken_enpi_tanimsizdir(db):
+    assert calc.enpi(10_000, 0) is None
+    assert calc.enpi(0, 0) is None
+
+
+def test_enpi_serisi_aylik_uretilir(db):
+    electricity = _energy_type(db)
+    meter = _meter(db, "Ana Trafo", electricity, is_main=True)
+    _readings(
+        db,
+        meter,
+        {"2025-12-31": 0, "2026-01-31": 10_000, "2026-02-28": 18_000},
+    )
+    _production(db, {"2026-01-31": (100, "ton"), "2026-02-28": (80, "ton")})
+
+    series = calc.enpi_series(db, "ton", electricity.id)
+    assert series["2026-01"] == pytest.approx(100)  # 10.000 / 100
+    assert series["2026-02"] == pytest.approx(100)  # 8.000 / 80
+
+
+def test_uretimi_olmayan_ay_enpi_uretmez(db):
+    electricity = _energy_type(db)
+    meter = _meter(db, "Ana Trafo", electricity, is_main=True)
+    _readings(db, meter, {"2025-12-31": 0, "2026-01-31": 10_000, "2026-02-28": 16_000})
+    _production(db, {"2026-01-31": (100, "ton")})
+
+    series = calc.enpi_series(db, "ton", electricity.id)
+    assert series["2026-01"] == pytest.approx(100)
+    assert series["2026-02"] is None
+
+
+def test_enpi_farkli_enerji_turlerini_karistirmaz(db):
+    electricity = _energy_type(db)
+    gas = _energy_type(db, name="Doğal Gaz", unit="Sm³")
+    electric_meter = _meter(db, "Elektrik Ana", electricity, is_main=True)
+    gas_meter = _meter(db, "Gaz Sayacı", gas)
+    _readings(db, electric_meter, {"2025-12-31": 0, "2026-01-31": 10_000})
+    _readings(db, gas_meter, {"2025-12-31": 0, "2026-01-31": 500})
+    _production(db, {"2026-01-31": (100, "ton")})
+
+    assert calc.enpi_series(db, "ton", electricity.id)["2026-01"] == pytest.approx(100)
+    assert calc.enpi_series(db, "ton", gas.id)["2026-01"] == pytest.approx(5)
+
+
+def test_enpi_farkli_uretim_birimlerini_karistirmaz(db):
+    electricity = _energy_type(db)
+    meter = _meter(db, "Ana Trafo", electricity, is_main=True)
+    _readings(db, meter, {"2025-12-31": 0, "2026-01-31": 10_000})
+    _production(db, {"2026-01-31": (100, "ton"), "2026-01-30": (2000, "adet")})
+
+    assert calc.enpi_series(db, "ton", electricity.id)["2026-01"] == pytest.approx(100)
+    assert calc.enpi_series(db, "adet", electricity.id)["2026-01"] == pytest.approx(5)
+
+
+def test_uretim_donem_gruplamasi(db):
+    _production(
+        db,
+        {"2026-01-10": (120, "ton"), "2026-01-20": (135, "ton"), "2026-02-05": (100, "ton")},
+    )
+
+    assert calc.production_by_period(db, "ton") == {
+        "2026-01": pytest.approx(255),
+        "2026-02": pytest.approx(100),
+    }

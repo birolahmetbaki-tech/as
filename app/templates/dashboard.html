@@ -21,6 +21,14 @@
     </option>
     {% endfor %}
   </select>
+  {% if production_units|length > 1 %}
+  <label for="birim">Üretim birimi</label>
+  <select id="birim" name="birim">
+    {% for unit in production_units %}
+    <option value="{{ unit }}" {{ "selected" if unit == selected_unit }}>{{ unit }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
   <button type="submit">Göster</button>
 </form>
 
@@ -55,6 +63,19 @@
       Birim fiyat: {{ selected_energy.unit_price|sayi(4) }} {{ currency }}/{{ selected_energy.unit }}
     </p>
   </div>
+
+  {% if production and production.total > 0 %}
+  <div class="card">
+    <p class="card-label">Enerji performansı</p>
+    <p class="card-value">
+      {% if production.enpi is not none %}{{ production.enpi|sayi }}{% else %}—{% endif %}
+      <span class="unit">{{ selected_energy.unit }}/{{ production.unit }}</span>
+    </p>
+    <p class="card-note muted">
+      Dönem üretimi: {{ production.total|sayi }} {{ production.unit }}
+    </p>
+  </div>
+  {% endif %}
 
   {% if summary.target %}
   <div class="card">
@@ -135,6 +156,53 @@
   <p class="muted">Son 12 ayda bu enerji türü için tüketim verisi yok.</p>
   {% endif %}
 </section>
+
+{% if enpi_trend.points|selectattr('value')|list %}
+<section class="panel">
+  <h2>Son 12 ay · EnPI ({{ selected_energy.unit }}/{{ selected_unit }})</h2>
+  {% set points = enpi_trend.points %}
+  <svg class="chart" viewBox="0 0 720 210" role="img"
+       aria-label="Son 12 ayın enerji performansı">
+    <line class="grid" x1="0" y1="30" x2="720" y2="30"></line>
+    <line class="grid" x1="0" y1="150" x2="720" y2="150"></line>
+    <text class="tick left" x="0" y="24">{{ enpi_trend.high|sayi }}</text>
+    <text class="tick left" x="0" y="166">{{ enpi_trend.low|sayi }}</text>
+    <line class="axis" x1="0" y1="178" x2="720" y2="178"></line>
+
+    {% for point in points %}
+    {% if point.value is not none and loop.index0 > 0
+          and points[loop.index0 - 1].value is not none %}
+    <line class="series"
+          x1="{{ (loop.index0 - 1) * 60 + 30 }}"
+          y1="{{ (150 - points[loop.index0 - 1].ratio * 1.2)|round(2) }}"
+          x2="{{ loop.index0 * 60 + 30 }}"
+          y2="{{ (150 - point.ratio * 1.2)|round(2) }}"></line>
+    {% endif %}
+    {% endfor %}
+
+    {% for point in points %}
+    <g>
+      {% if point.value is not none %}
+      <title>{{ point.label }}: {{ point.value|sayi }} {{ selected_energy.unit }}/{{ selected_unit }}</title>
+      <circle class="dot {{ 'selected' if point.selected }}"
+              cx="{{ loop.index0 * 60 + 30 }}"
+              cy="{{ (150 - point.ratio * 1.2)|round(2) }}" r="5"></circle>
+      {% if point.selected %}
+      <text class="value" x="{{ loop.index0 * 60 + 30 }}"
+            y="{{ (135 - point.ratio * 1.2)|round(2) }}">{{ point.value|sayi }}</text>
+      {% endif %}
+      {% endif %}
+      <text class="tick" x="{{ loop.index0 * 60 + 30 }}" y="194">{{ point.short }}</text>
+    </g>
+    {% endfor %}
+  </svg>
+  <p class="muted small">
+    EnPI = fabrika tüketimi ÷ üretim. Değerin düşmesi enerji performansının
+    iyileştiği anlamına gelir. Üretim verisi olmayan aylar boş bırakılır.
+    Değişim görünsün diye ölçek sıfırdan değil, en düşük değerden başlar.
+  </p>
+</section>
+{% endif %}
 
 {% if energy_types|length > 1 %}
 <section class="panel">

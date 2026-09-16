@@ -52,3 +52,18 @@ def readings(db, record, values: dict[str, float]) -> None:
             )
         )
     db.commit()
+
+
+def production(db, values: dict[str, tuple[float, str]]) -> None:
+    """values: {"2026-01-31": (120, "ton"), ...}"""
+    from app.models import Production
+
+    for day, (quantity, unit) in values.items():
+        db.add(
+            Production(
+                production_date=date.fromisoformat(day),
+                quantity=quantity,
+                unit=unit,
+            )
+        )
+    db.commit()

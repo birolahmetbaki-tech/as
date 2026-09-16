@@ -23,7 +23,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Meter, MeterReading
+from app.models import Meter, MeterReading, Production
 
 UNASSIGNED_DEPARTMENT = "Bölümsüz"
 
@@ -243,3 +243,100 @@ def group_by_department(entries: list[Consumption]) -> dict[str, float]:
     return dict(
         sorted(totals.items(), key=lambda item: (-item[1], item[0]))
     )
+
+
+# --------------------------------------------------------------------------- #
+# Uretim ve enerji performansi (EnPI)
+# --------------------------------------------------------------------------- #
+
+
+def production_total(
+    db: Session,
+    unit: str,
+    start: date | None = None,
+    end: date | None = None,
+) -> float:
+    """Belirtilen uretim biriminde donem uretim toplami.
+
+    Farkli birimler (ton, adet, m3) asla toplanmaz; her zaman tek bir birim
+    icin hesaplanir.
+    """
+    query = select(Production).where(Production.unit == unit)
+    if start is not None:
+        query = query.where(Production.production_date >= start)
+    if end is not None:
+        query = query.where(Production.production_date <= end)
+    return sum(record.quantity for record in db.scalars(query))
+
+
+def production_units(
+    db: Session, start: date | None = None, end: date | None = None
+) -> list[str]:
+    """Donemde kayit girilmis uretim birimleri, uretimi cok olandan az olana."""
+    query = select(Production)
+    if start is not None:
+        query = query.where(Production.production_date >= start)
+    if end is not None:
+        query = query.where(Production.production_date <= end)
+
+    totals: dict[str, float] = defaultdict(float)
+    for record in db.scalars(query):
+        totals[record.unit] += record.quantity
+    return [unit for unit, _ in sorted(totals.items(), key=lambda item: -item[1])]
+
+
+def production_by_period(
+    db: Session,
+    unit: str,
+    start: date | None = None,
+    end: date | None = None,
+    period: str = PERIOD_MONTH,
+) -> dict[str, float]:
+    """Donem bazinda uretim toplami (tek birim)."""
+    query = select(Production).where(Production.unit == unit)
+    if start is not None:
+        query = query.where(Production.production_date >= start)
+    if end is not None:
+        query = query.where(Production.production_date <= end)
+
+    totals: dict[str, float] = defaultdict(float)
+    for record in db.scalars(query):
+        totals[period_key(record.production_date, period)] += record.quantity
+    return {key: totals[key] for key in sorted(totals)}
+
+
+def enpi(energy: float, production: float) -> float | None:
+    """Enerji performans gostergesi: enerji / uretim.
+
+    Uretim yoksa (veya sifirsa) gosterge tanimsizdir; sayi uretmek yerine
+    None doner. Boylece ekranda "veri yok" olarak gosterilebilir.
+    """
+    if not production:
+        return None
+    return energy / production
+
+
+def enpi_series(
+    db: Session,
+    unit: str,
+    energy_type_id: int,
+    start: date | None = None,
+    end: date | None = None,
+    period: str = PERIOD_MONTH,
+) -> dict[str, float | None]:
+    """Donem bazinda EnPI serisi: (fabrika tuketimi) / (uretim).
+
+    Enerji tarafinda ana sayac kurali gecerlidir. Uretimi olmayan donemler
+    None degeri tasir; tuketimi olmayan donem sifir enerji ile hesaplanir.
+    """
+    energy_totals = group_by_period(
+        factory_consumptions(db, start=start, end=end, energy_type_id=energy_type_id),
+        period,
+    )
+    production_totals = production_by_period(db, unit, start=start, end=end, period=period)
+
+    keys = sorted(set(energy_totals) | set(production_totals))
+    return {
+        key: enpi(energy_totals.get(key, 0.0), production_totals.get(key, 0.0))
+        for key in keys
+    }

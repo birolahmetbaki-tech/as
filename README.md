@@ -14,6 +14,9 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
   ekran kendi tüketim hesabını yapmaz.
 - Fabrika toplamında, bir enerji türünde **ana sayaç tanımlıysa yalnızca ana
   sayaçlar** kullanılır; tanımlı değilse o türdeki tüm sayaçlar kullanılır.
+- **EnPI = enerji tüketimi ÷ üretim miktarı**, yalnızca tek bir üretim birimi
+  için hesaplanır. Farklı üretim birimleri (ton, adet) ve farklı enerji türleri
+  asla birbirine toplanmaz; enerji birimi dönüşümü yoktur.
 - Gösterge panelinde **bölüm dağılımı** bölüme bağlı alt sayaçlardan gelir;
   fabrika toplamı ile arasındaki fark "ölçülmeyen / dağıtılmamış" olarak
   gösterilir. Bu fark negatifse tüketim gibi değil, ölçüm kapsamı uyarısı
@@ -69,6 +72,7 @@ sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
 - **Enerji türleri** — ad, birim, birim fiyat, aktiflik
 - **Sayaçlar** — ad, enerji türü, bölüm, seri no, çarpan, ana/alt sayaç, aktiflik
 - **Okumalar** — sayaç endeksi girişi; son okumalar ve sayaç bazında geçmiş
+- **Üretim** — tarih, miktar ve birim; aynı gün ve birim için tek kayıt
 
 Tanım kayıtları silinmez; kullanılmayan tanımlar pasife alınır. Böylece geçmiş
 veriler her zaman anlamlı kalır.
@@ -82,7 +86,7 @@ veriler her zaman anlamlı kalır.
 | `department` | Fabrika bölümleri |
 | `meter` | Sayaç: enerji türü, bölüm, çarpan, ana/alt sayaç ayrımı |
 | `meter_reading` | Tarih bazlı sayaç endeksi (ham veri) |
-| `production` | Üretim miktarı ve birimi |
+| `production` | Üretim miktarı ve birimi (tarih + birim benzersiz) |
 | `target` | Aylık tüketim hedefi |
 
 ## Proje yapısı
@@ -96,6 +100,7 @@ app/
   main.py       giriş/çıkış ve panel rotaları
   definitions.py  tanım ekranları (bölüm, enerji türü, sayaç)
   readings.py   sayaç okuma girişi
+  production.py üretim verisi girişi
   calc.py       hesaplama çekirdeği (tüketimin tek kaynağı)
   dashboard.py  gösterge paneli (calc sonuçlarını gösterir)
   web.py        şablon, bildirim, sayı/tarih biçimi ve doğrulama yardımcıları

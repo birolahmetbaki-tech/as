@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Üretim{% endblock %}
+{% block content %}
+<h1>Üretim</h1>
+
+<form class="row-form wrap" method="post" action="/uretim">
+  <div class="field">
+    <label for="production_date">Tarih</label>
+    <input id="production_date" name="production_date" type="date"
+           value="{{ form.production_date if form else today }}" required>
+  </div>
+  <div class="field">
+    <label for="quantity">Miktar</label>
+    <input id="quantity" name="quantity" inputmode="decimal"
+           value="{{ form.quantity if form else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="unit">Birim</label>
+    <input id="unit" name="unit" list="birimler" maxlength="20" placeholder="ton"
+           value="{{ form.unit if form else (units[0] if units else '') }}" required>
+    <datalist id="birimler">
+      {% for unit in units %}<option value="{{ unit }}"></option>{% endfor %}
+    </datalist>
+  </div>
+  <button type="submit">Kaydet</button>
+</form>
+
+{% if records %}
+<table>
+  <thead><tr><th>Tarih</th><th class="right">Miktar</th><th>Birim</th></tr></thead>
+  <tbody>
+    {% for record in records %}
+    <tr>
+      <td>{{ record.production_date.strftime('%d.%m.%Y') }}</td>
+      <td class="right">{{ record.quantity|sayi }}</td>
+      <td>{{ record.unit }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">
+  Farklı birimler (ton, adet, m³) birbirine toplanmaz; enerji performansı
+  her birim için ayrı hesaplanır.
+</p>
+{% else %}
+<p class="muted">Henüz üretim kaydı girilmedi.</p>
+{% endif %}
+{% endblock %}

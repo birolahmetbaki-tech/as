@@ -5,7 +5,7 @@ import pytest
 from app import dashboard
 from app.db import SessionLocal
 from app.models import Target
-from tests.factories import department, energy_type, meter, readings
+from tests.factories import department, energy_type, meter, production, readings
 
 
 @pytest.fixture
@@ -263,3 +263,84 @@ def test_enerji_turu_secilebilir(logged_in_client, db, fabrika):
     response = logged_in_client.get(f"/?donem=2026-01&enerji={gas.id}")
     assert "Ocak 2026 · Doğal Gaz" in response.text
     assert "1.200,00" in response.text
+
+
+# --------------------------------------------------------------------------- #
+# Uretim ve EnPI
+# --------------------------------------------------------------------------- #
+
+
+def test_donem_uretimi_ve_enpi(db, fabrika):
+    production(db, {"2026-01-15": (100, "ton"), "2026-01-31": (84, "ton")})
+
+    summary = dashboard.production_summary(db, "ton", "2026-01", 18_400)
+    assert summary["total"] == pytest.approx(184)
+    assert summary["enpi"] == pytest.approx(100)  # 18.400 / 184
+
+
+def test_uretim_yokken_enpi_tanimsiz(db, fabrika):
+    summary = dashboard.production_summary(db, "ton", "2026-01", 18_400)
+    assert summary["total"] == pytest.approx(0)
+    assert summary["enpi"] is None
+
+
+def test_enpi_trendi_son_12_ayi_kapsar(db, fabrika):
+    production(db, {"2025-12-31": (50, "ton"), "2026-01-31": (184, "ton")})
+
+    trend = dashboard.enpi_trend(db, fabrika, "ton", "2026-01")
+    points = trend["points"]
+    values = {point["month"]: point["value"] for point in points}
+    assert len(points) == 12
+    assert trend["low"] == pytest.approx(80)
+    assert trend["high"] == pytest.approx(100)
+    assert values["2026-01"] == pytest.approx(100)  # 18.400 / 184
+    assert values["2025-12"] == pytest.approx(80)  # 4.000 / 50
+    assert values["2025-11"] is None  # üretim yok
+    assert points[-1]["selected"] is True
+
+
+def test_panelde_uretim_ve_enpi_gosterilir(logged_in_client, db, fabrika):
+    production(db, {"2026-01-31": (184, "ton")})
+
+    response = logged_in_client.get("/?donem=2026-01")
+    assert response.status_code == 200
+    assert "Enerji performansı" in response.text
+    assert "kWh/ton" in response.text
+    assert "184,00 ton" in response.text
+    assert "100,00" in response.text
+
+
+def test_uretim_verisi_yokken_panel_bozulmaz(logged_in_client, db, fabrika):
+    response = logged_in_client.get("/?donem=2026-01")
+    assert response.status_code == 200
+    assert "Enerji performansı" not in response.text
+    assert "18.400,00" in response.text  # tüketim tarafı çalışmaya devam eder
+
+
+def test_panelde_uretim_birimi_secilebilir(logged_in_client, db, fabrika):
+    production(db, {"2026-01-31": (184, "ton"), "2026-01-30": (2000, "adet")})
+
+    ton_page = logged_in_client.get("/?donem=2026-01&birim=ton")
+    assert "kWh/ton" in ton_page.text
+    assert "184,00 ton" in ton_page.text
+
+    adet_page = logged_in_client.get("/?donem=2026-01&birim=adet")
+    assert "kWh/adet" in adet_page.text
+    assert "2.000,00 adet" in adet_page.text
+    # 18.400 / 2.000 = 9,20
+    assert "9,20" in adet_page.text
+
+
+def test_varsayilan_birim_en_cok_uretim_yapilan_birimdir(logged_in_client, db, fabrika):
+    production(db, {"2026-01-31": (184, "ton"), "2026-01-30": (2000, "adet")})
+
+    response = logged_in_client.get("/?donem=2026-01")
+    assert "kWh/adet" in response.text  # 2.000 > 184
+
+
+def test_bilinmeyen_birim_istenirse_varsayilana_donulur(logged_in_client, db, fabrika):
+    production(db, {"2026-01-31": (184, "ton")})
+
+    response = logged_in_client.get("/?donem=2026-01&birim=fıçı")
+    assert response.status_code == 200
+    assert "kWh/ton" in response.text

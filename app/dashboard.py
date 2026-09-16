@@ -172,6 +172,63 @@ def department_breakdown(
     }
 
 
+def production_summary(
+    db: Session, unit: str, year_month: str, energy_total: float
+) -> dict:
+    """Donem uretimi ve enerji performansi (EnPI)."""
+    start, end = month_bounds(year_month)
+    produced = calc.production_total(db, unit, start=start, end=end)
+    return {
+        "unit": unit,
+        "total": produced,
+        "enpi": calc.enpi(energy_total, produced),
+    }
+
+
+def enpi_trend(
+    db: Session, energy_type: EnergyType, unit: str, year_month: str
+) -> dict:
+    """Secilen ay dahil son 12 ayin EnPI serisi.
+
+    EnPI'de onemli olan seviyenin kendisi degil degisimidir; bu yuzden olcek
+    serinin en dusuk ve en yuksek degeri arasina yerlestirilir. Olcegin
+    sifirdan baslamadigi ekranda acikca yazilir.
+    """
+    first_month = shift_month(year_month, -(TREND_MONTHS - 1))
+    start, _ = month_bounds(first_month)
+    _, end = month_bounds(year_month)
+
+    series = calc.enpi_series(
+        db, unit, energy_type.id, start=start, end=end, period=calc.PERIOD_MONTH
+    )
+    months = [shift_month(first_month, offset) for offset in range(TREND_MONTHS)]
+    values = [series.get(month) for month in months]
+    known = [value for value in values if value is not None]
+    low, high = (min(known), max(known)) if known else (0.0, 0.0)
+    span = high - low
+
+    return {
+        "low": low,
+        "high": high,
+        "points": [
+            {
+                "month": month,
+                "label": month_label(month),
+                "short": month_label(month).split(" ")[0][:3],
+                "value": value,
+                # Tek deger varsa veya butun degerler esitse cizgi ortada durur.
+                "ratio": (
+                    ((value - low) / span * 100)
+                    if (value is not None and span > 0)
+                    else (50 if value is not None else 0)
+                ),
+                "selected": month == year_month,
+            }
+            for month, value in zip(months, values)
+        ],
+    }
+
+
 def monthly_trend(db: Session, energy_type: EnergyType, year_month: str) -> list[dict]:
     """Secilen ay dahil son 12 ayin fabrika tuketimi."""
     first_month = shift_month(year_month, -(TREND_MONTHS - 1))
@@ -211,6 +268,7 @@ def dashboard(
     request: Request,
     donem: str | None = None,
     enerji: int | None = None,
+    birim: str | None = None,
     db: Session = Depends(get_session),
 ):
     year_month = _valid_month(donem)
@@ -225,6 +283,12 @@ def dashboard(
     )
     summary = energy_summary(db, selected, year_month)
     settings = db.get(Settings, 1)
+
+    # Uretim birimleri asla birbirine toplanmaz; EnPI tek bir birim icin
+    # hesaplanir. Varsayilan olarak donemde en cok uretim yapilan birim secilir.
+    start, end = month_bounds(year_month)
+    units = calc.production_units(db, start=start, end=end)
+    selected_unit = birim if birim in units else (units[0] if units else None)
 
     return render(
         request,
@@ -241,4 +305,16 @@ def dashboard(
         all_summaries=[
             energy_summary(db, energy_type, year_month) for energy_type in energy_types
         ],
+        production_units=units,
+        selected_unit=selected_unit,
+        production=(
+            production_summary(db, selected_unit, year_month, summary["total"])
+            if selected_unit
+            else None
+        ),
+        enpi_trend=(
+            enpi_trend(db, selected, selected_unit, year_month)
+            if selected_unit
+            else {"points": [], "low": 0, "high": 0}
+        ),
     )
