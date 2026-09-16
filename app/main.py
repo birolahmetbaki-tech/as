@@ -3,14 +3,12 @@
 import time
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import config, definitions, readings, security
-from app.db import get_session
+from app import config, dashboard, definitions, readings, security
 from app.web import render
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -79,10 +77,7 @@ def create_app() -> FastAPI:
         request.session.clear()
         return RedirectResponse(LOGIN_PATH, status_code=303)
 
-    @app.get("/", response_class=HTMLResponse)
-    async def dashboard(request: Request, db: Session = Depends(get_session)):
-        return render(request, "dashboard.html", db)
-
+    app.include_router(dashboard.router)
     app.include_router(definitions.router)
     app.include_router(readings.router)
 

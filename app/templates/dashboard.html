@@ -1,8 +1,166 @@
 {% extends "base.html" %}
 {% block content %}
+
+{% if not energy_types %}
 <h1>Gösterge Paneli</h1>
-<p class="muted">
-  Sistem kurulumu tamamlandı. Sonraki aşamada tanım ekranları
-  (bölüm, enerji türü, sayaç) eklenecek.
+<p class="notice">
+  Başlamak için önce bir <a href="/tanimlar/enerji-turleri">enerji türü</a> ve
+  <a href="/tanimlar/sayaclar">sayaç</a> tanımlayın, ardından
+  <a href="/okumalar">sayaç okuması</a> girin.
 </p>
+{% else %}
+
+<form class="filter panel-filter" method="get" action="/">
+  <label for="donem">Dönem</label>
+  <input id="donem" name="donem" type="month" value="{{ year_month }}">
+  <label for="enerji">Enerji türü</label>
+  <select id="enerji" name="enerji">
+    {% for energy_type in energy_types %}
+    <option value="{{ energy_type.id }}" {{ "selected" if energy_type.id == selected_energy.id }}>
+      {{ energy_type.name }}
+    </option>
+    {% endfor %}
+  </select>
+  <button type="submit">Göster</button>
+</form>
+
+<h1>{{ month_label }} · {{ selected_energy.name }}</h1>
+
+<section class="cards">
+  <div class="card">
+    <p class="card-label">Dönem tüketimi</p>
+    <p class="card-value">{{ summary.total|sayi }} <span class="unit">{{ selected_energy.unit }}</span></p>
+  </div>
+
+  <div class="card">
+    <p class="card-label">{{ summary.previous_label }}</p>
+    {% set change = summary.change %}
+    <p class="card-value">{{ change.previous|sayi }} <span class="unit">{{ selected_energy.unit }}</span></p>
+    {% if change.percent is not none %}
+    <p class="card-note {{ 'up' if change.difference > 0 else ('down' if change.difference < 0 else '') }}">
+      {{ "▲" if change.difference > 0 else ("▼" if change.difference < 0 else "•") }}
+      {{ change.difference|abs|sayi }} {{ selected_energy.unit }}
+      ({{ change.percent|abs|sayi(1) }}%)
+      {{ "artış" if change.difference > 0 else ("azalış" if change.difference < 0 else "değişim yok") }}
+    </p>
+    {% else %}
+    <p class="card-note muted">Karşılaştırma için önceki dönemde veri yok.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <p class="card-label">Enerji maliyeti</p>
+    <p class="card-value">{{ summary.cost|sayi }} <span class="unit">{{ currency }}</span></p>
+    <p class="card-note muted">
+      Birim fiyat: {{ selected_energy.unit_price|sayi(4) }} {{ currency }}/{{ selected_energy.unit }}
+    </p>
+  </div>
+
+  {% if summary.target %}
+  <div class="card">
+    <p class="card-label">Aylık hedef</p>
+    <p class="card-value">{{ summary.target.value|sayi }} <span class="unit">{{ selected_energy.unit }}</span></p>
+    <p class="card-note {{ 'up' if summary.target.exceeded else 'down' }}">
+      Gerçekleşme: {{ summary.target.percent|sayi(1) }}%
+      {{ "— hedef aşıldı" if summary.target.exceeded else "" }}
+    </p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Bölüm dağılımı</h2>
+  {% if breakdown.scope_warning %}
+  <p class="error">
+    Bölüm sayaçlarının toplamı ({{ breakdown.measured|sayi }} {{ selected_energy.unit }}),
+    fabrika toplamından ({{ summary.total|sayi }} {{ selected_energy.unit }}) fazla.
+    Bu bir ölçüm kapsamı sorunudur: sayaç tanımlarını ve ana sayaç seçimini gözden geçirin.
+  </p>
+  {% endif %}
+
+  {% if breakdown.rows %}
+  <div class="bars">
+    {% for row in breakdown.rows %}
+    <div class="bar-row">
+      <span class="bar-label">{{ row.label }}</span>
+      <span class="bar-track">
+        <span class="bar-fill {{ '' if row.measured else 'unmeasured' }}"
+              style="width: {{ row.ratio|round(1) }}%"></span>
+      </span>
+      <span class="bar-value">
+        {{ row.value|sayi }} {{ selected_energy.unit }}{% if row.share is not none %}
+        <span class="muted">({{ row.share|sayi(1) }}%)</span>{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted small">
+    Fabrika toplamı ana sayaçlardan, bölüm dağılımı bölüme bağlı alt sayaçlardan
+    gelir. Aradaki fark "ölçülmeyen / dağıtılmamış" olarak gösterilir.
+  </p>
+  {% else %}
+  <p class="muted">Bu dönemde bölüm bazında tüketim verisi yok.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Son 12 ay · {{ selected_energy.name }} ({{ selected_energy.unit }})</h2>
+  {% if trend|sum(attribute='value') > 0 %}
+  {% set peak = trend|map(attribute='value')|max %}
+  <svg class="chart" viewBox="0 0 720 210" role="img"
+       aria-label="Son 12 ayın aylık tüketimi">
+    <line class="grid" x1="0" y1="25" x2="720" y2="25"></line>
+    <text class="tick left" x="0" y="18">en yüksek: {{ peak|sayi(0) }} {{ selected_energy.unit }}</text>
+    <line class="axis" x1="0" y1="170" x2="720" y2="170"></line>
+    {% for point in trend %}
+    {% set height = (point.ratio * 1.45)|round(2) %}
+    <g>
+      <title>{{ point.label }}: {{ point.value|sayi }} {{ selected_energy.unit }}</title>
+      <rect class="bar {{ 'selected' if point.selected }}"
+            x="{{ loop.index0 * 60 + 12 }}"
+            y="{{ (170 - height)|round(2) }}"
+            width="36" height="{{ height if height > 0 else 0 }}" rx="4"></rect>
+      <rect class="hit" x="{{ loop.index0 * 60 }}" y="0" width="60" height="170"></rect>
+      <text class="tick" x="{{ loop.index0 * 60 + 30 }}" y="186">{{ point.short }}</text>
+      {% if point.selected and point.value > 0 %}
+      <text class="value" x="{{ loop.index0 * 60 + 30 }}" y="{{ (162 - height)|round(2) }}">
+        {{ point.value|sayi(0) }}
+      </text>
+      {% endif %}
+    </g>
+    {% endfor %}
+  </svg>
+  <p class="muted small">Sütunların üzerine gelince o ayın değeri görünür. Seçili ay koyu gösterilir.</p>
+  {% else %}
+  <p class="muted">Son 12 ayda bu enerji türü için tüketim verisi yok.</p>
+  {% endif %}
+</section>
+
+{% if energy_types|length > 1 %}
+<section class="panel">
+  <h2>Enerji türlerine göre · {{ month_label }}</h2>
+  <table>
+    <thead>
+      <tr><th>Enerji türü</th><th class="right">Tüketim</th>
+          <th class="right">Önceki döneme fark</th><th class="right">Maliyet</th></tr>
+    </thead>
+    <tbody>
+      {% for item in all_summaries %}
+      <tr>
+        <td>{{ item.energy_type.name }}</td>
+        <td class="right">{{ item.total|sayi }} {{ item.energy_type.unit }}</td>
+        <td class="right {{ 'up' if item.change.difference > 0 else ('down' if item.change.difference < 0 else '') }}">
+          {% if item.change.percent is not none %}
+            {{ "+" if item.change.difference > 0 else "" }}{{ item.change.percent|sayi(1) }}%
+          {% else %}—{% endif %}
+        </td>
+        <td class="right">{{ item.cost|sayi }} {{ currency }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% endif %}
 {% endblock %}

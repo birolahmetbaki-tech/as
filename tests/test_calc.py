@@ -10,61 +10,10 @@ import pytest
 
 from app import calc
 from app.db import SessionLocal
-from app.models import Department, EnergyType, Meter, MeterReading
-
-
-# --------------------------------------------------------------------------- #
-# Yardimcilar
-# --------------------------------------------------------------------------- #
-
-
-def _energy_type(db, name="Elektrik", unit="kWh", price=0.0) -> EnergyType:
-    energy_type = EnergyType(name=name, unit=unit, unit_price=price, is_active=True)
-    db.add(energy_type)
-    db.commit()
-    return energy_type
-
-
-def _department(db, name="Üretim") -> Department:
-    department = Department(name=name, is_active=True)
-    db.add(department)
-    db.commit()
-    return department
-
-
-def _meter(
-    db,
-    name,
-    energy_type,
-    department=None,
-    multiplier=1.0,
-    is_main=False,
-    is_active=True,
-) -> Meter:
-    meter = Meter(
-        name=name,
-        energy_type_id=energy_type.id,
-        department_id=department.id if department else None,
-        multiplier=multiplier,
-        is_main=is_main,
-        is_active=is_active,
-    )
-    db.add(meter)
-    db.commit()
-    return meter
-
-
-def _readings(db, meter, values: dict[str, float]) -> None:
-    """values: {"2026-01-01": 1000, ...}"""
-    for day, value in values.items():
-        db.add(
-            MeterReading(
-                meter_id=meter.id,
-                reading_date=date.fromisoformat(day),
-                index_value=value,
-            )
-        )
-    db.commit()
+from tests.factories import department as _department
+from tests.factories import energy_type as _energy_type
+from tests.factories import meter as _meter
+from tests.factories import readings as _readings
 
 
 @pytest.fixture

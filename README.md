@@ -14,6 +14,10 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
   ekran kendi tüketim hesabını yapmaz.
 - Fabrika toplamında, bir enerji türünde **ana sayaç tanımlıysa yalnızca ana
   sayaçlar** kullanılır; tanımlı değilse o türdeki tüm sayaçlar kullanılır.
+- Gösterge panelinde **bölüm dağılımı** bölüme bağlı alt sayaçlardan gelir;
+  fabrika toplamı ile arasındaki fark "ölçülmeyen / dağıtılmamış" olarak
+  gösterilir. Bu fark negatifse tüketim gibi değil, ölçüm kapsamı uyarısı
+  olarak gösterilir.
 - Bugün ihtiyaç duyulmayan özellik sisteme eklenmez.
 
 ## Teknoloji
@@ -59,6 +63,8 @@ sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
 
 ## Ekranlar
 
+- **Gösterge paneli** — seçilen ayın tüketimi, önceki dönemle karşılaştırma,
+  maliyet, varsa aylık hedef durumu, bölüm dağılımı, son 12 ayın trendi
 - **Bölümler** — ekleme, düzenleme, pasife alma
 - **Enerji türleri** — ad, birim, birim fiyat, aktiflik
 - **Sayaçlar** — ad, enerji türü, bölüm, seri no, çarpan, ana/alt sayaç, aktiflik
@@ -91,6 +97,7 @@ app/
   definitions.py  tanım ekranları (bölüm, enerji türü, sayaç)
   readings.py   sayaç okuma girişi
   calc.py       hesaplama çekirdeği (tüketimin tek kaynağı)
+  dashboard.py  gösterge paneli (calc sonuçlarını gösterir)
   web.py        şablon, bildirim, sayı/tarih biçimi ve doğrulama yardımcıları
   templates/  static/
 migrations/     Alembic şema geçişleri
