@@ -24,6 +24,8 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
   fabrika toplamı ile arasındaki fark "ölçülmeyen / dağıtılmamış" olarak
   gösterilir. Bu fark negatifse tüketim gibi değil, ölçüm kapsamı uyarısı
   olarak gösterilir.
+- Sayı girişi Türkçe yazımı doğru yorumlar: `1.000` → 1000, `1.250,50` → 1250,5.
+  Tanımsız biçimler sessizce dönüştürülmez, hata verilir.
 - Bugün ihtiyaç duyulmayan özellik sisteme eklenmez.
 
 ## Teknoloji
@@ -74,9 +76,12 @@ sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
 - **Bölümler** — ekleme, düzenleme, pasife alma
 - **Enerji türleri** — ad, birim, birim fiyat, aktiflik
 - **Sayaçlar** — ad, enerji türü, bölüm, seri no, çarpan, ana/alt sayaç, aktiflik
-- **Okumalar** — sayaç endeksi girişi; son okumalar ve sayaç bazında geçmiş
-- **Üretim** — tarih, miktar ve birim; aynı gün ve birim için tek kayıt
-- **Hedefler** — ay + enerji türü bazında aylık tüketim hedefi
+- **Okumalar** — sayaç endeksi girişi; son okumalar ve sayaç bazında geçmiş.
+  Yanlış girilen okuma onay alınarak silinip yeniden girilebilir
+- **Üretim** — tarih, miktar ve birim; aynı gün ve birim için tek kayıt.
+  Yanlış kayıt onay alınarak silinebilir
+- **Hedefler** — ay + enerji türü bazında aylık tüketim hedefi; düzeltilebilir
+  ve silinebilir
 - **Rapor** — tarih aralığı ve kırılım (enerji türü / sayaç / bölüm) seçimiyle
   tek ekranlık, yazdırılabilir rapor
 

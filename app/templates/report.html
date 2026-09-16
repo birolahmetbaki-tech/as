@@ -112,17 +112,25 @@
       </tr>
       {% endfor %}
       <tr class="total-row">
-        <td>Fabrika toplamı</td>
+        <td>Fabrika toplamı (ana sayaç)</td>
         <td class="right">{{ section.factory_total|sayi }}</td>
         <td>{{ section.energy_type.unit }}</td>
-        <td class="right">100,0%</td>
+        {# Olcum uyumsuzlugunda satirlarin toplami fabrika toplamini asar;
+           boyle bir durumda %100 yazmak yaniltici olur. #}
+        <td class="right">{{ "—" if section.breakdown.scope_warning else "100,0%" }}</td>
       </tr>
     </tbody>
   </table>
   <p class="muted small">
     Fabrika toplamı ana sayaçlardan, bölüm satırları bölüme bağlı alt
-    sayaçlardan gelir. Aradaki fark "ölçülmeyen / dağıtılmamış" satırındadır;
-    satırların toplamı fabrika toplamına eşittir, üzerine eklenmez.
+    sayaçlardan gelir.
+    {% if section.breakdown.scope_warning %}
+    Bölüm sayaçları fabrika toplamından fazla ölçtüğü için paylar %100'ü aşar;
+    bu bir ölçüm kapsamı sorunudur, tüketim farkı değildir.
+    {% else %}
+    Aradaki fark "ölçülmeyen / dağıtılmamış" satırındadır; satırların toplamı
+    fabrika toplamına eşittir, üzerine eklenmez.
+    {% endif %}
   </p>
 </section>
 {% endfor %}

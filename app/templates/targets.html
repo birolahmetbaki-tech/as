@@ -36,13 +36,14 @@
 
 {% if targets %}
 <table>
-  <thead><tr><th>Ay</th><th>Enerji türü</th><th class="right">Hedef tüketim</th></tr></thead>
+  <thead><tr><th>Ay</th><th>Enerji türü</th><th class="right">Hedef tüketim</th><th></th></tr></thead>
   <tbody>
     {% for item in targets %}
     <tr>
       <td>{{ item.label }}</td>
       <td>{{ item.record.energy_type.name }}</td>
       <td class="right">{{ item.record.target_value|sayi }} {{ item.record.energy_type.unit }}</td>
+      <td class="right"><a href="/hedefler/{{ item.record.id }}">Düzenle</a></td>
     </tr>
     {% endfor %}
   </tbody>

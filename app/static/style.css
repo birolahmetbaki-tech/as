@@ -305,3 +305,6 @@ a { color: var(--accent); }
   .panel { border: none; padding: 0 0 12px; break-inside: avoid; }
   table { border: 1px solid var(--line); }
 }
+
+button.link.danger { color: var(--error); }
+td form { display: inline; }

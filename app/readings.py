@@ -163,6 +163,29 @@ def readings(
     return render(request, "readings.html", db, **_page_context(db, sayac))
 
 
+@router.post("/{reading_id}/sil")
+def delete_reading(
+    request: Request, reading_id: int, db: Session = Depends(get_session)
+):
+    """Yanlis girilen okumayi siler.
+
+    Silme sonrasi tuketim yeniden hesaplanir (tuketim saklanmadigi icin
+    kendiliginden duzelir) ve onceki/sonraki okuma iliskileri yeni duruma
+    gore kurulur.
+    """
+    reading = db.get(MeterReading, reading_id)
+    if reading is None:
+        return render(request, "not_found.html", db, status_code=404, what="Okuma")
+
+    meter_id = reading.meter_id
+    label = reading.reading_date.strftime("%d.%m.%Y")
+    meter_name = reading.meter.name
+    db.delete(reading)
+    db.commit()
+    flash(request, f"{meter_name} · {label} tarihli okuma silindi.")
+    return RedirectResponse(f"/okumalar?sayac={meter_id}", status_code=303)
+
+
 @router.post("")
 def create_reading(
     request: Request,

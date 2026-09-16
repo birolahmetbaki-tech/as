@@ -1,5 +1,6 @@
 """Sayfa olusturma icin ortak yardimcilar: sablonlar, bildirimler, sayi/tarih bicimi."""
 
+import re
 from datetime import date
 from pathlib import Path
 
@@ -25,15 +26,45 @@ def format_number(value: float | int | None, decimals: int = 2) -> str:
 templates.env.filters["sayi"] = format_number
 
 
+# Binlik ayracli yazim: 1.000 / 12.500 / 1.234.567 (basta sifir olamaz).
+_THOUSANDS = re.compile(r"^-?[1-9]\d{0,2}(\.\d{3})+$")
+# Cozumlemeden sonra kabul edilen son bicim.
+_PLAIN_NUMBER = re.compile(r"^-?\d+(\.\d+)?$")
+
+
 def parse_number(raw: str | None, field_label: str) -> float:
-    """Metni sayiya cevirir. Virgul de ondalik ayraci olarak kabul edilir."""
-    text = (raw or "").strip().replace(" ", "").replace(",", ".")
+    """Metni sayiya cevirir; Turkce yazim bicimini dogru yorumlar.
+
+    1.000      -> 1000      (nokta binlik ayraci)
+    1.250,50   -> 1250.5    (ekranda gosterilen bicim)
+    1250,5     -> 1250.5
+    1250.5     -> 1250.5    (nokta ondalik ayraci)
+    0,5 / 0.5  -> 0.5
+
+    Nokta yalnizca ucer basamakli gruplari ayirdiginda binlik ayraci sayilir;
+    diger durumlarda ondalik ayracidir. Tanimsiz bicimler sessizce cevrilmez,
+    hata verilir.
+    """
+    text = (raw or "").strip().replace(" ", "").replace("\u00a0", "")
     if not text:
         raise ValueError(f"{field_label} alanı boş bırakılamaz.")
-    try:
-        return float(text)
-    except ValueError:
-        raise ValueError(f"{field_label} sayı olmalıdır.") from None
+
+    if "," in text and "." in text:
+        # Sonda gelen isaret ondalik ayracidir, digeri binlik ayracidir.
+        if text.rfind(",") > text.rfind("."):
+            text = text.replace(".", "").replace(",", ".")
+        else:
+            text = text.replace(",", "")
+    elif "," in text:
+        text = text.replace(",", ".")
+    elif _THOUSANDS.match(text):
+        text = text.replace(".", "")
+
+    if not _PLAIN_NUMBER.match(text):
+        raise ValueError(
+            f"{field_label} sayı olmalıdır (örnek: 1.250,50 veya 1250,5)."
+        )
+    return float(text)
 
 
 def required_text(raw: str | None, field_label: str, max_length: int) -> str:
@@ -102,6 +133,10 @@ def month_label(year_month: str) -> str:
     """'2026-01' -> 'Ocak 2026'"""
     year, month = (int(part) for part in year_month.split("-"))
     return f"{MONTH_NAMES[month - 1]} {year}"
+
+
+# Sablonlarda ay adini yazdirmak icin: {{ ay_adi("2026-01") }}
+templates.env.globals["ay_adi"] = month_label
 
 
 def parse_year_month(raw: str | None, field_label: str) -> str:

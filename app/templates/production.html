@@ -27,20 +27,27 @@
 
 {% if records %}
 <table>
-  <thead><tr><th>Tarih</th><th class="right">Miktar</th><th>Birim</th></tr></thead>
+  <thead><tr><th>Tarih</th><th class="right">Miktar</th><th>Birim</th><th></th></tr></thead>
   <tbody>
     {% for record in records %}
     <tr>
       <td>{{ record.production_date.strftime('%d.%m.%Y') }}</td>
       <td class="right">{{ record.quantity|sayi }}</td>
       <td>{{ record.unit }}</td>
+      <td class="right">
+        <form method="post" action="/uretim/{{ record.id }}/sil"
+              onsubmit="return confirm('{{ record.production_date.strftime('%d.%m.%Y') }} tarihli üretim kaydı silinecek. Onaylıyor musunuz?')">
+          <button class="link danger" type="submit">Sil</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 <p class="muted small">
   Farklı birimler (ton, adet, m³) birbirine toplanmaz; enerji performansı
-  her birim için ayrı hesaplanır.
+  her birim için ayrı hesaplanır. Yanlış girilen bir kaydı silip doğrusunu
+  yeniden girebilirsiniz.
 </p>
 {% else %}
 <p class="muted">Henüz üretim kaydı girilmedi.</p>

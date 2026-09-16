@@ -62,7 +62,7 @@
 {% if readings %}
 <table>
   <thead>
-    <tr><th>Tarih</th><th>Sayaç</th><th class="right">Endeks</th><th>Açıklama</th></tr>
+    <tr><th>Tarih</th><th>Sayaç</th><th class="right">Endeks</th><th>Açıklama</th><th></th></tr>
   </thead>
   <tbody>
     {% for reading in readings %}
@@ -71,13 +71,19 @@
       <td>{{ reading.meter.name }}</td>
       <td class="right">{{ reading.index_value|sayi }}</td>
       <td class="muted">{{ reading.note or "" }}</td>
+      <td class="right">
+        <form method="post" action="/okumalar/{{ reading.id }}/sil"
+              onsubmit="return confirm('{{ reading.meter.name }} sayacının {{ reading.reading_date.strftime('%d.%m.%Y') }} tarihli okuması silinecek. Onaylıyor musunuz?')">
+          <button class="link danger" type="submit">Sil</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 <p class="muted small">
   Burada sayacın o tarihteki endeksi tutulur. Dönem tüketimi bu okumalardan
-  hesaplanacaktır.
+  hesaplanır. Yanlış girilen bir okumayı silip doğrusunu yeniden girebilirsiniz.
 </p>
 {% else %}
 <p class="muted">

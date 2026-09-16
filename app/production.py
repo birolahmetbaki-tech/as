@@ -88,6 +88,27 @@ def production(request: Request, db: Session = Depends(get_session)):
     )
 
 
+@router.post("/{production_id}/sil")
+def delete_production(
+    request: Request, production_id: int, db: Session = Depends(get_session)
+):
+    """Yanlis girilen uretim kaydini siler.
+
+    Uretim toplami ve EnPI saklanmadigi icin silme sonrasi kendiliginden
+    dogru degere doner.
+    """
+    record = db.get(Production, production_id)
+    if record is None:
+        return render(request, "not_found.html", db, status_code=404, what="Üretim kaydı")
+
+    label = record.production_date.strftime("%d.%m.%Y")
+    unit = record.unit
+    db.delete(record)
+    db.commit()
+    flash(request, f"{label} tarihli üretim kaydı ({unit}) silindi.")
+    return RedirectResponse("/uretim", status_code=303)
+
+
 @router.post("")
 def create_production(
     request: Request,

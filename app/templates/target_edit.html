@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Hedef düzenle{% endblock %}
+{% block content %}
+<h1>Hedef düzenle</h1>
+
+<form class="card-form" method="post" action="/hedefler/{{ target.id }}">
+  <div class="field">
+    <label for="year_month">Ay</label>
+    <input id="year_month" name="year_month" type="month"
+           value="{{ form.year_month if form else target.year_month }}" required>
+  </div>
+  <div class="field">
+    <label for="energy_type_id">Enerji türü</label>
+    {% set selected = form.energy_type_id if form else target.energy_type_id|string %}
+    <select id="energy_type_id" name="energy_type_id" required>
+      {% for energy_type in energy_types %}
+      <option value="{{ energy_type.id }}" {{ "selected" if selected == energy_type.id|string }}>
+        {{ energy_type.name }} ({{ energy_type.unit }})
+      </option>
+      {% endfor %}
+      {% if target.energy_type not in energy_types %}
+      <option value="{{ target.energy_type.id }}" selected>
+        {{ target.energy_type.name }} (pasif)</option>
+      {% endif %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="target_value">Hedef tüketim</label>
+    <input id="target_value" name="target_value" inputmode="decimal"
+           value="{{ form.target_value if form else target.target_value }}" required>
+  </div>
+  <div class="actions">
+    <button type="submit">Kaydet</button>
+    <a href="/hedefler">Vazgeç</a>
+  </div>
+</form>
+
+<form class="card-form" method="post" action="/hedefler/{{ target.id }}/sil"
+      onsubmit="return confirm('{{ ay_adi(target.year_month) }} hedefi silinecek. Onaylıyor musunuz?')">
+  <p class="muted small">Bu hedefin hiç olmaması gerekiyorsa kaydı silebilirsiniz.</p>
+  <div class="actions"><button class="link danger" type="submit">Hedefi sil</button></div>
+</form>
+{% endblock %}
