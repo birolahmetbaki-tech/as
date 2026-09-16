@@ -38,6 +38,7 @@ class EnergyType(Base):
     name: Mapped[str] = mapped_column(String(60), unique=True)
     unit: Mapped[str] = mapped_column(String(20))
     unit_price: Mapped[float] = mapped_column(Float, default=0.0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     meters: Mapped[list["Meter"]] = relationship(back_populates="energy_type")
 
@@ -66,7 +67,7 @@ class Meter(Base):
     __tablename__ = "meter"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(120))
+    name: Mapped[str] = mapped_column(String(120), unique=True)
     energy_type_id: Mapped[int] = mapped_column(ForeignKey("energy_type.id"))
     department_id: Mapped[int | None] = mapped_column(
         ForeignKey("department.id"), nullable=True

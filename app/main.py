@@ -6,16 +6,14 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import config, security
+from app import config, definitions, security
 from app.db import get_session
-from app.models import Settings
+from app.web import render
 
 BASE_DIR = Path(__file__).resolve().parent
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 LOGIN_PATH = "/giris"
 PUBLIC_PATHS = (LOGIN_PATH, "/static", "/saglik")
@@ -57,26 +55,24 @@ def create_app() -> FastAPI:
     async def login_form(request: Request):
         if request.session.get("auth"):
             return RedirectResponse("/", status_code=303)
-        return templates.TemplateResponse(request, "login.html", {"error": None})
+        return render(request, "login.html", error=None)
 
     @app.post(LOGIN_PATH, response_class=HTMLResponse)
     async def login(request: Request, password: str = Form(...)):
         client = request.client.host if request.client else "bilinmeyen"
         if _is_locked(client):
-            return templates.TemplateResponse(
+            return render(
                 request,
                 "login.html",
-                {"error": "Çok fazla hatalı deneme. Bir dakika sonra tekrar deneyin."},
                 status_code=429,
+                error="Çok fazla hatalı deneme. Bir dakika sonra tekrar deneyin.",
             )
         if security.verify_password(password, config.password_hash()):
             _failed_attempts.pop(client, None)
             request.session["auth"] = True
             return RedirectResponse("/", status_code=303)
         _record_failure(client)
-        return templates.TemplateResponse(
-            request, "login.html", {"error": "Parola hatalı."}, status_code=401
-        )
+        return render(request, "login.html", status_code=401, error="Parola hatalı.")
 
     @app.post("/cikis")
     async def logout(request: Request):
@@ -85,12 +81,9 @@ def create_app() -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     async def dashboard(request: Request, db: Session = Depends(get_session)):
-        settings = db.get(Settings, 1)
-        return templates.TemplateResponse(
-            request,
-            "dashboard.html",
-            {"factory_name": settings.factory_name if settings else "Fabrika"},
-        )
+        return render(request, "dashboard.html", db)
+
+    app.include_router(definitions.router)
 
     # Oturum ara katmani en son eklenir; boylece en distaki katman olur ve
     # yukaridaki giris kontrolu request.session'a erisebilir.

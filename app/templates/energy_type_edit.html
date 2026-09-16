@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Enerji türü düzenle{% endblock %}
+{% block content %}
+<h1>Enerji türü düzenle</h1>
+
+<form class="card-form" method="post" action="/tanimlar/enerji-turleri/{{ energy_type.id }}">
+  <div class="field">
+    <label for="name">Enerji türü</label>
+    <input id="name" name="name" maxlength="60"
+           value="{{ form.name if form else energy_type.name }}" required>
+  </div>
+  <div class="field">
+    <label for="unit">Birim</label>
+    <input id="unit" name="unit" maxlength="20"
+           value="{{ form.unit if form else energy_type.unit }}" required>
+  </div>
+  <div class="field">
+    <label for="unit_price">Birim fiyat</label>
+    <input id="unit_price" name="unit_price" inputmode="decimal"
+           value="{{ form.unit_price if form else energy_type.unit_price }}" required>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="is_active"
+           {{ "checked" if (form.is_active if form else energy_type.is_active) }}>
+    Aktif
+  </label>
+  <div class="actions">
+    <button type="submit">Kaydet</button>
+    <a href="/tanimlar/enerji-turleri">Vazgeç</a>
+  </div>
+</form>
+{% endblock %}

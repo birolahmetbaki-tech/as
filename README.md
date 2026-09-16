@@ -54,12 +54,21 @@ sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
 Şema değişiklikleri Alembic ile yönetilir; güncelleme sonrası
 `alembic upgrade head` çalıştırılır.
 
+## Ekranlar
+
+- **Bölümler** — ekleme, düzenleme, pasife alma
+- **Enerji türleri** — ad, birim, birim fiyat, aktiflik
+- **Sayaçlar** — ad, enerji türü, bölüm, seri no, çarpan, ana/alt sayaç, aktiflik
+
+Tanım kayıtları silinmez; kullanılmayan tanımlar pasife alınır. Böylece geçmiş
+veriler her zaman anlamlı kalır.
+
 ## Veri modeli
 
 | Tablo | İçerik |
 |---|---|
 | `settings` | Fabrika adı, para birimi (tek satır) |
-| `energy_type` | Enerji türü, birimi, birim fiyatı |
+| `energy_type` | Enerji türü, birimi, birim fiyatı, aktiflik |
 | `department` | Fabrika bölümleri |
 | `meter` | Sayaç: enerji türü, bölüm, çarpan, ana/alt sayaç ayrımı |
 | `meter_reading` | Tarih bazlı sayaç endeksi (ham veri) |
@@ -74,7 +83,9 @@ app/
   security.py   parola özetleme (scrypt)
   db.py         veritabanı bağlantısı
   models.py     veri modeli
-  main.py       rotalar
+  main.py       giriş/çıkış ve panel rotaları
+  definitions.py  tanım ekranları (bölüm, enerji türü, sayaç)
+  web.py        şablon, bildirim ve sayı biçimi yardımcıları
   templates/  static/
 migrations/     Alembic şema geçişleri
 scripts/        parola ve anahtar üretme yardımcıları

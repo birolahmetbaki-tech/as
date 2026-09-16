@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Sayaç düzenle{% endblock %}
+{% block content %}
+<h1>Sayaç düzenle</h1>
+
+<form class="card-form" method="post" action="/tanimlar/sayaclar/{{ meter.id }}">
+  <div class="field">
+    <label for="name">Sayaç adı</label>
+    <input id="name" name="name" maxlength="120"
+           value="{{ form.name if form else meter.name }}" required>
+  </div>
+  <div class="field">
+    <label for="energy_type_id">Enerji türü</label>
+    {% set selected_energy = form.energy_type_id if form else meter.energy_type_id|string %}
+    <select id="energy_type_id" name="energy_type_id" required>
+      {% for energy_type in energy_types %}
+      <option value="{{ energy_type.id }}"
+        {{ "selected" if selected_energy == energy_type.id|string }}>{{ energy_type.name }}</option>
+      {% endfor %}
+      {% if meter.energy_type not in energy_types %}
+      <option value="{{ meter.energy_type.id }}"
+        {{ "selected" if selected_energy == meter.energy_type.id|string }}>
+        {{ meter.energy_type.name }} (pasif)</option>
+      {% endif %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="department_id">Bölüm</label>
+    {% set selected_department = form.department_id if form else (meter.department_id|string if meter.department_id else "") %}
+    <select id="department_id" name="department_id">
+      <option value="">Bölüm yok</option>
+      {% for department in departments %}
+      <option value="{{ department.id }}"
+        {{ "selected" if selected_department == department.id|string }}>{{ department.name }}</option>
+      {% endfor %}
+      {% if meter.department and meter.department not in departments %}
+      <option value="{{ meter.department.id }}"
+        {{ "selected" if selected_department == meter.department.id|string }}>
+        {{ meter.department.name }} (pasif)</option>
+      {% endif %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="serial_no">Seri no</label>
+    <input id="serial_no" name="serial_no" maxlength="60"
+           value="{{ form.serial_no if form else (meter.serial_no or '') }}">
+  </div>
+  <div class="field">
+    <label for="multiplier">Çarpan</label>
+    <input id="multiplier" name="multiplier" inputmode="decimal"
+           value="{{ form.multiplier if form else meter.multiplier }}" required>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="is_main"
+           {{ "checked" if (form.is_main if form else meter.is_main) }}>
+    Ana sayaç
+  </label>
+  <label class="check">
+    <input type="checkbox" name="is_active"
+           {{ "checked" if (form.is_active if form else meter.is_active) }}>
+    Aktif
+  </label>
+  <p class="muted small">Pasif sayaçlar veri giriş ekranında listelenmez, geçmiş okumaları korunur.</p>
+  <div class="actions">
+    <button type="submit">Kaydet</button>
+    <a href="/tanimlar/sayaclar">Vazgeç</a>
+  </div>
+</form>
+{% endblock %}

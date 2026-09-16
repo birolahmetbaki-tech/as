@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Bölüm düzenle{% endblock %}
+{% block content %}
+<h1>Bölüm düzenle</h1>
+
+<form class="card-form" method="post" action="/tanimlar/bolumler/{{ department.id }}">
+  <div class="field">
+    <label for="name">Bölüm adı</label>
+    <input id="name" name="name" maxlength="120"
+           value="{{ form.name if form else department.name }}" required>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="is_active"
+           {{ "checked" if (form.is_active if form else department.is_active) }}>
+    Aktif
+  </label>
+  <p class="muted small">Pasif bölümler yeni sayaç tanımlarında listelenmez, geçmiş verileri korunur.</p>
+  <div class="actions">
+    <button type="submit">Kaydet</button>
+    <a href="/tanimlar/bolumler">Vazgeç</a>
+  </div>
+</form>
+{% endblock %}

@@ -79,3 +79,98 @@ input {
 }
 
 .login button { margin-top: 14px; }
+
+/* --- gezinme --- */
+.topbar nav { display: flex; gap: 16px; margin-right: auto; margin-left: 24px; }
+.topbar nav a { color: var(--muted); text-decoration: none; font-size: 14px; }
+.topbar nav a:hover { color: var(--accent); }
+
+/* --- bildirimler --- */
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #cfe3d6;
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: #f1f8f4;
+}
+
+.content .error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #f3d0cc;
+  border-left: 3px solid var(--error);
+  border-radius: 6px;
+  background: #fdf3f2;
+}
+
+.small { font-size: 13px; }
+
+/* --- formlar --- */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field.grow { flex: 1 1 200px; }
+.field.narrow { width: 100px; }
+
+.row-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.row-form.wrap { flex-wrap: wrap; }
+
+.card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.card-form .muted { margin: 0; }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.check input { width: auto; }
+
+select {
+  font: inherit;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.actions { display: flex; align-items: center; gap: 16px; }
+.actions a { color: var(--muted); font-size: 14px; }
+
+/* --- tablolar --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+th { font-size: 13px; color: var(--muted); font-weight: 600; background: #fbfcfd; }
+tbody tr:last-child td { border-bottom: none; }
+.right { text-align: right; }
+tr.passive td { color: var(--muted); }
+a { color: var(--accent); }

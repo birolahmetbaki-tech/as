@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Sayaçlar{% endblock %}
+{% block content %}
+<h1>Sayaçlar</h1>
+
+{% if energy_types %}
+<form class="row-form wrap" method="post" action="/tanimlar/sayaclar">
+  <div class="field grow">
+    <label for="name">Sayaç adı</label>
+    <input id="name" name="name" maxlength="120"
+           value="{{ form.name if form else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="energy_type_id">Enerji türü</label>
+    <select id="energy_type_id" name="energy_type_id" required>
+      <option value="">Seçiniz</option>
+      {% for energy_type in energy_types %}
+      <option value="{{ energy_type.id }}"
+        {{ "selected" if form and form.energy_type_id == energy_type.id|string }}>
+        {{ energy_type.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="department_id">Bölüm</label>
+    <select id="department_id" name="department_id">
+      <option value="">Bölüm yok</option>
+      {% for department in departments %}
+      <option value="{{ department.id }}"
+        {{ "selected" if form and form.department_id == department.id|string }}>
+        {{ department.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="serial_no">Seri no</label>
+    <input id="serial_no" name="serial_no" maxlength="60"
+           value="{{ form.serial_no if form else '' }}">
+  </div>
+  <div class="field narrow">
+    <label for="multiplier">Çarpan</label>
+    <input id="multiplier" name="multiplier" inputmode="decimal"
+           value="{{ form.multiplier if form else '1' }}" required>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="is_main" {{ "checked" if form and form.is_main }}>
+    Ana sayaç
+  </label>
+  <button type="submit">Ekle</button>
+</form>
+{% else %}
+<p class="notice">Sayaç tanımlayabilmek için önce en az bir
+  <a href="/tanimlar/enerji-turleri">enerji türü</a> tanımlayın.</p>
+{% endif %}
+
+{% if meters %}
+<table>
+  <thead>
+    <tr><th>Sayaç</th><th>Enerji türü</th><th>Bölüm</th><th>Seri no</th>
+        <th class="right">Çarpan</th><th>Tip</th><th>Durum</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for meter in meters %}
+    <tr class="{{ '' if meter.is_active else 'passive' }}">
+      <td>{{ meter.name }}</td>
+      <td>{{ meter.energy_type.name }}</td>
+      <td>{{ meter.department.name if meter.department else "—" }}</td>
+      <td>{{ meter.serial_no or "—" }}</td>
+      <td class="right">{{ meter.multiplier|sayi(3) }}</td>
+      <td>{{ "Ana sayaç" if meter.is_main else "Alt sayaç" }}</td>
+      <td>{{ "Aktif" if meter.is_active else "Pasif" }}</td>
+      <td class="right"><a href="/tanimlar/sayaclar/{{ meter.id }}">Düzenle</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">
+  Tüketim = (yeni endeks − önceki endeks) × çarpan. Çarpanı olmayan sayaçlarda 1 kalır.
+  Bir enerji türünde ana sayaç tanımlıysa fabrika toplamı ana sayaçlardan hesaplanır;
+  böylece ana ve alt sayaçlar mükerrer toplanmaz.
+</p>
+{% else %}
+<p class="muted">Henüz sayaç tanımlanmadı.</p>
+{% endif %}
+{% endblock %}

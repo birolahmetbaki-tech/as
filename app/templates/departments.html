@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Bölümler{% endblock %}
+{% block content %}
+<h1>Bölümler</h1>
+
+<form class="row-form" method="post" action="/tanimlar/bolumler">
+  <div class="field grow">
+    <label for="name">Bölüm adı</label>
+    <input id="name" name="name" maxlength="120" value="{{ form.name if form else '' }}" required>
+  </div>
+  <button type="submit">Ekle</button>
+</form>
+
+{% if departments %}
+<table>
+  <thead><tr><th>Bölüm</th><th>Durum</th><th></th></tr></thead>
+  <tbody>
+    {% for department in departments %}
+    <tr class="{{ '' if department.is_active else 'passive' }}">
+      <td>{{ department.name }}</td>
+      <td>{{ "Aktif" if department.is_active else "Pasif" }}</td>
+      <td class="right"><a href="/tanimlar/bolumler/{{ department.id }}">Düzenle</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">Henüz bölüm tanımlanmadı.</p>
+{% endif %}
+{% endblock %}

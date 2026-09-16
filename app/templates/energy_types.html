@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Enerji Türleri{% endblock %}
+{% block content %}
+<h1>Enerji Türleri</h1>
+
+<form class="row-form" method="post" action="/tanimlar/enerji-turleri">
+  <div class="field grow">
+    <label for="name">Enerji türü</label>
+    <input id="name" name="name" maxlength="60" placeholder="Elektrik"
+           value="{{ form.name if form else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="unit">Birim</label>
+    <input id="unit" name="unit" maxlength="20" placeholder="kWh"
+           value="{{ form.unit if form else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="unit_price">Birim fiyat</label>
+    <input id="unit_price" name="unit_price" inputmode="decimal"
+           value="{{ form.unit_price if form else '0' }}" required>
+  </div>
+  <button type="submit">Ekle</button>
+</form>
+
+{% if energy_types %}
+<table>
+  <thead><tr><th>Enerji türü</th><th>Birim</th><th class="right">Birim fiyat</th><th>Durum</th><th></th></tr></thead>
+  <tbody>
+    {% for energy_type in energy_types %}
+    <tr class="{{ '' if energy_type.is_active else 'passive' }}">
+      <td>{{ energy_type.name }}</td>
+      <td>{{ energy_type.unit }}</td>
+      <td class="right">{{ energy_type.unit_price|sayi(4) }}</td>
+      <td>{{ "Aktif" if energy_type.is_active else "Pasif" }}</td>
+      <td class="right"><a href="/tanimlar/enerji-turleri/{{ energy_type.id }}">Düzenle</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">Birim fiyat, maliyet hesabında kullanılacak güncel fiyattır.</p>
+{% else %}
+<p class="muted">Henüz enerji türü tanımlanmadı. Örnek: Elektrik / kWh.</p>
+{% endif %}
+{% endblock %}

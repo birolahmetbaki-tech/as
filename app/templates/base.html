@@ -9,10 +9,18 @@
 <body>
   {% block layout %}
   <header class="topbar">
-    <a class="brand" href="/">{{ factory_name|default("Fabrika") }} · Enerji İzleme</a>
+    <a class="brand" href="/">{{ factory_name }} · Enerji İzleme</a>
+    <nav>
+      <a href="/">Panel</a>
+      <a href="/tanimlar/bolumler">Bölümler</a>
+      <a href="/tanimlar/enerji-turleri">Enerji Türleri</a>
+      <a href="/tanimlar/sayaclar">Sayaçlar</a>
+    </nav>
     <form method="post" action="/cikis"><button class="link" type="submit">Çıkış</button></form>
   </header>
   <main class="content">
+    {% for message in flash_messages %}<p class="notice">{{ message }}</p>{% endfor %}
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
     {% block content %}{% endblock %}
   </main>
   {% endblock %}
