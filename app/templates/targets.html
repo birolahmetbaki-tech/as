@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Hedefler{% endblock %}
+{% block content %}
+<h1>Aylık Hedefler</h1>
+
+{% if energy_types %}
+<form class="row-form wrap" method="post" action="/hedefler">
+  <div class="field">
+    <label for="year_month">Ay</label>
+    <input id="year_month" name="year_month" type="month"
+           value="{{ form.year_month if form else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="energy_type_id">Enerji türü</label>
+    <select id="energy_type_id" name="energy_type_id" required>
+      <option value="">Seçiniz</option>
+      {% for energy_type in energy_types %}
+      <option value="{{ energy_type.id }}"
+        {{ "selected" if form and form.energy_type_id == energy_type.id|string }}>
+        {{ energy_type.name }} ({{ energy_type.unit }})
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="target_value">Hedef tüketim</label>
+    <input id="target_value" name="target_value" inputmode="decimal"
+           value="{{ form.target_value if form else '' }}" required>
+  </div>
+  <button type="submit">Kaydet</button>
+</form>
+{% else %}
+<p class="notice">Hedef tanımlayabilmek için önce bir
+  <a href="/tanimlar/enerji-turleri">enerji türü</a> tanımlayın.</p>
+{% endif %}
+
+{% if targets %}
+<table>
+  <thead><tr><th>Ay</th><th>Enerji türü</th><th class="right">Hedef tüketim</th></tr></thead>
+  <tbody>
+    {% for item in targets %}
+    <tr>
+      <td>{{ item.label }}</td>
+      <td>{{ item.record.energy_type.name }}</td>
+      <td class="right">{{ item.record.target_value|sayi }} {{ item.record.energy_type.unit }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">
+  Hedefe göre durum gösterge panelinde görünür: gerçekleşen hedefin altındaysa
+  "hedef içinde", üstündeyse "hedef aşıldı".
+</p>
+{% else %}
+<p class="muted">Henüz hedef tanımlanmadı.</p>
+{% endif %}
+{% endblock %}

@@ -340,3 +340,35 @@ def enpi_series(
         key: enpi(energy_totals.get(key, 0.0), production_totals.get(key, 0.0))
         for key in keys
     }
+
+
+# --------------------------------------------------------------------------- #
+# Maliyet ve hedef
+# --------------------------------------------------------------------------- #
+
+
+def cost(consumption: float, unit_price: float) -> float:
+    """Enerji maliyeti = tuketim x birim fiyat.
+
+    Enerji turunun birimi ile birim fiyati uyumlu kabul edilir (orn. kWh ve
+    TL/kWh). Bu asamada tarife dilimi, vergi, ek bedel veya gecmis fiyat
+    takibi yoktur: her zaman enerji turunun GUNCEL birim fiyati kullanilir.
+    """
+    return consumption * unit_price
+
+
+def target_status(actual: float, target_value: float) -> dict | None:
+    """Aylik hedefe gore durum.
+
+    Gerceklesen <= hedef ise hedef icinde, buyukse hedef asilmistir.
+    Hedef sifir veya negatifse gosterge anlamsizdir; None doner.
+    """
+    if target_value <= 0:
+        return None
+    return {
+        "target": target_value,
+        "actual": actual,
+        "difference": actual - target_value,
+        "percent": actual / target_value * 100,
+        "exceeded": actual > target_value,
+    }

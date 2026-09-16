@@ -21,20 +21,18 @@ router = APIRouter(prefix="/uretim")
 RECENT_LIMIT = 50
 
 
+def normalise_unit(unit: str) -> str:
+    """Birimi tek bicime indirir: ' Ton ', 'TON' -> 'ton'.
+
+    Turkce 'I' ve 'İ' harfleri Python'un lower() islevinde beklenmedik sonuc
+    verdigi icin once elle esleniyor. Bunun otesinde bir birim yonetimi yoktur.
+    """
+    return unit.strip().replace("I", "ı").replace("İ", "i").lower()
+
+
 def _known_units(db: Session) -> list[str]:
-    """Daha once kullanilmis uretim birimleri (yazim bicimi korunur)."""
-    seen: dict[str, str] = {}
-    for unit in db.scalars(select(Production.unit)):
-        seen.setdefault(unit.casefold(), unit)
-    return sorted(seen.values(), key=str.casefold)
-
-
-def _normalised_unit(db: Session, unit: str) -> str:
-    """Ayni birimin farkli yazimlarini tek yazima baglar: 'Ton' -> 'ton'."""
-    for known in _known_units(db):
-        if known.casefold() == unit.casefold():
-            return known
-    return unit
+    """Daha once kullanilmis uretim birimleri (giris kutusunda oneri olarak)."""
+    return sorted(set(db.scalars(select(Production.unit))))
 
 
 def _records(db: Session) -> list[Production]:
@@ -59,7 +57,9 @@ def _read_form(db: Session, production_date: str, quantity: str, unit: str) -> d
     if amount <= 0:
         raise ValueError("Üretim miktarı sıfırdan büyük olmalıdır.")
 
-    clean_unit = _normalised_unit(db, required_text(unit, "Birim", 20))
+    clean_unit = normalise_unit(required_text(unit, "Birim", 20))
+    if not clean_unit:
+        raise ValueError("Birim alanı boş bırakılamaz.")
 
     existing = db.scalars(
         select(Production).where(

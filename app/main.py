@@ -8,7 +8,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import config, dashboard, definitions, production, readings, security
+from app import (
+    config,
+    dashboard,
+    definitions,
+    production,
+    readings,
+    security,
+    targets,
+)
 from app.web import render
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -81,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(definitions.router)
     app.include_router(readings.router)
     app.include_router(production.router)
+    app.include_router(targets.router)
 
     # Oturum ara katmani en son eklenir; boylece en distaki katman olur ve
     # yukaridaki giris kontrolu request.session'a erisebilir.

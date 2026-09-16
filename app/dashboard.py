@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from app import calc
 from app.db import get_session
 from app.models import EnergyType, Meter, Settings, Target
-from app.web import render
+from app.web import month_label, render
 
 router = APIRouter()
 
@@ -43,15 +43,6 @@ def shift_month(year_month: str, months: int) -> str:
     year, month = (int(part) for part in year_month.split("-"))
     index = year * 12 + (month - 1) + months
     return f"{index // 12:04d}-{index % 12 + 1:02d}"
-
-
-def month_label(year_month: str) -> str:
-    names = [
-        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
-    ]
-    year, month = (int(part) for part in year_month.split("-"))
-    return f"{names[month - 1]} {year}"
 
 
 def _valid_month(raw: str | None) -> str:
@@ -116,20 +107,10 @@ def energy_summary(db: Session, energy_type: EnergyType, year_month: str) -> dic
     return {
         "energy_type": energy_type,
         "total": total,
-        "cost": total * energy_type.unit_price,
+        "cost": calc.cost(total, energy_type.unit_price),
         "change": _change(total, previous_total),
         "previous_label": month_label(previous_month),
-        "target": (
-            {
-                "value": target.target_value,
-                "percent": (total / target.target_value * 100)
-                if target.target_value
-                else None,
-                "exceeded": total > target.target_value,
-            }
-            if target
-            else None
-        ),
+        "target": calc.target_status(total, target.target_value) if target else None,
     }
 
 

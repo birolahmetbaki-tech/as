@@ -80,10 +80,10 @@
   {% if summary.target %}
   <div class="card">
     <p class="card-label">Aylık hedef</p>
-    <p class="card-value">{{ summary.target.value|sayi }} <span class="unit">{{ selected_energy.unit }}</span></p>
+    <p class="card-value">{{ summary.target.target|sayi }} <span class="unit">{{ selected_energy.unit }}</span></p>
     <p class="card-note {{ 'up' if summary.target.exceeded else 'down' }}">
-      Gerçekleşme: {{ summary.target.percent|sayi(1) }}%
-      {{ "— hedef aşıldı" if summary.target.exceeded else "" }}
+      Gerçekleşme: {{ summary.target.percent|sayi(1) }}% —
+      {{ "hedef aşıldı" if summary.target.exceeded else "hedef içinde" }}
     </p>
   </div>
   {% endif %}

@@ -176,7 +176,7 @@ def test_hedef_asildiginda_isaretlenir(db, fabrika):
     db.commit()
 
     target = dashboard.energy_summary(db, fabrika, "2026-01")["target"]
-    assert target["value"] == pytest.approx(16_000)
+    assert target["target"] == pytest.approx(16_000)
     assert target["percent"] == pytest.approx(115, abs=0.1)
     assert target["exceeded"] is True
 

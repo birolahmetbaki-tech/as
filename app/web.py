@@ -90,3 +90,31 @@ def parse_date(raw: str | None, field_label: str) -> date:
 def _parse_dotted_date(text: str) -> date:
     day, month, year = (int(part) for part in text.split("."))
     return date(year, month, day)
+
+
+MONTH_NAMES = (
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+)
+
+
+def month_label(year_month: str) -> str:
+    """'2026-01' -> 'Ocak 2026'"""
+    year, month = (int(part) for part in year_month.split("-"))
+    return f"{MONTH_NAMES[month - 1]} {year}"
+
+
+def parse_year_month(raw: str | None, field_label: str) -> str:
+    """Ay metnini dogrular ve 'YYYY-MM' bicimine getirir."""
+    text = (raw or "").strip()
+    if not text:
+        raise ValueError(f"{field_label} alanı boş bırakılamaz.")
+    try:
+        year, month = (int(part) for part in text.split("-"))
+        if not (1 <= month <= 12 and 2000 <= year <= 2100):
+            raise ValueError
+    except ValueError:
+        raise ValueError(
+            f"{field_label} geçerli bir ay olmalıdır (örnek: 2026-01)."
+        ) from None
+    return f"{year:04d}-{month:02d}"

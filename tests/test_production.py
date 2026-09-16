@@ -129,3 +129,19 @@ def test_kayitlar_yeniden_eskiye_siralanir(logged_in_client):
 
     page = logged_in_client.get("/uretim").text
     assert page.index("10.03.2026") < page.index("10.02.2026") < page.index("10.01.2026")
+
+
+def test_birim_normalize_edilir(logged_in_client):
+    """Bastaki/sondaki bosluk temizlenir, buyuk harf kucultulur."""
+    _add(logged_in_client, on_date="2026-01-10", unit="  TON  ")
+    _add(logged_in_client, on_date="2026-01-11", unit="Ton")
+    _add(logged_in_client, on_date="2026-01-12", unit="ton")
+
+    with SessionLocal() as db:
+        assert {record.unit for record in db.query(Production)} == {"ton"}
+
+
+def test_ilk_kayitta_da_birim_kucuk_harfe_cevrilir(logged_in_client):
+    _add(logged_in_client, unit="ADET")
+    with SessionLocal() as db:
+        assert db.get(Production, 1).unit == "adet"
