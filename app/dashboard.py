@@ -115,10 +115,18 @@ def energy_summary(db: Session, energy_type: EnergyType, year_month: str) -> dic
 
 
 def department_breakdown(
-    db: Session, energy_type: EnergyType, year_month: str, factory_total: float
+    db: Session,
+    energy_type: EnergyType,
+    start: date,
+    end: date,
+    factory_total: float,
 ) -> dict:
-    """Bolum dagilimi ve olculmeyen pay."""
-    start, end = month_bounds(year_month)
+    """Bolum dagilimi ve olculmeyen pay.
+
+    Fabrika toplami ana sayaclardan, bolum dagilimi bolume bagli alt
+    sayaclardan gelir; aradaki fark "olculmeyen / dagitilmamis" olarak ayri
+    gosterilir. Bu kural hem panelde hem raporda ayni yerden kullanilir.
+    """
     entries = calc.consumptions(
         db,
         start=start,
@@ -280,7 +288,7 @@ def dashboard(
         energy_types=energy_types,
         selected_energy=selected,
         summary=summary,
-        breakdown=department_breakdown(db, selected, year_month, summary["total"]),
+        breakdown=department_breakdown(db, selected, start, end, summary["total"]),
         trend=monthly_trend(db, selected, year_month),
         currency=settings.currency if settings else "TL",
         all_summaries=[

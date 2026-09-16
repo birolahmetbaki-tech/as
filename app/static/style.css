@@ -293,3 +293,15 @@ a { color: var(--accent); }
 .chart .series { stroke: var(--accent); stroke-width: 2; fill: none; }
 .chart .dot { fill: #7fb49a; stroke: var(--panel); stroke-width: 2; }
 .chart .dot.selected { fill: var(--accent); }
+
+/* --- rapor --- */
+.report-head { margin: -6px 0 18px; }
+.total-row td { font-weight: 600; border-top: 1px solid var(--line); }
+
+@media print {
+  .topbar, .no-print { display: none; }
+  body { background: #fff; }
+  .content { max-width: none; padding: 0; }
+  .panel { border: none; padding: 0 0 12px; break-inside: avoid; }
+  table { border: 1px solid var(--line); }
+}

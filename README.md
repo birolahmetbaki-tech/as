@@ -77,6 +77,8 @@ sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
 - **Okumalar** — sayaç endeksi girişi; son okumalar ve sayaç bazında geçmiş
 - **Üretim** — tarih, miktar ve birim; aynı gün ve birim için tek kayıt
 - **Hedefler** — ay + enerji türü bazında aylık tüketim hedefi
+- **Rapor** — tarih aralığı ve kırılım (enerji türü / sayaç / bölüm) seçimiyle
+  tek ekranlık, yazdırılabilir rapor
 
 Tanım kayıtları silinmez; kullanılmayan tanımlar pasife alınır. Böylece geçmiş
 veriler her zaman anlamlı kalır.
@@ -106,6 +108,7 @@ app/
   readings.py   sayaç okuma girişi
   production.py üretim verisi girişi
   targets.py    aylık tüketim hedefleri
+  reports.py    rapor ekranı (yalnızca calc sonuçlarını sunar)
   calc.py       hesaplama çekirdeği (tüketimin tek kaynağı)
   dashboard.py  gösterge paneli (calc sonuçlarını gösterir)
   web.py        şablon, bildirim, sayı/tarih biçimi ve doğrulama yardımcıları

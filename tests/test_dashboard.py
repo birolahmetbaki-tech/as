@@ -88,7 +88,7 @@ def test_maliyet_birim_fiyatla_hesaplanir(db, fabrika):
 
 
 def test_bolum_dagilimi_ana_sayaci_ikinci_kez_saymaz(db, fabrika):
-    breakdown = dashboard.department_breakdown(db, fabrika, "2026-01", 18_400)
+    breakdown = dashboard.department_breakdown(db, fabrika, *dashboard.month_bounds("2026-01"), 18_400)
     measured = {row["label"]: row["value"] for row in breakdown["rows"] if row["measured"]}
 
     assert measured == {
@@ -100,7 +100,7 @@ def test_bolum_dagilimi_ana_sayaci_ikinci_kez_saymaz(db, fabrika):
 
 
 def test_olculmeyen_pay_dogru_hesaplanir(db, fabrika):
-    breakdown = dashboard.department_breakdown(db, fabrika, "2026-01", 18_400)
+    breakdown = dashboard.department_breakdown(db, fabrika, *dashboard.month_bounds("2026-01"), 18_400)
     assert breakdown["unmeasured"] == pytest.approx(2_900)
 
     unmeasured_rows = [row for row in breakdown["rows"] if not row["measured"]]
@@ -119,7 +119,7 @@ def test_bolum_toplami_fabrika_toplamini_asarsa_uyari_verilir(db):
     readings(db, main, {"2026-01-01": 0, "2026-01-31": 1000})
     readings(db, sub, {"2026-01-01": 0, "2026-01-31": 1500})
 
-    breakdown = dashboard.department_breakdown(db, electricity, "2026-01", 1000)
+    breakdown = dashboard.department_breakdown(db, electricity, *dashboard.month_bounds("2026-01"), 1000)
     assert breakdown["unmeasured"] == pytest.approx(-500)
     assert breakdown["scope_warning"] is True
     assert all(row["measured"] for row in breakdown["rows"])
@@ -136,7 +136,7 @@ def test_bolumu_olmayan_alt_sayac_dagilima_girmez(db):
     readings(db, sub, {"2026-01-01": 0, "2026-01-31": 600})
     readings(db, loose, {"2026-01-01": 0, "2026-01-31": 200})
 
-    breakdown = dashboard.department_breakdown(db, electricity, "2026-01", 1000)
+    breakdown = dashboard.department_breakdown(db, electricity, *dashboard.month_bounds("2026-01"), 1000)
     assert [row["label"] for row in breakdown["rows"]] == [
         "Üretim",
         "Ölçülmeyen / dağıtılmamış",

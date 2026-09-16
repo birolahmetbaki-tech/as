@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Rapor{% endblock %}
+{% block content %}
+
+<form class="filter panel-filter no-print" method="get" action="/rapor">
+  <label for="baslangic">Başlangıç</label>
+  <input id="baslangic" name="baslangic" type="date" value="{{ start.isoformat() }}">
+  <label for="bitis">Bitiş</label>
+  <input id="bitis" name="bitis" type="date" value="{{ end.isoformat() }}">
+  <label for="kirilim">Kırılım</label>
+  <select id="kirilim" name="kirilim">
+    {% for key, label in breakdowns.items() %}
+    <option value="{{ key }}" {{ "selected" if key == breakdown }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Raporla</button>
+</form>
+
+<h1>Enerji Raporu</h1>
+<p class="muted report-head">
+  {{ factory_name }} · {{ start.strftime('%d.%m.%Y') }} – {{ end.strftime('%d.%m.%Y') }}
+  · Kırılım: {{ breakdowns[breakdown] }}
+</p>
+
+{% if breakdown == "enerji" %}
+<section class="panel">
+  <h2>Enerji türüne göre tüketim</h2>
+  {% if energy_rows|sum(attribute='total') > 0 %}
+  <table>
+    <thead><tr><th>Enerji türü</th><th class="right">Tüketim</th><th>Birim</th>
+               <th class="right">Maliyet ({{ currency }})</th></tr></thead>
+    <tbody>
+      {% for row in energy_rows %}
+      <tr>
+        <td>{{ row.energy_type.name }}</td>
+        <td class="right">{{ row.total|sayi }}</td>
+        <td>{{ row.energy_type.unit }}</td>
+        <td class="right">{{ row.cost|sayi }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="3">Toplam maliyet</td>
+        <td class="right">{{ energy_rows|sum(attribute='cost')|sayi }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted small">
+    Tüketim, fabrika toplamıdır: bir enerji türünde ana sayaç tanımlıysa
+    yalnızca ana sayaçlar kullanılır. Farklı enerji türleri birbirine
+    dönüştürülmez; yalnızca maliyetleri toplanabilir.
+  </p>
+  {% else %}
+  <p class="muted">Bu aralıkta tüketim verisi yok.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if breakdown == "sayac" %}
+<section class="panel">
+  <h2>Sayaca göre tüketim</h2>
+  {% if meter_rows %}
+  <table>
+    <thead><tr><th>Sayaç</th><th>Enerji türü</th><th>Bölüm</th><th>Tip</th>
+               <th class="right">Tüketim</th><th>Birim</th>
+               <th class="right">Maliyet ({{ currency }})</th></tr></thead>
+    <tbody>
+      {% for row in meter_rows %}
+      <tr>
+        <td>{{ row.meter.name }}</td>
+        <td>{{ row.meter.energy_type.name }}</td>
+        <td>{{ row.meter.department.name if row.meter.department else "—" }}</td>
+        <td>{{ "Ana" if row.meter.is_main else "Alt" }}</td>
+        <td class="right">{{ row.total|sayi }}</td>
+        <td>{{ row.meter.energy_type.unit }}</td>
+        <td class="right">{{ row.cost|sayi }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">
+    Ana ve alt sayaçlar birlikte listelenir. Toplamları fabrika tüketimini
+    aşabileceği için bu tabloda genel toplam gösterilmez.
+  </p>
+  {% else %}
+  <p class="muted">Bu aralıkta sayaç tüketimi yok.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if breakdown == "bolum" %}
+{% if department_sections %}
+{% for section in department_sections %}
+<section class="panel">
+  <h2>Bölüme göre tüketim · {{ section.energy_type.name }}</h2>
+  {% if section.breakdown.scope_warning %}
+  <p class="error">
+    Bölüm sayaçlarının toplamı ({{ section.breakdown.measured|sayi }}
+    {{ section.energy_type.unit }}) fabrika toplamından fazla. Bu bir ölçüm
+    kapsamı sorunudur; sayaç tanımlarını gözden geçirin.
+  </p>
+  {% endif %}
+  <table>
+    <thead><tr><th>Bölüm</th><th class="right">Tüketim</th><th>Birim</th>
+               <th class="right">Pay</th></tr></thead>
+    <tbody>
+      {% for row in section.breakdown.rows %}
+      <tr class="{{ '' if row.measured else 'passive' }}">
+        <td>{{ row.label }}</td>
+        <td class="right">{{ row.value|sayi }}</td>
+        <td>{{ section.energy_type.unit }}</td>
+        <td class="right">{% if row.share is not none %}{{ row.share|sayi(1) }}%{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td>Fabrika toplamı</td>
+        <td class="right">{{ section.factory_total|sayi }}</td>
+        <td>{{ section.energy_type.unit }}</td>
+        <td class="right">100,0%</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted small">
+    Fabrika toplamı ana sayaçlardan, bölüm satırları bölüme bağlı alt
+    sayaçlardan gelir. Aradaki fark "ölçülmeyen / dağıtılmamış" satırındadır;
+    satırların toplamı fabrika toplamına eşittir, üzerine eklenmez.
+  </p>
+</section>
+{% endfor %}
+{% else %}
+<section class="panel">
+  <h2>Bölüme göre tüketim</h2>
+  <p class="muted">Bu aralıkta bölüm bazında tüketim verisi yok.</p>
+</section>
+{% endif %}
+{% endif %}
+
+{% if production_rows %}
+<section class="panel">
+  <h2>Üretim ve enerji performansı</h2>
+  <table>
+    <thead><tr><th>Üretim birimi</th><th class="right">Üretim</th>
+               <th>Enerji türü</th><th class="right">Tüketim</th>
+               <th class="right">EnPI</th></tr></thead>
+    <tbody>
+      {% for row in production_rows %}
+      <tr>
+        <td>{{ row.unit }}</td>
+        <td class="right">{{ row.production|sayi }}</td>
+        <td>{{ row.energy_type.name }}</td>
+        <td class="right">{{ row.total|sayi }} {{ row.energy_type.unit }}</td>
+        <td class="right">
+          {% if row.enpi is not none %}
+            {{ row.enpi|sayi }} {{ row.energy_type.unit }}/{{ row.unit }}
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">
+    Farklı üretim birimleri birbirine toplanmaz; EnPI her birim için ayrı
+    hesaplanır.
+  </p>
+</section>
+{% endif %}
+
+{% if target_rows %}
+<section class="panel">
+  <h2>Hedef / gerçekleşen</h2>
+  <table>
+    <thead><tr><th>Ay</th><th>Enerji türü</th><th class="right">Hedef</th>
+               <th class="right">Gerçekleşen</th><th class="right">Gerçekleşme</th>
+               <th>Durum</th></tr></thead>
+    <tbody>
+      {% for row in target_rows %}
+      <tr>
+        <td>{{ row.label }}</td>
+        <td>{{ row.energy_type.name }}</td>
+        <td class="right">{{ row.status.target|sayi }} {{ row.energy_type.unit }}</td>
+        <td class="right">{{ row.status.actual|sayi }} {{ row.energy_type.unit }}</td>
+        <td class="right">{{ row.status.percent|sayi(1) }}%</td>
+        <td class="{{ 'up' if row.status.exceeded else 'down' }}">
+          {{ "Hedef aşıldı" if row.status.exceeded else "Hedef içinde" }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">
+    Yalnızca seçilen aralığa tamamen giren aylar listelenir.
+  </p>
+</section>
+{% endif %}
+
+{% endblock %}

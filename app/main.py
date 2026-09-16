@@ -14,6 +14,7 @@ from app import (
     definitions,
     production,
     readings,
+    reports,
     security,
     targets,
 )
@@ -90,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(readings.router)
     app.include_router(production.router)
     app.include_router(targets.router)
+    app.include_router(reports.router)
 
     # Oturum ara katmani en son eklenir; boylece en distaki katman olur ve
     # yukaridaki giris kontrolu request.session'a erisebilir.
