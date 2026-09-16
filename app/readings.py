@@ -114,6 +114,11 @@ def _read_form(
         )
 
     on_date = parse_date(reading_date, "Tarih")
+    if on_date > date.today():
+        raise ValueError(
+            "Okuma tarihi bugünden ileri olamaz "
+            f"(bugün: {date.today().strftime('%d.%m.%Y')})."
+        )
     value = parse_number(index_value, "Endeks")
     if value < 0:
         raise ValueError("Endeks negatif olamaz.")

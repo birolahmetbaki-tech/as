@@ -282,3 +282,31 @@ def test_son_endeks_secim_listesinde_gosterilir(logged_in_client):
     response = logged_in_client.get("/okumalar")
     assert 'data-son-endeks="1.250,50"' in response.text
     assert 'data-son-tarih="31.01.2026"' in response.text
+
+
+# --------------------------------------------------------------------------- #
+# Gelecek tarih
+# --------------------------------------------------------------------------- #
+
+
+def test_gelecek_tarihli_okuma_reddedilir(logged_in_client):
+    from datetime import date, timedelta
+
+    _setup_meter(logged_in_client)
+    yarin = (date.today() + timedelta(days=1)).isoformat()
+    response = _add_reading(logged_in_client, on_date=yarin)
+    assert response.status_code == 400
+    assert "bugünden ileri olamaz" in response.text
+
+    with SessionLocal() as db:
+        assert db.query(MeterReading).count() == 0
+
+
+def test_bugun_tarihli_okuma_kabul_edilir(logged_in_client):
+    from datetime import date
+
+    _setup_meter(logged_in_client)
+    response = _add_reading(logged_in_client, on_date=date.today().isoformat())
+    assert response.status_code == 200
+    with SessionLocal() as db:
+        assert db.query(MeterReading).count() == 1

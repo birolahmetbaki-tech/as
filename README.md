@@ -10,7 +10,10 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
   tüketim, maliyet ve EnPI gibi türetilmiş değerler saklanmaz, merkezi
   hesaplama modülünde üretilir.
 - **Tüketim = (endeks₂ − endeks₁) × sayaç çarpanı** ve ikinci okumanın
-  tarihine yazılır.
+  tarihine yazılır. Bu hesap yalnızca `app/calc.py` içinde yapılır; hiçbir
+  ekran kendi tüketim hesabını yapmaz.
+- Fabrika toplamında, bir enerji türünde **ana sayaç tanımlıysa yalnızca ana
+  sayaçlar** kullanılır; tanımlı değilse o türdeki tüm sayaçlar kullanılır.
 - Bugün ihtiyaç duyulmayan özellik sisteme eklenmez.
 
 ## Teknoloji
@@ -87,6 +90,7 @@ app/
   main.py       giriş/çıkış ve panel rotaları
   definitions.py  tanım ekranları (bölüm, enerji türü, sayaç)
   readings.py   sayaç okuma girişi
+  calc.py       hesaplama çekirdeği (tüketimin tek kaynağı)
   web.py        şablon, bildirim, sayı/tarih biçimi ve doğrulama yardımcıları
   templates/  static/
 migrations/     Alembic şema geçişleri
