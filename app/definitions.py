@@ -1,4 +1,4 @@
-"""Tanim ekranlari: bolum, enerji turu ve sayac.
+"""Tanim ekranlari: bolum, enerji turu, sayac ve enerji donusum katsayilari.
 
 Bu ekranlarin tek amaci sonraki asamadaki elle veri girisine saglam bir temel
 hazirlamaktir. Kayitlar silinmez; kullanilmayan tanimlar pasife alinir.
@@ -9,9 +9,17 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app import calc, units
 from app.db import get_session
-from app.models import Department, EnergyType, Meter
-from app.web import flash, optional_text, parse_number, render, required_text
+from app.models import Department, EnergyConversion, EnergyType, Meter
+from app.web import (
+    flash,
+    optional_text,
+    parse_date,
+    parse_number,
+    render,
+    required_text,
+)
 
 router = APIRouter(prefix="/tanimlar")
 
@@ -406,3 +414,128 @@ def edit_meter(
     db.commit()
     flash(request, f"'{meter.name}' sayacı güncellendi.")
     return RedirectResponse("/tanimlar/sayaclar", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Enerji donusum katsayilari
+#
+# 1 <enerji turu birimi> = factor GJ. Yalnizca matematiksel olarak
+# cevrilemeyen birimler (Sm3, kg, lt gibi) icin gereklidir; kWh/MJ/GJ gibi
+# enerji birimleri zaten standart donusumle cevrilir. Kullanici yine de
+# isterse standart degerin yerine kendi katsayisini tanimlayabilir.
+# --------------------------------------------------------------------------- #
+
+
+def _conversion_page_context(db: Session) -> dict:
+    records = calc.energy_conversion_records(db)
+    return {
+        "energy_types": db.scalars(_active_first(EnergyType)).all(),
+        "records": [
+            {
+                "record": record,
+                # Kullanicinin katsayiyi tanidik bir birimde gorebilmesi icin.
+                "kwh": units.convert(record.factor, calc.REFERENCE_ENERGY_UNIT, "kWh"),
+            }
+            for record in sorted(
+                records,
+                key=lambda item: (item.energy_type.name, item.valid_from),
+                reverse=True,
+            )
+        ],
+        "reference_unit": calc.REFERENCE_ENERGY_UNIT,
+    }
+
+
+def _read_conversion_form(
+    db: Session, energy_type_id: str, factor: str, valid_from: str, source: str
+) -> dict:
+    if not (energy_type_id or "").strip():
+        raise ValueError("Enerji türü seçilmelidir.")
+    energy_type = db.get(EnergyType, int(energy_type_id))
+    if energy_type is None:
+        raise ValueError("Seçilen enerji türü bulunamadı.")
+
+    value = parse_number(factor, "Katsayı")
+    if value <= 0:
+        raise ValueError("Katsayı sıfırdan büyük olmalıdır.")
+
+    start = parse_date(valid_from, "Geçerlilik başlangıcı")
+    existing = db.scalars(
+        select(EnergyConversion).where(
+            EnergyConversion.energy_type_id == energy_type.id,
+            EnergyConversion.valid_from == start,
+        )
+    ).first()
+    if existing is not None:
+        raise ValueError(
+            f"'{energy_type.name}' için {start.strftime('%d.%m.%Y')} tarihinden "
+            "geçerli bir katsayı zaten tanımlı."
+        )
+
+    return {
+        "energy_type_id": energy_type.id,
+        "factor": value,
+        "valid_from": start,
+        "source": required_text(source or "Kullanıcı", "Kaynak", 120),
+    }
+
+
+@router.get("/donusum-katsayilari")
+def conversions(request: Request, db: Session = Depends(get_session)):
+    return render(request, "conversions.html", db, **_conversion_page_context(db))
+
+
+@router.post("/donusum-katsayilari")
+def create_conversion(
+    request: Request,
+    energy_type_id: str = Form(""),
+    factor: str = Form(""),
+    valid_from: str = Form(""),
+    source: str = Form(""),
+    note: str = Form(""),
+    db: Session = Depends(get_session),
+):
+    try:
+        values = _read_conversion_form(db, energy_type_id, factor, valid_from, source)
+    except ValueError as error:
+        return render(
+            request,
+            "conversions.html",
+            db,
+            status_code=400,
+            error=str(error),
+            form={
+                "energy_type_id": energy_type_id,
+                "factor": factor,
+                "valid_from": valid_from,
+                "source": source,
+                "note": note,
+            },
+            **_conversion_page_context(db),
+        )
+
+    db.add(EnergyConversion(**values, note=optional_text(note, "Not", 500)))
+    db.commit()
+    flash(request, "Dönüşüm katsayısı kaydedildi.")
+    return RedirectResponse("/tanimlar/donusum-katsayilari", status_code=303)
+
+
+@router.post("/donusum-katsayilari/{conversion_id}/sil")
+def delete_conversion(
+    request: Request, conversion_id: int, db: Session = Depends(get_session)
+):
+    """Katsayi silinince o donem icin donusum yapilamaz hale gelebilir.
+
+    Bu durumda toplam enerji sessizce eksik hesaplanmaz; ekranda katsayinin
+    bulunamadigi acikca yazilir.
+    """
+    record = db.get(EnergyConversion, conversion_id)
+    if record is None:
+        return render(request, "not_found.html", db, status_code=404, what="Katsayı")
+
+    name = record.energy_type.name
+    label = record.valid_from.strftime("%d.%m.%Y")
+    db.delete(record)
+    db.commit()
+    flash(request, f"{name} · {label} tarihli dönüşüm katsayısı silindi.")
+    return RedirectResponse("/tanimlar/donusum-katsayilari", status_code=303)

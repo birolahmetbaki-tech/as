@@ -29,6 +29,12 @@
     {% endfor %}
   </select>
   {% endif %}
+  <label for="enerji_birimi">Toplam enerji birimi</label>
+  <select id="enerji_birimi" name="enerji_birimi">
+    {% for unit in energy_units %}
+    <option value="{{ unit }}" {{ "selected" if unit == energy_unit }}>{{ unit }}</option>
+    {% endfor %}
+  </select>
   <button type="submit">Göster</button>
 </form>
 
@@ -102,6 +108,116 @@
   </div>
   {% endif %}
 </section>
+
+<section class="panel">
+  <h2>Toplam enerji · {{ month_label }} ({{ total_energy.unit }})</h2>
+  {% if total_energy.rows %}
+    {% if total_energy.complete %}
+    <p class="card-value big">
+      {{ total_energy.value|sayi }} <span class="unit">{{ total_energy.unit }}</span>
+    </p>
+    {% else %}
+    <p class="warning">{{ total_energy.message }}</p>
+    {% endif %}
+
+    <table>
+      <thead>
+        <tr><th>Enerji türü</th><th class="right">Tüketim</th><th>Birim</th>
+            <th class="right">{{ total_energy.unit }} eşdeğeri</th>
+            <th>Katsayı</th></tr>
+      </thead>
+      <tbody>
+        {% for row in total_energy.rows %}
+        <tr class="{{ '' if row.convertible else 'passive' }}">
+          <td>{{ row.energy_type.name }}</td>
+          <td class="right">{{ row.raw_total|sayi }}</td>
+          <td>{{ row.raw_unit }}</td>
+          <td class="right">
+            {% if row.convertible %}{{ row.value|sayi }}{% else %}—{% endif %}
+          </td>
+          <td class="muted small">
+            {% if not row.convertible %}
+              Katsayı yok
+            {% elif row.coefficient is not none %}
+              1 {{ row.raw_unit }} = {{ row.coefficient|sayi(6) }} {{ total_energy.unit }}
+              · {{ row.source }}
+            {% else %}
+              Dönem içinde birden fazla katsayı · {{ row.source }}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if total_energy.complete %}
+        <tr class="total-row">
+          <td colspan="3">Toplam</td>
+          <td class="right">{{ total_energy.value|sayi }} {{ total_energy.unit }}</td>
+          <td></td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {% if combined_enpi.value is not none %}
+    <p class="muted small">
+      Toplam enerji performansı:
+      <strong>{{ combined_enpi.value|sayi }}
+        {{ combined_enpi.unit }}/{{ combined_enpi.production_unit }}</strong>
+      (dönem üretimi: {{ combined_enpi.production|sayi }} {{ combined_enpi.production_unit }})
+    </p>
+    {% elif combined_enpi.production_unit and not total_energy.complete %}
+    <p class="muted small">
+      Toplam enerji hesaplanamadığı için birleşik EnPI de gösterilmez; eksik
+      enerjiyle hesaplanan bir değer performansı olduğundan iyi gösterirdi.
+    </p>
+    {% endif %}
+
+    <p class="muted small">
+      Her enerji türü kendi katsayısıyla
+      {{ total_energy.unit }} eşdeğerine çevrilip toplanır. Ham tüketim verileri
+      dönüştürülerek saklanmaz; dönüşüm yalnızca gösterim sırasında yapılır.
+      Katsayılar <a href="/tanimlar/donusum-katsayilari">Katsayılar</a>
+      ekranından tanımlanır.
+    </p>
+  {% else %}
+  <p class="muted">Bu dönemde tüketim verisi yok.</p>
+  {% endif %}
+</section>
+
+{% if total_energy_trend.has_value %}
+<section class="panel">
+  <h2>Toplam enerji · son 12 ay ({{ total_energy_trend.unit }})</h2>
+  {% set points = total_energy_trend.points %}
+  {% set peak = points|map(attribute='value')|select('number')|max %}
+  <svg class="chart" viewBox="0 0 720 210" role="img"
+       aria-label="Son 12 ayın toplam enerjisi">
+    <line class="grid" x1="0" y1="25" x2="720" y2="25"></line>
+    <text class="tick left" x="0" y="18">en yüksek: {{ peak|sayi(0) }} {{ total_energy_trend.unit }}</text>
+    <line class="axis" x1="0" y1="170" x2="720" y2="170"></line>
+    {% for point in points %}
+    {% set height = (point.ratio * 1.45)|round(2) %}
+    <g>
+      <title>{{ point.label }}: {% if point.value is not none %}{{ point.value|sayi }} {{ total_energy_trend.unit }}{% else %}katsayı eksik{% endif %}</title>
+      {% if point.value is not none %}
+      <rect class="bar {{ 'selected' if point.selected }}"
+            x="{{ loop.index0 * 60 + 12 }}"
+            y="{{ (170 - height)|round(2) }}"
+            width="36" height="{{ height if height > 0 else 0 }}" rx="4"></rect>
+      {% else %}
+      <text class="tick" x="{{ loop.index0 * 60 + 30 }}" y="164">—</text>
+      {% endif %}
+      <text class="tick" x="{{ loop.index0 * 60 + 30 }}" y="186">{{ point.short }}</text>
+    </g>
+    {% endfor %}
+  </svg>
+  {% if total_energy_trend.incomplete %}
+  <p class="muted small">
+    Dönüşüm katsayısı eksik olduğu için gösterilemeyen aylar:
+    {{ total_energy_trend.incomplete|join(", ") }}. Bu aylar sıfır kabul
+    edilmez, boş bırakılır.
+  </p>
+  {% endif %}
+</section>
+{% endif %}
 
 <section class="panel">
   <h2>Bölüm dağılımı</h2>

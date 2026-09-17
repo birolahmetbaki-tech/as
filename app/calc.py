@@ -30,7 +30,15 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import DirectConsumption, Meter, MeterReading, Production
+from app import units
+from app.models import (
+    DirectConsumption,
+    EnergyConversion,
+    EnergyType,
+    Meter,
+    MeterReading,
+    Production,
+)
 
 UNASSIGNED_DEPARTMENT = "Bölümsüz"
 
@@ -511,4 +519,266 @@ def target_status(actual: float, target_value: float) -> dict | None:
         "difference": actual - target_value,
         "percent": actual / target_value * 100,
         "exceeded": actual > target_value,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Birim / enerji donusumu
+#
+# Uygulamanin donusum icin kullandigi TEK arayuz burasidir. Dashboard,
+# raporlar ve EnPI kendi donusum formulunu yazmaz.
+#
+# Iki ayri mekanizma vardir ve birbirine karistirilmaz:
+#   1. Matematiksel birim donusumu (units modulu): kWh -> MJ -> GJ -> TEP.
+#      Sabittir, herkes icin aynidir.
+#   2. Enerji icerigi katsayisi (energy_conversion tablosu): Sm3 -> GJ.
+#      Yakita ve olcum bazina gore degisir; kullanici girer.
+#
+# Oncelik sirasi:
+#   a. Doneme uyan kullanici katsayisi varsa o kullanilir.
+#   b. Yoksa enerji turunun birimi zaten bir enerji birimiyse (kWh, MJ...)
+#      matematiksel standart donusum kullanilir.
+#   c. Hicbiri yoksa donusum YAPILMAZ: convertible=False doner.
+#      Varsayilan katsayi uydurulmaz, deger sessizce 0 kabul edilmez.
+# --------------------------------------------------------------------------- #
+
+REFERENCE_ENERGY_UNIT = units.ENERGY_REFERENCE  # "GJ"
+
+# Ekranda secilebilen enerji gosterim birimleri.
+DISPLAY_ENERGY_UNITS = ("kWh", "MJ", "GJ", "TEP")
+
+FACTOR_SOURCE_STANDARD = "Standart"
+
+
+@dataclass(frozen=True)
+class Conversion:
+    """Bir donusumun sonucu ve nasil yapildigi.
+
+    value        : donusturulmus deger (yapilamadiysa None)
+    unit         : hedef birim
+    coefficient  : 1 <kaynak birim> kac <unit> eder
+    source       : katsayinin kaynagi ("Standart" ya da kullanicinin yazdigi)
+    convertible  : donusum yapilabildi mi
+    reason       : yapilamadiysa kisa ve acik gerekce
+    """
+
+    value: float | None
+    unit: str
+    coefficient: float | None
+    source: str | None
+    convertible: bool
+    reason: str | None = None
+
+
+def energy_conversion_records(
+    db: Session, energy_type_id: int | None = None
+) -> list[EnergyConversion]:
+    """Kullanici tanimli enerji icerigi katsayilari, tarihe gore sirali."""
+    query = select(EnergyConversion).options(
+        joinedload(EnergyConversion.energy_type)
+    )
+    if energy_type_id is not None:
+        query = query.where(EnergyConversion.energy_type_id == energy_type_id)
+    return list(
+        db.scalars(
+            query.order_by(
+                EnergyConversion.energy_type_id, EnergyConversion.valid_from
+            )
+        )
+    )
+
+
+def active_conversion(
+    records: list[EnergyConversion], on_date: date | None
+) -> EnergyConversion | None:
+    """Donem tarihine uyan katsayi: valid_from <= donem olan EN YENI kayit.
+
+    on_date verilmezse en yeni katsayi kullanilir (tarihi olmayan sorgular
+    icin). Donem tarihinden once baslayan hicbir katsayi yoksa None doner;
+    ileri tarihli bir katsayinin gecmise uygulanmasi kasitla engellenir.
+    """
+    uygun = [
+        record
+        for record in records
+        if on_date is None or record.valid_from <= on_date
+    ]
+    if not uygun:
+        return None
+    return max(uygun, key=lambda record: record.valid_from)
+
+
+def convert_energy(
+    db: Session,
+    energy_type: EnergyType,
+    value: float,
+    to_unit: str = REFERENCE_ENERGY_UNIT,
+    on_date: date | None = None,
+    records: list[EnergyConversion] | None = None,
+) -> Conversion:
+    """Bir enerji turunun kendi birimindeki degerini hedef enerji birimine cevirir.
+
+    records verilirse veritabani tekrar sorgulanmaz (toplu hesaplarda).
+    """
+    target = units.get(to_unit)
+    if target.dimension != units.DIMENSION_ENERGY:
+        raise units.DimensionMismatch(f"'{to_unit}' bir enerji birimi degil.")
+
+    if records is None:
+        records = energy_conversion_records(db, energy_type.id)
+    record = active_conversion(records, on_date)
+
+    if record is not None:
+        # 1 <enerji turu birimi> = record.factor GJ
+        coefficient = record.factor / target.factor
+        source = record.source
+    elif units.dimension_of(energy_type.unit) == units.DIMENSION_ENERGY:
+        coefficient = units.factor_between(energy_type.unit, target.code)
+        source = FACTOR_SOURCE_STANDARD
+    else:
+        return Conversion(
+            value=None,
+            unit=target.code,
+            coefficient=None,
+            source=None,
+            convertible=False,
+            reason=(
+                f"{energy_type.name} için geçerli dönüşüm katsayısı bulunamadı "
+                f"({energy_type.unit} → {target.code})."
+            ),
+        )
+
+    return Conversion(
+        value=value * coefficient,
+        unit=target.code,
+        coefficient=coefficient,
+        source=source,
+        convertible=True,
+    )
+
+
+def energy_totals(
+    db: Session,
+    start: date | None = None,
+    end: date | None = None,
+    to_unit: str = REFERENCE_ENERGY_UNIT,
+) -> dict:
+    """Butun enerji turlerinin ortak enerji biriminde toplami.
+
+    Her tuketim kaydi KENDI donem tarihine gore cevrilir; boylece yil icinde
+    degisen katsayilar dogru uygulanir.
+
+    Bir enerji turu cevrilemiyorsa toplam URETILMEZ (value None, complete
+    False): eksik bir toplami tam gibi gostermek yaniltici olur. Ham tuketim
+    satirlari yine de doner; kullanici neyin eksik oldugunu gorur.
+    """
+    target = units.get(to_unit).code
+    rows: list[dict] = []
+    missing: list[str] = []
+    running = 0.0
+
+    for energy_type in db.scalars(select(EnergyType).order_by(EnergyType.id)):
+        entries = factory_consumptions(
+            db, start=start, end=end, energy_type_id=energy_type.id
+        )
+        if not entries:
+            continue
+
+        records = energy_conversion_records(db, energy_type.id)
+        raw_total = total(entries)
+        converted = 0.0
+        coefficients: set[float] = set()
+        sources: list[str] = []
+        failure: Conversion | None = None
+
+        for entry in entries:
+            result = convert_energy(
+                db,
+                energy_type,
+                entry.consumption,
+                to_unit=target,
+                on_date=entry.period_date,
+                records=records,
+            )
+            if not result.convertible:
+                failure = result
+                break
+            converted += result.value
+            coefficients.add(result.coefficient)
+            if result.source not in sources:
+                sources.append(result.source)
+
+        if failure is not None:
+            missing.append(energy_type.name)
+            rows.append(
+                {
+                    "energy_type": energy_type,
+                    "raw_total": raw_total,
+                    "raw_unit": energy_type.unit,
+                    "value": None,
+                    "coefficient": None,
+                    "source": None,
+                    "convertible": False,
+                    "reason": failure.reason,
+                }
+            )
+            continue
+
+        running += converted
+        rows.append(
+            {
+                "energy_type": energy_type,
+                "raw_total": raw_total,
+                "raw_unit": energy_type.unit,
+                "value": converted,
+                # Aralikta birden fazla katsayi gecerliyse tek bir katsayi
+                # yazmak yaniltici olur.
+                "coefficient": coefficients.pop() if len(coefficients) == 1 else None,
+                "source": " / ".join(sources) if sources else None,
+                "convertible": True,
+                "reason": None,
+            }
+        )
+
+    complete = not missing
+    return {
+        "unit": target,
+        "value": running if complete else None,
+        "complete": complete,
+        "rows": rows,
+        "missing": missing,
+        "message": (
+            None
+            if complete
+            else (
+                f"Toplam enerji {target} olarak hesaplanamadı: "
+                f"{', '.join(missing)} için geçerli dönüşüm katsayısı bulunamadı."
+            )
+        ),
+    }
+
+
+def combined_enpi(
+    db: Session,
+    production_unit: str | None,
+    start: date | None = None,
+    end: date | None = None,
+    to_unit: str = REFERENCE_ENERGY_UNIT,
+) -> dict:
+    """Butun enerji turlerinin ortak birimdeki toplami / uretim.
+
+    Enerji turlerinden biri bile cevrilemiyorsa deger URETILMEZ; eksik enerji
+    ile hesaplanan bir EnPI, oldugundan iyi gorunur.
+    """
+    totals = energy_totals(db, start=start, end=end, to_unit=to_unit)
+    produced = (
+        production_total(db, production_unit, start=start, end=end)
+        if production_unit
+        else 0.0
+    )
+    return {
+        "unit": totals["unit"],
+        "production_unit": production_unit,
+        "production": produced,
+        "energy": totals,
+        "value": enpi(totals["value"], produced) if totals["complete"] else None,
     }

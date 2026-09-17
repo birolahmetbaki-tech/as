@@ -23,8 +23,21 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
   takibi yoktur: birim fiyat değiştirilirse geçmiş dönemlerin maliyeti de yeni
   fiyata göre hesaplanır. Vergi, ek bedel ve tarife dilimi kapsam dışıdır.
 - **EnPI = enerji tüketimi ÷ üretim miktarı**, yalnızca tek bir üretim birimi
-  için hesaplanır. Farklı üretim birimleri (ton, adet) ve farklı enerji türleri
-  asla birbirine toplanmaz; enerji birimi dönüşümü yoktur.
+  için hesaplanır. Farklı üretim birimleri (ton, adet) asla birbirine toplanmaz.
+- **Enerji dönüşümünde iki mekanizma ayrıdır ve karıştırılmaz.**
+  *Matematiksel birim dönüşümü* (kWh → MJ → GJ → TEP) sabittir ve
+  `app/units.py` içindedir; referans birim GJ'dir (1 TEP = 41,868 GJ =
+  11.630 kWh). *Enerji içeriği katsayısı* (1 Sm³ doğal gaz = ? GJ) yakıta ve
+  ölçüm bazına göre değiştiği için sistem tarafından varsayılmaz; kullanıcı
+  `energy_conversion` tablosunda tanımlar. Bir dönem için
+  `valid_from ≤ dönem` koşulunu sağlayan en yeni katsayı kullanılır.
+- **Dönüştürülemeyen değer sıfır sayılmaz.** Bir enerji türünün geçerli
+  katsayısı yoksa ortak birimdeki toplam üretilmez; eksikliğin hangi enerji
+  türünden kaynaklandığı ekranda yazılır. Ham tüketim kayıtları hiçbir zaman
+  dönüştürülerek saklanmaz; dönüşüm yalnızca gösterim sırasında yapılır.
+- **Maliyet dönüşümden etkilenmez:** her zaman enerji türünün kendi biriminden
+  ve kendi birim fiyatından hesaplanır. Aylık hedefler de enerji türünün kendi
+  birimindedir.
 - Gösterge panelinde **bölüm dağılımı** bölüme bağlı alt sayaçlardan gelir;
   fabrika toplamı ile arasındaki fark "ölçülmeyen / dağıtılmamış" olarak
   gösterilir. Bu fark negatifse tüketim gibi değil, ölçüm kapsamı uyarısı
@@ -114,12 +127,14 @@ app/
   db.py         veritabanı bağlantısı
   models.py     veri modeli
   main.py       giriş/çıkış ve panel rotaları
-  definitions.py  tanım ekranları (bölüm, enerji türü, sayaç)
+  definitions.py  tanım ekranları (bölüm, enerji türü, sayaç, dönüşüm katsayısı)
   readings.py   sayaç okuma girişi
+  direct.py     doğrudan tüketim girişi (fatura/beyan)
   production.py üretim verisi girişi
   targets.py    aylık tüketim hedefleri
   reports.py    rapor ekranı (yalnızca calc sonuçlarını sunar)
-  calc.py       hesaplama çekirdeği (tüketimin tek kaynağı)
+  calc.py       hesaplama çekirdeği (tüketim ve dönüşümün tek kaynağı)
+  units.py      birim envanteri ve matematiksel birim dönüşümleri
   dashboard.py  gösterge paneli (calc sonuçlarını gösterir)
   web.py        şablon, bildirim, sayı/tarih biçimi ve doğrulama yardımcıları
   templates/  static/

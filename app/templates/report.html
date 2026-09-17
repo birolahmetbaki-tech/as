@@ -13,6 +13,12 @@
     <option value="{{ key }}" {{ "selected" if key == breakdown }}>{{ label }}</option>
     {% endfor %}
   </select>
+  <label for="enerji_birimi">Enerji birimi</label>
+  <select id="enerji_birimi" name="enerji_birimi">
+    {% for unit in energy_units %}
+    <option value="{{ unit }}" {{ "selected" if unit == energy_unit }}>{{ unit }}</option>
+    {% endfor %}
+  </select>
   <button type="submit">Raporla</button>
 </form>
 
@@ -44,6 +50,8 @@
   <table>
     <thead><tr><th>Enerji türü</th><th class="right">Tüketim</th><th>Birim</th>
                <th>Kaynak</th>
+               <th class="right">{{ energy_unit }} eşdeğeri</th>
+               <th>Katsayı</th>
                <th class="right">Maliyet ({{ currency }})</th></tr></thead>
     <tbody>
       {% for row in energy_rows %}
@@ -52,21 +60,48 @@
         <td class="right">{{ row.total|sayi }}</td>
         <td>{{ row.energy_type.unit }}</td>
         <td>{{ row.source }}</td>
+        {% set conversion = row.conversion %}
+        <td class="right">
+          {% if conversion and conversion.convertible %}{{ conversion.value|sayi }}
+          {% else %}—{% endif %}
+        </td>
+        <td class="muted small">
+          {% if not conversion %}—
+          {% elif not conversion.convertible %}Katsayı yok
+          {% elif conversion.coefficient is not none %}
+            {{ conversion.coefficient|sayi(6) }} · {{ conversion.source }}
+          {% else %}Birden fazla katsayı · {{ conversion.source }}
+          {% endif %}
+        </td>
         <td class="right">{{ row.cost|sayi }}</td>
       </tr>
       {% endfor %}
       <tr class="total-row">
-        <td colspan="4">Toplam maliyet</td>
-        <td class="right">{{ energy_rows|sum(attribute='cost')|sayi }}</td>
+        <td colspan="4">Toplam</td>
+        <td class="right">
+          {% if energy_totals.complete %}{{ energy_totals.value|sayi }} {{ energy_totals.unit }}
+          {% else %}—{% endif %}
+        </td>
+        <td></td>
+        <td class="right">{{ energy_rows|sum(attribute='cost')|sayi }} {{ currency }}</td>
       </tr>
     </tbody>
   </table>
+  {% if not energy_totals.complete %}
+  <p class="warning">{{ energy_totals.message }}</p>
+  {% endif %}
+  <p class="muted small">
+    "{{ energy_unit }} eşdeğeri" sütunu her enerji türünü kendi katsayısıyla
+    çevirir; katsayı sütunu 1 birimin kaç {{ energy_unit }} ettiğini ve
+    katsayının kaynağını gösterir. Farklı enerji türleri yalnızca ortak enerji
+    biriminde toplanır. Maliyet dönüşümden etkilenmez: her zaman enerji
+    türünün kendi birim fiyatından hesaplanır.
+  </p>
   <p class="muted small">
     Tüketim, fabrika toplamıdır: bir ay için doğrudan tüketim girilmişse o ay
     doğrudan değer kullanılır, girilmemişse ana sayaç tanımlıysa yalnızca ana
     sayaçlar kullanılır. "Karışık", aralıktaki ayların bir kısmının doğrudan
-    bir kısmının sayaç verisinden geldiği anlamına gelir. Farklı enerji
-    türleri birbirine dönüştürülmez; yalnızca maliyetleri toplanabilir.
+    bir kısmının sayaç verisinden geldiği anlamına gelir.
   </p>
   {% else %}
   <p class="muted">Bu aralıkta tüketim verisi yok.</p>

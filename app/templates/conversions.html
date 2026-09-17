@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Dönüşüm Katsayıları{% endblock %}
+{% block content %}
+<h1>Enerji Dönüşüm Katsayıları</h1>
+
+<p class="muted small">
+  Katsayı kuralı: <strong>1 enerji türü birimi = katsayı {{ reference_unit }}</strong>.
+  Örnek: doğal gaz için <code>0,0385</code> girilirse 1 Sm³ = 0,0385 GJ kabul edilir.
+  kWh, MJ, GJ gibi enerji birimleri için katsayı girmek gerekmez; bunlar
+  standart dönüşümle çevrilir. Buraya girilen katsayı, varsa standart değerin
+  önüne geçer.
+</p>
+
+{% if energy_types %}
+<form class="row-form wrap" method="post" action="/tanimlar/donusum-katsayilari">
+  <div class="field">
+    <label for="energy_type_id">Enerji türü</label>
+    <select id="energy_type_id" name="energy_type_id" required
+            onchange="birimiGoster(this)">
+      <option value="">Seçiniz</option>
+      {% for energy_type in energy_types %}
+      <option value="{{ energy_type.id }}" data-birim="{{ energy_type.unit }}"
+        {{ "selected" if form and form.energy_type_id == energy_type.id|string }}>
+        {{ energy_type.name }} ({{ energy_type.unit }})
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="factor">Katsayı — 1 <span id="birim-etiketi">birim</span> = ? {{ reference_unit }}</label>
+    <input id="factor" name="factor" inputmode="decimal" placeholder="0,0385"
+           value="{{ form.factor if form else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="valid_from">Geçerlilik başlangıcı</label>
+    <input id="valid_from" name="valid_from" type="date"
+           value="{{ form.valid_from if form else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="source">Kaynak</label>
+    <input id="source" name="source" maxlength="120" placeholder="Kullanıcı"
+           value="{{ form.source if form else 'Kullanıcı' }}">
+  </div>
+  <div class="field grow">
+    <label for="note">Not</label>
+    <input id="note" name="note" maxlength="500"
+           placeholder="Fatura/tedarikçi değeri, üst ısıl değer (ÜİD) …"
+           value="{{ form.note if form else '' }}">
+  </div>
+  <button type="submit">Kaydet</button>
+</form>
+{% else %}
+<p class="notice">Katsayı tanımlamak için önce bir
+  <a href="/tanimlar/enerji-turleri">enerji türü</a> tanımlayın.</p>
+{% endif %}
+
+{% if records %}
+<table>
+  <thead>
+    <tr><th>Enerji türü</th><th>Geçerlilik başlangıcı</th>
+        <th class="right">Katsayı ({{ reference_unit }})</th>
+        <th class="right">kWh karşılığı</th>
+        <th>Kaynak</th><th>Not</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for item in records %}
+    <tr>
+      <td>{{ item.record.energy_type.name }}</td>
+      <td>{{ item.record.valid_from.strftime('%d.%m.%Y') }}</td>
+      <td class="right">
+        1 {{ item.record.energy_type.unit }} = {{ item.record.factor|sayi(6) }} {{ reference_unit }}
+      </td>
+      <td class="right muted">{{ item.kwh|sayi(4) }} kWh</td>
+      <td>{{ item.record.source }}</td>
+      <td class="muted">{{ item.record.note or "" }}</td>
+      <td class="right">
+        <form method="post" action="/tanimlar/donusum-katsayilari/{{ item.record.id }}/sil"
+              onsubmit="return confirm('{{ item.record.energy_type.name }} · {{ item.record.valid_from.strftime('%d.%m.%Y') }} tarihli katsayı silinecek. Bu dönem için toplam enerji hesaplanamayabilir. Onaylıyor musunuz?')">
+          <button class="link danger" type="submit">Sil</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">
+  Bir dönem için <strong>geçerlilik başlangıcı o dönemden önce olan en yeni
+  katsayı</strong> kullanılır. Örnek: 01.01.2026 ve 01.07.2026 tarihli iki
+  katsayı varsa Haziran 2026 ilkini, Temmuz 2026 ikincisini kullanır.
+  Ham tüketim kayıtları hiçbir zaman dönüştürülerek saklanmaz; dönüşüm yalnızca
+  gösterim sırasında yapılır.
+</p>
+{% else %}
+<p class="muted">Henüz dönüşüm katsayısı tanımlanmadı.</p>
+{% endif %}
+
+<script>
+  function birimiGoster(select) {
+    const option = select.options[select.selectedIndex];
+    document.getElementById("birim-etiketi").textContent = option.dataset.birim || "birim";
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("energy_type_id");
+    if (select) { birimiGoster(select); }
+  });
+</script>
+{% endblock %}

@@ -37,8 +37,18 @@ def _energy_types(db: Session) -> list[EnergyType]:
     return list(db.scalars(select(EnergyType).order_by(EnergyType.id)))
 
 
-def rows_by_energy_type(db: Session, start: date, end: date) -> list[dict]:
-    """Her enerji turunun fabrika tuketimi, kaynagi ve maliyeti."""
+def rows_by_energy_type(
+    db: Session, start: date, end: date, totals: dict | None = None
+) -> list[dict]:
+    """Her enerji turunun fabrika tuketimi, kaynagi, esdegeri ve maliyeti.
+
+    Ortak enerji birimindeki esdeger calc.energy_totals'tan gelir; rapor kendi
+    donusumunu yapmaz. totals verilmezse GJ esdegeri hesaplanir.
+    """
+    if totals is None:
+        totals = calc.energy_totals(db, start=start, end=end)
+    conversions = {row["energy_type"].id: row for row in totals["rows"]}
+
     rows = []
     for energy_type in _energy_types(db):
         entries = calc.factory_consumptions(
@@ -51,6 +61,7 @@ def rows_by_energy_type(db: Session, start: date, end: date) -> list[dict]:
                 "total": total,
                 "cost": calc.cost(total, energy_type.unit_price),
                 "source": source_label(entries),
+                "conversion": conversions.get(energy_type.id),
             }
         )
     return rows
@@ -180,6 +191,7 @@ def report(
     baslangic: str | None = None,
     bitis: str | None = None,
     kirilim: str = "enerji",
+    enerji_birimi: str | None = None,
     db: Session = Depends(get_session),
 ):
     default_start, default_end = default_range()
@@ -194,7 +206,14 @@ def report(
         start, end = default_start, default_end
 
     breakdown = kirilim if kirilim in BREAKDOWNS else "enerji"
+    energy_unit = (
+        enerji_birimi
+        if enerji_birimi in calc.DISPLAY_ENERGY_UNITS
+        else calc.REFERENCE_ENERGY_UNIT
+    )
     settings = db.get(Settings, 1)
+    # Panelde kullanilan islevin aynisi: iki ekran ayni sayiyi gosterir.
+    energy_totals = calc.energy_totals(db, start=start, end=end, to_unit=energy_unit)
 
     return render(
         request,
@@ -206,7 +225,14 @@ def report(
         breakdown=breakdown,
         breakdowns=BREAKDOWNS,
         currency=settings.currency if settings else "TL",
-        energy_rows=rows_by_energy_type(db, start, end) if breakdown == "enerji" else [],
+        energy_unit=energy_unit,
+        energy_units=calc.DISPLAY_ENERGY_UNITS,
+        energy_totals=energy_totals,
+        energy_rows=(
+            rows_by_energy_type(db, start, end, energy_totals)
+            if breakdown == "enerji"
+            else []
+        ),
         meter_rows=rows_by_meter(db, start, end) if breakdown == "sayac" else [],
         department_sections=(
             rows_by_department(db, start, end) if breakdown == "bolum" else []

@@ -226,6 +226,58 @@ def enpi_trend(
     }
 
 
+def combined_energy(db: Session, year_month: str, energy_unit: str) -> dict:
+    """Butun enerji turlerinin secilen gosterim biriminde toplami.
+
+    Hesabin tamami calc.energy_totals icinde yapilir; burada yalnizca donem
+    sinirlari belirlenir. Katsayisi olmayan bir enerji turu varsa toplam
+    uretilmez ve eksiklik acikca bildirilir.
+    """
+    start, end = month_bounds(year_month)
+    return calc.energy_totals(db, start=start, end=end, to_unit=energy_unit)
+
+
+def combined_trend(db: Session, year_month: str, energy_unit: str) -> dict:
+    """Secilen ay dahil son 12 ayin ortak birimdeki toplam enerjisi.
+
+    Donusturulemeyen aylar sifir gibi gosterilmez; bos birakilir ve hangi
+    aylarin eksik oldugu ayrica bildirilir.
+    """
+    months = [
+        shift_month(year_month, offset - (TREND_MONTHS - 1))
+        for offset in range(TREND_MONTHS)
+    ]
+    points = []
+    incomplete = []
+    for month in months:
+        totals = combined_energy(db, month, energy_unit)
+        if not totals["complete"]:
+            incomplete.append(month_label(month))
+        points.append(
+            {
+                "month": month,
+                "label": month_label(month),
+                "short": month_label(month).split(" ")[0][:3],
+                "value": totals["value"],
+                "selected": month == year_month,
+            }
+        )
+
+    largest = max((point["value"] or 0) for point in points)
+    for point in points:
+        point["ratio"] = (
+            (point["value"] / largest * 100)
+            if largest > 0 and point["value"] is not None
+            else 0
+        )
+    return {
+        "unit": energy_unit,
+        "points": points,
+        "incomplete": incomplete,
+        "has_value": any(point["value"] for point in points),
+    }
+
+
 def monthly_trend(db: Session, energy_type: EnergyType, year_month: str) -> list[dict]:
     """Secilen ay dahil son 12 ayin fabrika tuketimi."""
     first_month = shift_month(year_month, -(TREND_MONTHS - 1))
@@ -266,9 +318,15 @@ def dashboard(
     donem: str | None = None,
     enerji: int | None = None,
     birim: str | None = None,
+    enerji_birimi: str | None = None,
     db: Session = Depends(get_session),
 ):
     year_month = _valid_month(donem)
+    energy_unit = (
+        enerji_birimi
+        if enerji_birimi in calc.DISPLAY_ENERGY_UNITS
+        else calc.REFERENCE_ENERGY_UNIT
+    )
     # Tanim sirasi korunur: ilk tanimlanan enerji turu varsayilan secimdir.
     energy_types = list(db.scalars(select(EnergyType).order_by(EnergyType.id)))
 
@@ -313,5 +371,12 @@ def dashboard(
             enpi_trend(db, selected, selected_unit, year_month)
             if selected_unit
             else {"points": [], "low": 0, "high": 0}
+        ),
+        energy_unit=energy_unit,
+        energy_units=calc.DISPLAY_ENERGY_UNITS,
+        total_energy=combined_energy(db, year_month, energy_unit),
+        total_energy_trend=combined_trend(db, year_month, energy_unit),
+        combined_enpi=calc.combined_enpi(
+            db, selected_unit, start=start, end=end, to_unit=energy_unit
         ),
     )

@@ -231,6 +231,9 @@ a { color: var(--accent); }
 
 .card-value .unit { font-size: 14px; color: var(--muted); }
 
+/* Panel icinde tek basina duran buyuk deger (toplam enerji). */
+.card-value.big { font-size: 28px; margin: 0 0 12px; }
+
 .card-note { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 
 /* Artis/azalis yonu metinle de belirtilir; renk tek basina anlam tasimaz. */

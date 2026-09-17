@@ -83,3 +83,19 @@ def direct_consumption(db, energy, year_month: str, quantity: float, note=None):
     db.add(record)
     db.commit()
     return record
+
+
+def conversion(db, energy, factor: float, valid_from: str, source="Kullanıcı", note=None):
+    """Enerji icerigi katsayisi: 1 <enerji turu birimi> = factor GJ."""
+    from app.models import EnergyConversion
+
+    record = EnergyConversion(
+        energy_type_id=energy.id,
+        factor=factor,
+        valid_from=date.fromisoformat(valid_from),
+        source=source,
+        note=note,
+    )
+    db.add(record)
+    db.commit()
+    return record

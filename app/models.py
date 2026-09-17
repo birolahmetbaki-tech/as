@@ -1,6 +1,6 @@
 """Veri modeli.
 
-MVP kapsaminda yedi tablo vardir. Tuketim, maliyet ve EnPI gibi turetilmis
+MVP kapsaminda dokuz tablo vardir. Tuketim, maliyet ve EnPI gibi turetilmis
 degerler saklanmaz; bunlar hesaplama modulunde uretilir.
 """
 
@@ -131,6 +131,35 @@ class DirectConsumption(Base):
     period_date: Mapped[Date] = mapped_column(Date, index=True)
     energy_type_id: Mapped[int] = mapped_column(ForeignKey("energy_type.id"))
     quantity: Mapped[float] = mapped_column(Float)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    energy_type: Mapped["EnergyType"] = relationship()
+
+
+class EnergyConversion(Base):
+    """Enerji turunun kendi biriminden GJ'e cevrim katsayisi (enerji icerigi).
+
+    Kural:  1 <enerji turu birimi> = factor GJ
+    Ornek:  Dogal Gaz / Sm3, factor = 0,0385  ->  1 Sm3 = 0,0385 GJ
+
+    Bu katsayi MATEMATIKSEL bir birim donusumu DEGILDIR: yakitin kalitesine,
+    tedarikciye ve olcum bazina (UID/HHV, AID/LHV) gore degisir. Bu yuzden
+    sistem tarafindan varsayilmaz, kullanici tarafindan girilir; hangi
+    degerin nereden geldigi source ve note alanlarinda saklanir.
+
+    valid_from: katsayinin gecerli oldugu ilk tarih. Bir donem icin
+    valid_from <= donem tarihi kosulunu saglayan EN YENI katsayi kullanilir.
+    valid_to yoktur: bir sonraki kaydin valid_from tarihi zaten sinirdir.
+    """
+
+    __tablename__ = "energy_conversion"
+    __table_args__ = (UniqueConstraint("energy_type_id", "valid_from"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    energy_type_id: Mapped[int] = mapped_column(ForeignKey("energy_type.id"))
+    factor: Mapped[float] = mapped_column(Float)
+    valid_from: Mapped[Date] = mapped_column(Date, index=True)
+    source: Mapped[str] = mapped_column(String(120), default="Kullanıcı")
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     energy_type: Mapped["EnergyType"] = relationship()
