@@ -78,7 +78,9 @@ copy .env.example .env
 ```
 
 Kurulumdan sonra uygulamayı her seferinde `baslat.bat` dosyasına çift
-tıklayarak açabilirsiniz.
+tıklayarak açabilirsiniz. Bu dosya önce ortamı denetler (`.env`, anahtarlar,
+veritabanı tabloları) ve eksik varsa ne yapılacağını yazar; sonra sunucuyu
+başlatıp **hazır olduğunu doğrulayınca** tarayıcıyı açar.
 
 ### Linux / macOS
 
@@ -230,6 +232,11 @@ app/
                 yerinden çağrılmaz ve çalışmasını etkilemez
   templates/  static/
 migrations/     Alembic şema geçişleri
-scripts/        parola ve anahtar üretme yardımcıları
+scripts/        generate_secret.py  oturum anahtarı üretir
+                set_password.py     parola özeti üretir
+                onkontrol.py        başlatmadan önce ortamı denetler
+                tarayici_ac.py      sunucu hazır olunca tarayıcıyı açar
+                backup.py           güvenli yedek alır
+                restore.py          yedeği geri yükler
 tests/
 ```

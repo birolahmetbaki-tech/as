@@ -5,9 +5,14 @@ Bu belge günlük kullanım içindir. Kurulum ve teknik ayrıntılar için
 
 ## Uygulamayı açma
 
-Windows'ta `baslat.bat` dosyasına çift tıklayın; tarayıcı kendiliğinden
-<http://127.0.0.1:8000> adresini açar. Açılan siyah pencere uygulamanın
-kendisidir, **kapatmayın**; işiniz bitince kapatarak uygulamayı durdurabilirsiniz.
+Windows'ta `baslat.bat` dosyasına çift tıklayın. Tarayıcı, sunucu hazır olur
+olmaz <http://127.0.0.1:8000> adresini kendiliğinden açar (yavaş bir
+bilgisayarda birkaç saniye sürebilir; bekleyin). Açılan siyah pencere
+uygulamanın kendisidir, **kapatmayın**; işiniz bitince kapatarak uygulamayı
+durdurabilirsiniz.
+
+Bir eksik varsa uygulama açılmaz ve siyah pencerede ne yapmanız gerektiği
+yazar (örneğin `.env` dosyası yoksa veya veritabanı henüz oluşturulmamışsa).
 
 Giriş ekranında kurulum sırasında belirlediğiniz parolayı yazın. Tek kullanıcı
 vardır; parola `.env` dosyasında yalnızca özeti (geri çevrilemez karşılığı)
@@ -176,7 +181,9 @@ dönebilirsiniz.
 
 | Durum | Nedeni / çözümü |
 |---|---|
-| Giriş sonrası "Internal Server Error" | Veritabanı tabloları oluşmamış. Uygulamayı kapatıp `alembic upgrade head` çalıştırın. |
+| Giriş sonrası "Internal Server Error" | Veritabanı tabloları oluşmamış. Uygulamayı kapatıp `alembic upgrade head` çalıştırın. (`baslat.bat` bunu başlamadan önce kontrol eder ve uyarır.) |
+| Tarayıcı açılmadı | Adres çubuğuna `http://127.0.0.1:8000` yazın. Sunucu 60 saniyede hazır olmazsa siyah penceredeki mesajı okuyun. |
+| "Sunucu baslatilamadi" | 8000 portu kullanımda — uygulama zaten açık olabilir. Diğer siyah pencereleri kapatıp tekrar deneyin. |
 | Panelde tüketim 0 görünüyor | O ay için **ikinci** okuma (ertesi ayın 1'i) henüz girilmemiş olabilir. |
 | "Ana sayaç okuması yok" uyarısı | Ana sayaç tanımlı ama o dönemde okuması yok. Alt sayaçlar ana sayacın yerine geçmez; eksik okumayı girin. |
 | "Toplam enerji hesaplanamadı" | O enerji türünün dönüşüm katsayısı yok. Katsayılar ekranından tanımlayın. |
