@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 0.6 — tasarım tamamlandı, gözden geçirme aşaması |
+| **Sürüm** | 0.7 — tasarım tamamlandı, gözden geçirme tamamlandı |
 | **Durum** | Kodlama **başlamadı**. Tasarım görüşmesi sürüyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -84,8 +84,8 @@ Formüllerden çıkarılan, **korunacak** kurallar:
 | Üretilen Elektrik | `Türbin + GM-1 + GM-2 + GM-3 elektrik üretimi` | Korunur |
 | Toplam Elektrik Enerjisi | `Satın alınan + Üretilen` | Korunur (bilgi amaçlı; toplam enerjiye girmez) |
 | Toplam Doğalgaz kWh / m³ | `İstasyon 1 + 2 + 3` | Korunur |
-| **Toplam Enerji Tüketimi kWh** | **`Satın alınan elektrik + Toplam doğalgaz`** | **Doğru ve korunur.** Kendi ürettiği elektriği saymıyor → çift sayım yok. |
-| Toplam Enerji TL | `Elektrik TL + Doğalgaz TL` | Korunur |
+| **Toplam Enerji Tüketimi kWh** | **`Satın alınan elektrik + Toplam doğalgaz`** | **Mantığı doğru ve korunur** (kendi ürettiği elektriği saymıyor → çift sayım yok), ancak **motorini dışarıda bırakıyor**. Yeni sistemde düzeltilir: toplam, rolü `satin_alinan` olan bütün türleri kapsar (K-24). |
+| Toplam Enerji TL | `Elektrik TL + Doğalgaz TL` | Aynı eksik: **motorin faturası dışarıda.** Yeni sistemde rolü `maliyet` olan bütün kalemler toplanır (K-24). |
 | Buhar kg → kWh | `kg × 600 / 860` = 0,6977 kWh/kg | Korunur, ancak **tarihli katsayı** olarak tanımlanır |
 | Doğalgaz m³ → kWh | (formül yok, elle) ≈ **10,92 kWh/m³** | İkisi de elle girilecek; sistem tutarlılığı **denetler** |
 
@@ -100,7 +100,7 @@ Formüllerden çıkarılan, **korunacak** kurallar:
 | S5 | **Birim fiyat 11 kat değişmiş** (0,29 → 3,24 TL/kWh) | **Tarihli fiyat zorunlu**; tek "güncel fiyat" modeli kullanılamaz |
 | S6 | **GM-1/2/3 2025'te durmuş** (12 ay boş), İstasyon-1 gazı akmaya devam ediyor | Varlıklara **devreye alma / çıkarma tarihi** |
 | S7 | F sütunu başlığı "Hat-3" olarak tekrar ediyor | Aktarımda **Hat-4** olarak düzeltilir |
-| S8 | Motorin tanımlı ama 8 yıldır boş | Enerji türü olarak tanımlanır, veri girilmez |
+| S8 | Motorin tanımlı ama 8 yıldır boş; üstelik Excel'in toplam enerji ve toplam maliyet formüllerine **hiç dahil edilmemiş** | Enerji türü olarak tanımlanır ve **toplamlara dahil edilir** (K-24). Bugün değeri yok; tüketim başladığında giriş açıktır ve toplamlar kendiliğinden kapsar |
 | S9 | Doğalgaz m³ ve kWh **çift elle giriş** | Kullanıcı kararı (K-04); sistem tutarlılığı denetler |
 
 ### 2.4 Verinin bize söylediği: EnPI zaten bir soru soruyor
@@ -120,7 +120,7 @@ Formüllerden çıkarılan, **korunacak** kurallar:
 
 > **Bu gerçek bir verimsizlik mi, yoksa sabit yükün düşük üretime bölünmesi mi?**
 > Ham EnPI bu iki sebebi ayıramaz. Platformun en önemli işlevi bu soruyu
-> cevaplamak olacak (bkz. Bölüm 7 — regresyonlu baz çizgi ve normalize EnPI).
+> cevaplamak olacak (bkz. Bölüm 8 — regresyonlu baz çizgi ve normalize EnPI).
 
 ---
 
@@ -200,6 +200,7 @@ numaralara atıf yapar.
 | **K-20** | Raporlar | Üç rapor: **aylık enerji raporu**, **yönetim gözden geçirme raporu** (ISO 50001 md. 9.3), **serbest rapor oluşturucu**. | Kullanıcı seçimi. ENVER yıllık bildirim özeti ileriye bırakıldı. |
 | **K-21** | Hedefler | Dört hedef türü birden: **EnPI**, **tüketim (kWh)**, **maliyet (TL)**, **tasarruf (baz çizgiye göre %)**. | Farklı muhataplar farklı hedef diliyle konuşur; dördü de aynı motordan beslenir. |
 | **K-22** | Ekran listesi | **15 ekran** (Özet 1 · Veri 4 · Analiz 6 · Yönetim 2 · Sistem 2). | Bkz. 9.1 navigasyon haritası. K-23 ile bir ekran eklendi. |
+| **K-24** | Motorin ve toplamların genelleştirilmesi | **Motorin toplam enerjiye ve toplam enerji maliyetine dahil edilir.** Dahası kural sabit listeden **rol filtresine** çevrilir: toplam enerji = rolü `satin_alinan` olan bütün noktalar; toplam maliyet = rolü `maliyet` olan bütün noktalar. | Bugün motorin sıfır, ama ileride tüketim olabilir; Excel onu her iki formülün de dışında bırakmış. Sabit liste yazılsaydı yeni yakıt eklendiğinde formülün güncellenmesi gerekir ve bir gün unutulurdu. Rol filtresi bunu yapısal olarak imkânsız kılar. |
 | **K-23** | Hesaplanan değerler katmanı | Hesaplanan bütün değerler **ayrı bir katmanda toplanır**; ekranlar veriyi buradan çeker. Katman **açılışta ve her veri değişiminde** baştan üretilir, kullanıcıya **görünür** (Ekran 5) ve **iki sayfalı Excel** olarak dışa aktarılır (`Ham Veri` + `Hesaplanan`). Yedek dosyasına **yazılmaz**; yazılırsa bile geri yüklemede yok sayılıp yeniden üretilir. | Kullanıcı isteği. Tek bir hesap katmanı, bütün ekranların aynı sayıyı göstermesini yapısal olarak garanti eder (İ-2) ve hesabı denetlenebilir kılar (E-4). Yedeğe yazılmaması, formül değişince bayat değerin geri gelmesini önler. |
 
 ---
@@ -613,6 +614,8 @@ Sistem birim fiyatı tersinden hesaplayıp gösterir.
 | Ölçüm noktası | Rol | Açıklama |
 |---|---|---|
 | `ELEKTRIK_FATURA_TL` | `maliyet` | **Mahsup öncesi brüt** şebeke faturası (K-13) |
+| `DOGALGAZ_FATURA_TL` | `maliyet` | Doğalgaz faturası |
+| `MOTORIN_FATURA_TL` | `maliyet` | Motorin faturası (K-24) |
 | `GES_MAHSUP_TL` | `gelir` | GES üretiminden faturadan düşülen tutar |
 | `GES_SATIS_TL` | `gelir` | Mahsup fazlası, şebekeye satış |
 | `GES_TOPLAM_TL` | `gelir` | **Alternatif:** ikisi ayrıştırılamıyorsa tek kalem |
@@ -624,17 +627,28 @@ Sistem birim fiyatı tersinden hesaplayıp gösterir.
 > `GES_TOPLAM_TL` tek kalem girilir ve net ödenen hesabında aynı şekilde
 > kullanılır. Ayrıştırma yapılırsa GES'in fatura üzerindeki etkisi ile şebekeye
 > satıştan gelen gelir ayrı izlenebilir; yapılmazsa yalnız toplam katkı görünür.
-| `DOGALGAZ_FATURA_TL` | `maliyet` | Doğalgaz faturası |
 
 **Sistemin hesapladıkları (hiçbiri saklanmaz — İ-1):**
 
 ```
 Net ödenen elektrik      = ELEKTRIK_FATURA_TL − GES_MAHSUP_TL
-Toplam enerji maliyeti   = Net ödenen elektrik + DOGALGAZ_FATURA_TL
+
+Toplam enerji maliyeti   = rolü `maliyet` olan BÜTÜN noktaların toplamı
+                           − GES mahsubu
+                         = Net ödenen elektrik
+                           + DOGALGAZ_FATURA_TL
+                           + MOTORIN_FATURA_TL          (K-24)
+                           + ileride eklenecek her yakıt faturası
+
 GES'in mali katkısı      = GES_MAHSUP_TL + GES_SATIS_TL
                            (veya ayrıştırılmamışsa GES_TOPLAM_TL)
 Ortalama birim fiyat     = ELEKTRIK_FATURA_TL ÷ Şebekeden çekilen kWh
 ```
+
+> **Kural sabit liste değildir (K-24):** Toplam maliyet, adı sayılan kalemlerin
+> toplamı değil, **rolü `maliyet` olan bütün ölçüm noktalarının** toplamıdır.
+> Yarın LPG, kömür veya fuel-oil eklenirse hiçbir formül değişmeden toplama
+> girer.
 
 Son satır, K-12'nin asıl kazancıdır: Excel'de görünmeyen **gerçek birim fiyat
 trendi** (2018'de 0,29 → 2025'te 3,24 TL/kWh) otomatik ortaya çıkar ve enerji
@@ -656,9 +670,27 @@ Hiyerarşi değişince kendiliğinden güncellenir.
 | Toplam Üretim | `TOPLAM_KAKAO + CIKOLATA` |
 | Üretilen Elektrik | `TURBIN_EL + GM1_EL + GM2_EL + GM3_EL` |
 | Toplam Doğalgaz kWh | `IST1_DG_KWH + IST2_DG_KWH + IST3_DG_KWH` |
-| Toplam Enerji kWh | `SATIN_EL + TOPLAM_DG_KWH` |
-| Hat-1..4 çekirdek | `TOPLAM_CEKIRDEK × oran` → `veri_tipi = dagitilmis` (S-2.3) |
+| **Toplam Enerji kWh** | **rolü `satin_alinan` olan bütün noktaların ortak birimdeki toplamı** (K-24) — bugün: `SATIN_EL + TOPLAM_DG_KWH + MOTORIN_KWH` |
+| Hat-1..4 çekirdek | `TOPLAM_CEKIRDEK × oran` → `veri_tipi = dagitilmis` (bkz. 2.2) |
 | Buhar kWh | `BUHAR_KG × katsayı` → `conversion` tablosundan, tarihli |
+| Motorin kWh | `MOTORIN_KG × katsayı` → `conversion` tablosundan, tarihli (K-24) |
+
+> **Toplam enerji sabit bir liste değildir (K-24).** Formül "elektrik + doğalgaz"
+> diye yazılmaz; **rol filtresi** olarak çalışır. Yeni bir satın alınan enerji
+> türü (LPG, kömür, fuel-oil) tanımlandığı anda, hiçbir formül değişmeden
+> toplama girer. Aynısı toplam maliyet için `maliyet` rolüyle geçerlidir (6.5).
+
+**Eksik veri ve katsayı — kenar durum kuralı (İ-3):**
+
+| Durum | Davranış |
+|---|---|
+| Ölçüm noktasının o dönem için değeri **yok** | Toplama katılmaz; toplam **üretilir** |
+| Değer **sıfır** | Katkısı sıfırdır; katsayı tanımlı olmasa bile toplam **üretilir** |
+| Değer **sıfırdan farklı**, dönüşüm katsayısı **tanımsız** | Toplam **ÜRETİLMEZ**; eksikliğin hangi enerji türünden kaynaklandığı yazılır |
+
+> Bu ayrım motorin için pratik önem taşır: 2018–2025 arası motorin boştur, bu
+> yüzden geçmiş dönem toplamları katsayı olmadan da üretilir ve **değişmez**.
+> İlk motorin değeri girildiğinde sistem katsayı ister.
 
 ### 6.7 Ölçüm kapsamı — "ölçülmeyen / dağıtılmamış" (S2)
 
@@ -693,7 +725,8 @@ Giriş anında çalışan denetimler. **Sistem asla sessizce düzeltmez** (İ-3,
 - Kaynak: `veri.xlsx`, 2018-01 → 2025-12.
 - BX–DD sütunları **aktarılmaz** (K-02).
 - F sütunu **Hat-4** olarak düzeltilir (S7).
-- Motorin noktaları **tanımlanır**, veri girilmez (S8).
+- Motorin noktaları **tanımlanır** ve toplamlara dahil edilir (K-24); 2018–2025
+  arası veri boş olduğu için aktarılacak değer yoktur ve yıllık toplamlar değişmez.
 - Formül sütunları **aktarılmaz** — türetilmiş olarak yeniden hesaplanır (İ-1).
 - Aktarım **önizlemeli** ve **ya hep ya hiç**: kaç satır geçerli, kaç satır
   hatalı, hangisi neden — kaydetmeden önce gösterilir.
@@ -721,10 +754,20 @@ türetilmez.
 ### 7.1 Enerji dengesi (kWh) — fiziksel
 
 ```
-Toplam Enerji Tüketimi = Şebekeden çekilen elektrik
-                       + Toplam doğalgaz
-                       + Motorin (varsa)
+Toplam Enerji Tüketimi = rolü `satin_alinan` olan bütün ölçüm
+                         noktalarının ortak birimdeki toplamı
+
+bugün  =  Şebekeden çekilen elektrik
+        + Toplam doğalgaz
+        + Motorin                      ← K-24; bugün sıfır, yarın olabilir
+        + (ileride eklenecek her satın alınan yakıt)
 ```
+
+> **Neden sabit liste değil (K-24):** Toplam enerji "elektrik + doğalgaz" diye
+> yazılsaydı, motorin veya yeni bir yakıt eklendiğinde formülün güncellenmesi
+> gerekirdi — ve bir gün unutulurdu. Rol filtresi olarak yazıldığında yeni tür
+> tanımlandığı anda toplama girer. Motorin bugün sıfır olduğu için geçmiş
+> toplamlar **değişmez** (bkz. 6.6 kenar durum kuralı).
 
 **Girmeyenler ve nedenleri:**
 
@@ -777,9 +820,9 @@ Bütün hesaplar tek modülde toplanır (İ-2) ve hiçbiri saklanmaz (İ-1).
 |---|---|
 | Aylık toplam | Ölçüm noktası değerlerinin dönem toplamı |
 | Hiyerarşi toplamı | Bir varlığın altındaki bütün noktaların toplamı (6.6) |
-| Toplam enerji | Yalnız `satin_alinan` rolündeki noktalar (7.1) |
+| Toplam enerji | Yalnız `satin_alinan` rolündeki noktalar — **sabit liste değil, rol filtresi** (7.1, K-24). Bugün: elektrik + doğalgaz + motorin |
 | Ortak birim | kWh ↔ MJ ↔ GJ ↔ TEP. Referans GJ; 1 TEP = 41,868 GJ = 11.630 kWh |
-| Maliyet | Girilen fatura tutarları; net ödenen = brüt − GES mahsubu (6.5) |
+| Maliyet | Rolü `maliyet` olan bütün noktaların toplamı; net ödenen = brüt − GES mahsubu (6.5, K-24) |
 | Ortalama birim fiyat | Fatura TL ÷ tüketim — **hesaplanır, girilmez** (K-12) |
 | Ölçüm kapsamı | Ölçülen alt toplam ÷ üst toplam; kalan "ölçülmeyen" (6.7) |
 
@@ -1860,7 +1903,8 @@ enerji türü, birim, **rol** (6.4), toplama dahil mi, veri tipi
 Elektrik, Doğalgaz, Buhar, Sıcak Su, Motorin. Ad, kod, ana birim, aktiflik.
 
 #### Sekme 4 — Dönüşüm Katsayıları
-Tarihli (İ-5): doğalgaz m³→kWh (≈10,92), buhar kg→kWh (600/860 = 0,6977).
+Tarihli (İ-5): doğalgaz m³→kWh (≈10,92), buhar kg→kWh (600/860 = 0,6977),
+**motorin kg→kWh (tanımsız — ilk motorin verisi girilince istenir, K-24)**.
 Her kayıt: enerji türü, kaynak/hedef birim, katsayı, geçerlilik başlangıcı,
 **kaynak** ve **not** (örn. *"600 kcal/kg ÷ 860 kcal/kWh"*).
 
@@ -2001,7 +2045,8 @@ bunlara **veri ve kanıt** üretir.
 | A-02 | Maliyet nasıl oluşacak? | **Kapandı** — K-12: fatura tutarı elle girilir |
 | A-03 | Elektrik TL mahsup öncesi mi sonrası mı? | **Kapandı** — K-13: mahsup öncesi brüt |
 | A-04 | Veri girişi ekranı biçimi | **Kapandı** — K-14: dört yöntem birden |
-| A-09 | Ekran listesi | **Kapandı** — K-22: 14 ekran onaylandı |
+| A-09 | Ekran listesi | **Kapandı** — K-22: 15 ekran onaylandı |
+| A-07 | Motorin ileride kullanılacak mı? | **Kapandı** — K-24: evet; toplam enerjiye ve maliyete dahil edildi |
 
 ### 11.2 Açık kalanlar
 
@@ -2012,8 +2057,8 @@ cevap gelince tanım ekranından değiştirilir.
 |---|---|---|---|
 | **A-05** | İstasyon–makine tutarsızlığı (S3) neden kaynaklanıyor? İstasyon, makineler dışında başka tüketicileri de besliyor mu? | Fark "ölçülmeyen" olarak gösterilir | Ölçüm kapsamı yorumu buna bağlı |
 | **A-06** | Hat çekirdek dağıtım oranları (0,34/0,12/0,32/0,22) sabit mi, dönemsel mi? | Sabit; `veri_tipi = dagitilmis` olarak işaretli | Hat bazlı EnPI hesaplanacaksa kritik |
-| **A-07** | Motorin ileride kullanılacak mı? | Tanımlanır, veri girilmez (S8) | — |
 | **A-08** | Buhar 600 kcal/kg varsayımı sabit mi, basınca göre değişken mi? | Sabit, tarihli katsayı olarak tanımlı (0,6977 kWh/kg) | Kazan ve kojen verimini doğrudan etkiler — 8.8'deki bulgunun hassasiyeti buna bağlı |
+| **A-12** | Motorin kg → kWh dönüşüm katsayısı ne olacak? | Tanımsız bırakılır; ilk motorin verisi girildiğinde sistem ister (K-24, 6.6) | Sistem katsayı varsaymaz (İ-3). Dizel için tipik değer ~11,9 kWh/kg'dır ama ölçüm bazına ve yakıt özelliğine göre değişir; kullanıcı kendi kaynağıyla tanımlar |
 | **A-10** | Ekran 14'teki başlangıç varlık ağacı nasıl kurulsun? | Excel'in istasyon–makine yapısı temel alınır | K-16 gömülü tanımların içeriği |
 | **A-11** | GES'in TL değeri mahsup ve satış olarak ayrıştırılabiliyor mu? Excel'de tek sütun var. | Tek kalem (`GES_TOPLAM_TL`); ayrıştırma isteğe bağlı | Mahsubun faturaya etkisi ile satış gelirinin ayrı izlenip izlenemeyeceğini belirler (6.5) |
 
@@ -2096,6 +2141,7 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 | Son dönem | 2025 Aralık |
 | Aktarılmayan sütunlar | BX–DD (K-02) |
 | Hat-4 başlığı | "Hat-3" değil **"Hat-4"** (S7) |
+| Motorin noktaları | **Tanımlı ve toplamlara dahil** (K-24); veri boş, yıllık toplamlar **değişmiyor** |
 
 ### 13.2 Altın sayılar — yıllık toplamlar
 
@@ -2172,6 +2218,7 @@ gözden geçirilir.
 | Sürüm | Tarih | Değişiklik |
 |---|---|---|
 | 0.1 | 2026-09-17 | İlk taslak. Excel analizi, temel ilkeler, K-01…K-08 kararları, veri modeli çerçevesi, enerji/mali denge ayrımı. |
+| 0.7 | 2026-09-17 | **Bölüm bölüm gözden geçirme tamamlandı.** D-01: 2.4'teki Bölüm 7 atfı Bölüm 8 olarak düzeltildi. **D-02 (K-24): motorin toplam enerjiye ve toplam maliyete dahil edildi** ve kural sabit listeden **rol filtresine** genelleştirildi; eksik değer/katsayı kenar durum kuralı yazıldı; A-07 kapandı, A-12 açıldı. D-03: 6.5'te tablo dışına düşmüş satır tabloya alındı. D-04: geçersiz `(S-2.3)` atfı düzeltildi. |
 | 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
 | 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |
 | 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |
