@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 0.4 — taslak, tasarım aşaması |
+| **Sürüm** | 0.5 — tasarım tamamlandı, gözden geçirme aşaması |
 | **Durum** | Kodlama **başlamadı**. Tasarım görüşmesi sürüyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -563,8 +563,10 @@ Excel'deki 6 sütunu onun 6 ölçüm noktasıdır:
 | | **Kural:** katsayı ile aynı — `gecerli_baslangic ≤ dönem` olan en yeni |
 | | **Kenar durum:** ilk fiyattan önceki dönem için maliyet **üretilmez** (İ-3) |
 
-> **Not:** Excel'de TL değerleri doğrudan giriliyor (fatura tutarı). Bu durumda
-> fiyat tablosu ikincil kalır — açık soru A-02'ye bakınız.
+> **Durumu (K-12):** Maliyet, fatura tutarı olarak elle girilir; bu tablodan
+> **hesaplanmaz**. `price` tablosu ilk sürümde **kullanılmaz**; ileride gölge
+> faturalama (fatura doğrulama, 9.10) eklenirse devreye girer. Yapısı şimdiden
+> tanımlıdır ki sonradan şema değişikliği gerekmesin.
 
 ### 6.4 Enerji rolleri (K-07)
 
@@ -599,6 +601,15 @@ Sistem birim fiyatı tersinden hesaplayıp gösterir.
 | `ELEKTRIK_FATURA_TL` | `maliyet` | **Mahsup öncesi brüt** şebeke faturası (K-13) |
 | `GES_MAHSUP_TL` | `gelir` | GES üretiminden faturadan düşülen tutar |
 | `GES_SATIS_TL` | `gelir` | Mahsup fazlası, şebekeye satış |
+| `GES_TOPLAM_TL` | `gelir` | **Alternatif:** ikisi ayrıştırılamıyorsa tek kalem |
+
+> ⚠ **Veri uyuşmazlığı (A-11).** Excel'de her santral için **tek** TL sütunu var
+> (Yozgat, Adana); mahsup ile satış ayrılmamış. Anlattığınız süreçte ikisi farklı
+> şeyler: mahsup faturayı düşürür, fazlası satış faturası olur. Model **her iki
+> durumu da kaldırır** — ayrıştırabiliyorsanız iki kalem, ayrıştıramıyorsanız
+> `GES_TOPLAM_TL` tek kalem girilir ve net ödenen hesabında aynı şekilde
+> kullanılır. Ayrıştırma yapılırsa GES'in fatura üzerindeki etkisi ile şebekeye
+> satıştan gelen gelir ayrı izlenebilir; yapılmazsa yalnız toplam katkı görünür.
 | `DOGALGAZ_FATURA_TL` | `maliyet` | Doğalgaz faturası |
 
 **Sistemin hesapladıkları (hiçbiri saklanmaz — İ-1):**
@@ -607,6 +618,7 @@ Sistem birim fiyatı tersinden hesaplayıp gösterir.
 Net ödenen elektrik      = ELEKTRIK_FATURA_TL − GES_MAHSUP_TL
 Toplam enerji maliyeti   = Net ödenen elektrik + DOGALGAZ_FATURA_TL
 GES'in mali katkısı      = GES_MAHSUP_TL + GES_SATIS_TL
+                           (veya ayrıştırılmamışsa GES_TOPLAM_TL)
 Ortalama birim fiyat     = ELEKTRIK_FATURA_TL ÷ Şebekeden çekilen kWh
 ```
 
@@ -879,6 +891,12 @@ beklenen_enerji = 0,4254 × üretim_kg + 6.774.643        R² = 0,40
 > üretim miktarı **değil**. Bu bulgunun kendisi değerlidir: başka bir sürükleyici
 > (mevsim, ürün karması, ekipman durumu) baskındır. Aşağıdaki sayı bu nedenle
 > **işaret**tir, kanıt değildir.
+>
+> Aynı belirsizlik **sabit yük (`b`) tahminini de kapsar**: düşük R²'de kesişim
+> noktasının güven aralığı geniştir. "%63,4" bir büyüklük mertebesidir —
+> *"tüketimin yarısından fazlası üretimden bağımsız"* denebilir, "%63,4'tür"
+> denemez. Kesinleştirmenin yolu modele ikinci bir değişken eklemektir
+> (dış sıcaklık / derece-gün, ürün karması) — bkz. 9.8 "ileride eklenebilecekler".
 
 **Adım 2 — Sonuç:**
 
@@ -1895,6 +1913,150 @@ cevap gelince tanım ekranından değiştirilir.
 | **A-07** | Motorin ileride kullanılacak mı? | Tanımlanır, veri girilmez (S8) | — |
 | **A-08** | Buhar 600 kcal/kg varsayımı sabit mi, basınca göre değişken mi? | Sabit, tarihli katsayı olarak tanımlı (0,6977 kWh/kg) | Kazan ve kojen verimini doğrudan etkiler — 8.8'deki bulgunun hassasiyeti buna bağlı |
 | **A-10** | Ekran 13'teki başlangıç varlık ağacı nasıl kurulsun? | Excel'in istasyon–makine yapısı temel alınır | K-16 gömülü tanımların içeriği |
+| **A-11** | GES'in TL değeri mahsup ve satış olarak ayrıştırılabiliyor mu? Excel'de tek sütun var. | Tek kalem (`GES_TOPLAM_TL`); ayrıştırma isteğe bağlı | Mahsubun faturaya etkisi ile satış gelirinin ayrı izlenip izlenemeyeceğini belirler (6.5) |
+
+---
+
+## 12. Geliştirme yol haritası
+
+Kodlama bu sırayla yapılır. Her faz **kendi başına çalışır bir bütündür**;
+yarıda kalsa bile ortada kullanılabilir bir program olur.
+
+### Faz 1 — Çekirdek (programın ayakta durması)
+
+| Adım | İçerik | Biten ne demek |
+|---|---|---|
+| 1.1 | İskelet: tek HTML, menü, tema, yönlendirme | Ekranlar arası geçiş çalışıyor |
+| 1.2 | Veri katmanı: IndexedDB + `.json` dışa/içe aktarma (5.2) | Veri kaydediliyor, yedek alınıp geri yükleniyor |
+| 1.3 | **Ekran 13 — Tanımlar** (varlık ağacı, ölçüm noktaları, türler, katsayılar) | Sistem iskeleti kurulabiliyor |
+| 1.4 | **Ekran 14 — Ayarlar ve Yedekleme** | Veri güvenliği yerinde |
+| 1.5 | Hesap çekirdeği (8.1): toplamlar, hiyerarşi, ortak birim | Sayılar üretiliyor |
+
+### Faz 2 — Veri (Excel'den kurtulma)
+
+| Adım | İçerik | Biten ne demek |
+|---|---|---|
+| 2.1 | **Ekran 2 — Veri Girişi** (dört yöntem, K-14) | Aylık veri girilebiliyor |
+| 2.2 | Doğrulama kuralları (6.8) | Hatalı giriş yakalanıyor |
+| 2.3 | **Ekran 3 — Veri Aktarma** (`.xlsx`, K-15) | 96 aylık geçmiş içeri alınabiliyor |
+| 2.4 | **Ekran 4 — Veri Denetimi** | Veri sağlığı görülebiliyor |
+
+> **Faz 2 sonunda Excel'e ihtiyaç kalmaz.** Bu, projenin asıl eşiğidir.
+
+### Faz 3 — Görme (veri anlam kazanır)
+
+| Adım | İçerik |
+|---|---|
+| 3.1 | SVG grafik motoru (5.7): sütun, çizgi, yığılmış, ısı haritası, dağılım |
+| 3.2 | **Ekran 1 — Gösterge Paneli** |
+| 3.3 | **Ekran 6 — Tüketim Analizi** |
+| 3.4 | **Ekran 5 — Enerji Dengesi** (Sankey) |
+
+### Faz 4 — Anlama (ISO 50001'in ölçüm motoru)
+
+| Adım | İçerik |
+|---|---|
+| 4.1 | Baz çizgi ve regresyon (8.3), R² uyarıları |
+| 4.2 | **Ekran 7 — Performans**: normalize EnPI, CUSUM |
+| 4.3 | **Ekran 8 — Dönüşüm Verimliliği** |
+| 4.4 | **Ekran 9 — Maliyet**: fiyat/hacim ayrıştırması (8.7) |
+| 4.5 | **Ekran 10 — GES** |
+
+### Faz 5 — Yönetme
+
+| Adım | İçerik |
+|---|---|
+| 5.1 | **Ekran 11 — Hedefler ve Aksiyonlar** |
+| 5.2 | **Ekran 12 — Raporlar** (K-20) |
+| 5.3 | İzlenebilirlik (E-4): her sayıdan ham veriye iniş |
+
+> **Not:** Faz 1–2 bittiğinde elinizde Excel'in yerini alan çalışan bir program
+> olur. Faz 3–4, Excel'in hiç yapamadığını yapar. Faz 5, ISO 50001 dosyasını
+> besler. Fazlar arasında durup değerlendirmek mümkündür.
+
+---
+
+## 13. Kabul kriterleri ve doğrulama
+
+> Yazılımın **doğru** çalıştığını nasıl bileceğiz? Excel'in bilinen sonuçlarını
+> birebir üretmesiyle. Aşağıdaki değerler kaynak veriden hesaplanmıştır ve
+> **sınav sorularıdır**: Excel içe aktarıldıktan sonra program bu sayıları
+> tam olarak üretmelidir.
+
+### 13.1 Aktarım kontrolü
+
+| Kontrol | Beklenen |
+|---|---|
+| Dolu dönem sayısı | **96** (2018-01 → 2025-12) |
+| İlk dönem | 2018 Ocak |
+| Son dönem | 2025 Aralık |
+| Aktarılmayan sütunlar | BX–DD (K-02) |
+| Hat-4 başlığı | "Hat-3" değil **"Hat-4"** (S7) |
+
+### 13.2 Altın sayılar — yıllık toplamlar
+
+Program içe aktarma sonrası bu tabloyu **hesaplayarak** üretmelidir
+(hiçbiri veri dosyasında saklı değildir — İ-1):
+
+| Yıl | Şebeke elektriği (kWh) | Doğalgaz (kWh) | **Toplam enerji (kWh)** | Üretim (kg) | **EnPI** | Maliyet (TL) |
+|---|---:|---:|---:|---:|---:|---:|
+| 2018 | 15.919.712 | 128.362.622 | **144.282.334** | 104.980.360 | **1,3744** | 18.090.355 |
+| 2019 | 4.388.200 | 151.249.409 | **155.637.609** | 101.839.334 | **1,5283** | 24.838.813 |
+| 2020 | 6.559.460 | 147.423.923 | **153.983.384** | 101.758.697 | **1,5132** | 25.453.964 |
+| 2021 | 12.425.346 | 127.572.551 | **139.997.897** | 98.148.940 | **1,4264** | 41.002.718 |
+| 2022 | 24.482.137 | 99.649.227 | **124.131.364** | 107.258.078 | **1,1573** | 185.374.960 |
+| 2023 | 18.097.125 | 111.279.600 | **129.376.725** | 111.976.787 | **1,1554** | 167.503.412 |
+| 2024 | 19.248.726 | 111.987.169 | **131.235.894** | 111.897.453 | **1,1728** | 180.794.462 |
+| 2025 | 17.199.431 | 120.168.406 | **137.367.837** | 100.503.911 | **1,3668** | 220.905.805 |
+
+**8 yıl toplamı:** enerji **1.116.013.044 kWh** · üretim **838.363.559 kg** ·
+maliyet **863.964.489 TL**
+
+### 13.3 Nokta kontrolü — tek ay
+
+**2024 Haziran:**
+
+| Değer | Beklenen |
+|---|---|
+| Şebeke elektriği | 1.789.176 kWh |
+| Toplam doğalgaz | 9.010.928 kWh |
+| **Toplam enerji** | **10.800.103 kWh** |
+| Toplam üretim | 8.868.323 kg |
+| **EnPI** | **1,2178 kWh/kg** |
+
+### 13.4 Hesap motoru kontrolleri
+
+| Hesap | Beklenen sonuç |
+|---|---|
+| Baz çizgi 2022–2024 regresyonu (8.3) | `a = 0,4254` · `b = 6.774.643` · `R² = 0,40` |
+| Normalize EnPI 2025 (8.4) | **1,107** |
+| CUSUM 2025 yıl sonu (8.5) | **+13.319.837 kWh** |
+| CUSUM işaret değiştirdiği ay | **Şubat 2025** |
+| Türbin toplam verimi 2024 / 2025 (8.6) | **%57,2 / %50,3** |
+| Elektrik fiyat etkisi 2024→2025 (8.7) | **+10.682.663 TL** |
+| Elektrik hacim etkisi 2024→2025 | **−5.500.767 TL** |
+| Doğalgaz hacim etkisi 2024→2025 | **+13.475.761 TL** |
+
+### 13.5 Davranış kontrolleri
+
+| Senaryo | Beklenen davranış |
+|---|---|
+| Dönüşüm katsayısı olmayan tür için ortak birim isteniyor | Sonuç **üretilmez**, nedeni yazılır (İ-3) |
+| Negatif değer giriliyor | **Engellenir** (6.8) |
+| Alt toplam üst toplamı aşıyor | Kaydedilir ama **uyarı gösterilir** (S3) |
+| Doğalgaz kWh/m³ oranı 10,92'den saptı | **Uyarı** (K-04) |
+| Regresyonda 12'den az veri noktası | Regresyon **kurulmaz** (8.3) |
+| R² < 0,5 | Model kurulur, **açık uyarı** gösterilir |
+| Tarayıcı deposu boş, yedek yok | Boş durum ekranı **ne yapılacağını anlatır** (E-5) |
+| Yedek 7 günden eski | Üst şeritte **uyarı** (5.2) |
+| İçe aktarmada 1 satır hatalı | **Hiçbiri yazılmaz**, hata satırı gösterilir (9.4) |
+
+### 13.6 Bu bölümün kullanımı
+
+Her faz sonunda ilgili kontroller çalıştırılır. Bir sayı tutmuyorsa **program
+yanlıştır**, el kitabı değil — çünkü bu sayılar kaynak veriden bağımsız olarak
+hesaplanmıştır. Tutmayan sayı bulunursa önce hesabın kendisi, sonra aktarım
+gözden geçirilir.
 
 ---
 
@@ -1903,6 +2065,7 @@ cevap gelince tanım ekranından değiştirilir.
 | Sürüm | Tarih | Değişiklik |
 |---|---|---|
 | 0.1 | 2026-09-17 | İlk taslak. Excel analizi, temel ilkeler, K-01…K-08 kararları, veri modeli çerçevesi, enerji/mali denge ayrımı. |
+| 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |
 | 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |
 | 0.3 | 2026-09-17 | **Görsel dil ve grafik standartları (5.7)**: renk paleti, yasaklar (çift eksen dahil), zorunlu davranışlar, grafik tipleri. **Ekranlar bölümü başladı (9)**: tasarım ilkeleri, navigasyon haritası (14 ekran), Ekran 1–4 tam tasarımı (Gösterge Paneli, Veri Girişi, Veri Aktarma, Veri Denetimi). |
 | 0.2 | 2026-09-17 | **Teknik mimari belirlendi (Bölüm 5).** K-09…K-18 kararları: tek HTML dosyası, iki katmanlı veri saklama, Chrome/Edge, fatura tutarı girişi, GES mahsubunun ayrı kalem olması, dört yöntemli veri girişi, gömülü `.xlsx` okuyucu, saf SVG grafikler. Maliyet ve GES mahsup modeli (6.4b). A-01…A-04 kapatıldı. |
