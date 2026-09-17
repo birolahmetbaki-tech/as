@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 0.2 — taslak, tasarım aşaması |
+| **Sürüm** | 0.3 — taslak, tasarım aşaması |
 | **Durum** | Kodlama **başlamadı**. Tasarım görüşmesi sürüyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -318,6 +318,112 @@ Veri **hiçbir yere gönderilmez.** Program ağa hiç çıkmaz; tüm işlem kull
 bilgisayarında, tarayıcı içinde gerçekleşir. Sunucu olmadığı için sunucu
 güvenliği, oturum yönetimi veya parola konusu yoktur. Verinin korunması,
 yedek dosyasının saklanmasıyla sağlanır.
+
+---
+
+### 5.7 Görsel dil ve grafik standartları
+
+Grafikler saf SVG ile çizilir (K-17). Aşağıdaki kurallar **bağlayıcıdır**;
+amaç bütün ekranların tek bir sistem gibi okunmasıdır.
+
+#### 5.7.1 Renk paleti
+
+Renk **işine göre** seçilir, güzelliğine göre değil. Dört iş vardır:
+
+| İş | Kullanım | Palet |
+|---|---|---|
+| **Kimlik** (kategorik) | Ayrı serileri ayırt etmek | Aşağıdaki 8 slot, **sabit sırayla** |
+| **Büyüklük** (sequential) | Isı haritası, yoğunluk | Tek hue, açıktan koyuya (mavi) |
+| **Kutupluluk** (diverging) | Sapma, CUSUM, hedefe fark | Mavi ↔ kırmızı, **nötr gri orta nokta** |
+| **Durum** (status) | İyi / uyarı / ciddi / kritik | Ayrılmış; seri rengi olarak asla kullanılmaz |
+
+**Kategorik slotlar (sıra değişmez):**
+
+| Slot | Renk | Açık tema | Koyu tema |
+|---|---|---|---|
+| 1 | mavi | `#2a78d6` | `#3987e5` |
+| 2 | turuncu | `#eb6834` | `#d95926` |
+| 3 | deniz yeşili | `#1baf7a` | `#199e70` |
+| 4 | sarı | `#eda100` | `#c98500` |
+| 5 | macenta | `#e87ba4` | `#d55181` |
+| 6 | yeşil | `#008300` | `#008300` |
+| 7 | mor | `#4a3aa7` | `#9085e9` |
+| 8 | kırmızı | `#e34948` | `#e66767` |
+
+Bu sıra renk körlüğü testlerinden geçmiş bir sıradır; **karıştırılmaz**.
+8'den fazla seri gerekirse yeni renk üretilmez — kuyruk "Diğer"e katlanır
+veya grafik küçük parçalara bölünür.
+
+**Sıralı (sequential) ramp — ısı haritası için:** tek hue mavi,
+`#cde2fb` (açık) → `#0d366b` (koyu), 12 adım.
+
+**Kutuplu (diverging) — CUSUM ve sapma için:** mavi (tasarruf) ↔ kırmızı
+(kayıp), orta nokta nötr gri (`#f0efec` açık / `#383835` koyu).
+Orta noktada **asla renk olmaz** — "sıfır sapma" hiçbir şey demektir.
+
+**Durum renkleri (asla seri rengi olarak kullanılmaz):**
+iyi `#0ca30c` · uyarı `#fab219` · ciddi `#ec835a` · kritik `#d03b3b`.
+Her zaman **ikon + etiket** ile birlikte kullanılır; renk tek başına anlam taşımaz.
+
+**Zemin ve mürekkep:**
+
+| Rol | Açık | Koyu |
+|---|---|---|
+| Grafik zemini | `#fcfcfb` | `#1a1a19` |
+| Sayfa zemini | `#f9f9f7` | `#0d0d0d` |
+| Ana metin | `#0b0b0b` | `#ffffff` |
+| İkincil metin | `#52514e` | `#c3c2b7` |
+| Eksen / etiket | `#898781` | `#898781` |
+| Kılavuz çizgi | `#e1e0d9` | `#2c2c2a` |
+| Taban / eksen çizgisi | `#c3c2b7` | `#383835` |
+
+#### 5.7.2 Yasaklar
+
+| Yasak | Neden |
+|---|---|
+| **Çift eksenli grafik** (iki y-ekseni) | İki ölçeğin hizası keyfîdir; veride olmayan bir ilişki uydurur. **Bu en yaygın grafik hatasıdır.** Çözüm: iki ayrı grafik veya ortak tabana indeksleme |
+| Gökkuşağı / çok renkli büyüklük rampası | Büyüklük tek hue ile gösterilir |
+| Kutuplu grafiğin ortasında renk | Orta nokta "hiçbir şey" demeli |
+| Sıralaması olmayan kategorilerde değer rampası | Çubuk uzunluğu zaten büyüklüğü gösterir; rengi boşa harcar |
+| Her veri noktasına sayı yazmak | Okunmaz. Seçici etiketleme: uç nokta, aykırı değer, önemli seri |
+| 8'den fazla kategorik renk | Renk körlüğünde ayırt edilemez |
+| Kalın bloklar, kalın kılavuz çizgileri | İnce işaretler, saç teli kılavuz |
+| Kesikli kılavuz veya eksen çizgisi | Gürültü yaratır, "eşik" gibi okunur |
+| Durum rengini seri rengi olarak kullanmak | Kırmızı "kritik" demek; "4. seri" değil |
+| 2 dilimli pasta, tek çubuklu grafik | Sayının kendisi yeterlidir → KPI kartı |
+
+#### 5.7.3 Zorunlu davranışlar
+
+- **≥2 seri varsa açıklama (legend) her zaman vardır**; ≤4 seri ise ayrıca
+  doğrudan etiketlenir. Kimlik asla yalnız renge bırakılmaz.
+- **Her grafiğin fare üstü (hover) katmanı vardır:** çizgi/alan grafiklerde
+  dikey nişangâh + kutucuk, çubuk/nokta/hücrede işaret başına kutucuk.
+- **Her grafiğin "tablo olarak göster" seçeneği vardır.** Renk göremeyen,
+  yazdıran veya sayıyı okumak isteyen kullanıcı için.
+- **Koyu tema ayrı seçilmiştir**, otomatik ters çevirme değildir. Yukarıdaki
+  koyu sütun kullanılır.
+- Sayı biçimi Türkçedir: `1.250,50`. Eksen etiketlerinde ve tablo sütunlarında
+  hizalı rakam (`tabular-nums`) kullanılır.
+
+#### 5.7.4 Bu platformda kullanılacak grafik tipleri
+
+| Grafik | Form | Renk işi | Not |
+|---|---|---|---|
+| Aylık tüketim trendi | Sütun | Tek slot (1) | Tek seri → açıklama gerekmez |
+| Enerji türü dağılımı | Yığılmış sütun | Kategorik | Segmentler arası 2px boşluk |
+| EnPI trendi | Çizgi | Tek slot (1) + baz çizgi referansı | **Tüketimle aynı grafikte değil** |
+| Beklenen vs gerçek | İki çizgi | Kategorik (1, 2) | Açıklama + uç nokta etiketi |
+| Regresyon (üretim–enerji) | Dağılım + doğru | En fazla 3 seri | Baz dönem / sonraki dönem ayrımı |
+| CUSUM | Çizgi + dolgu | **Kutuplu** | Sıfırın altı mavi (tasarruf), üstü kırmızı (kayıp) |
+| Isı haritası (yıl × ay) | Hücre matrisi | **Sıralı** mavi | Ölçek açıklaması zorunlu |
+| Pareto | Yatay çubuk + tablo | Tek slot (1) | Kümülatif % **tabloda**, çift eksen değil |
+| Enerji akışı | Sankey | Kategorik | Enerji dengesi ekranı |
+| KPI | Kart (değer + fark + mini grafik) | Durum renkleri | Grafik değil, sayının kendisi |
+
+> **Pareto notu:** Klasik Pareto çift eksenlidir (çubuk = değer, çizgi =
+> kümülatif %). Bu yasak olduğu için kümülatif yüzde, çubukların yanındaki
+> **tablo sütununda** gösterilir ve %80 eşiği satır arasına konan bir ayraçla
+> işaretlenir. Sonuç daha okunaklıdır ve kuralı çiğnemez.
 
 ---
 
@@ -650,34 +756,336 @@ Bu göstergeler enerji dengesinin **dışındadır**; dönüşüm ekipmanının 
 
 ## 9. Ekranlar
 
-> **Bu bölüm henüz yazılmadı.** Görüşmenin bir sonraki aşamasında, her ekran için
-> şu başlıklar tek tek kararlaştırılacak:
->
-> - Ekranın amacı
-> - Kullanıcının göreceği bilgiler
-> - Kullanıcının gireceği veriler
-> - Sistemin otomatik hesaplayacağı değerler
-> - Kullanılacak grafikler ve tablolar
-> - Yapılabilecek analizler
-> - ISO 50001 ile ilişkisi
-> - İleride eklenebilecek özellikler
+### 9.0 Ekran tasarımı ilkeleri
 
-Planlanan ekran listesi (taslak, görüşmede kesinleşecek):
+**E-1 · Her ekran tek bir soruyu cevaplar.** Bir ekran ikinci bir soruya cevap
+vermeye başladıysa, yeni bir ekran gerekiyor demektir.
 
-1. Gösterge paneli
-2. Aylık veri girişi
-3. Varlık ağacı yönetimi
-4. Ölçüm noktası tanımları
-5. Enerji türleri, dönüşüm katsayıları, fiyatlar
-6. EnPI tanımları
-7. Baz çizgi ve performans analizi
-8. Ölçüm kapsamı / enerji dengesi
-9. Dönüşüm verimliliği (kojen & kazan)
-10. GES takibi
-11. Raporlar
-12. Hedefler ve aksiyonlar
-13. Excel içe aktarma
-14. Ayarlar ve yedekleme
+| Ekran | Cevapladığı soru |
+|---|---|
+| Gösterge Paneli | Durumumuz ne? |
+| Veri Girişi | Bu ayın verilerini nasıl girerim? |
+| Veri Denetimi | Verim sağlam mı? |
+| Enerji Dengesi | Enerji nereye gidiyor? |
+| Tüketim Analizi | Nereye bakmalıyım? |
+| Performans | İyileştik mi? Ne zaman, ne kadar? |
+| Verimlilik | Dönüşüm ekipmanım sağlıklı mı? |
+| Maliyet | Para nereye gidiyor, neden arttı? |
+| GES | Santraller ne üretti, ne kazandırdı? |
+
+**E-2 · Uyarı, sonucun yanında durur.** Ayrı bir "uyarılar" sekmesine sürülen
+uyarı okunmaz.
+
+**E-3 · Her sayı yazdırılabilir ve tabloya çevrilebilir.** Her grafiğin
+"tablo olarak göster" seçeneği vardır (5.7.3).
+
+**E-4 · Her sayıdan ham veriye inilebilir.** Panel veya rapordaki her türetilmiş
+sayının yanında bir "?" bağlantısı vardır; tıklanınca o sayının hangi ölçüm
+noktalarından, hangi değerlerden ve hangi katsayılarla üretildiği gösterilir.
+ISO 50001 denetiminde "bu sayı nereden geliyor?" sorusunun tek tıkla cevabıdır.
+
+**E-5 · Boş durum öğreticidir.** Veri yokken ekran boş kalmaz; ne yapılması
+gerektiğini anlatır.
+
+### 9.1 Navigasyon haritası
+
+Sol tarafta sabit menü, beş grup:
+
+```
+┌─ ÖZET ──────────────────┐
+│  1  Gösterge Paneli     │   ← açılış ekranı
+├─ VERİ ──────────────────┤
+│  2  Veri Girişi         │
+│  3  Veri Aktarma        │
+│  4  Veri Denetimi       │
+├─ ANALİZ ────────────────┤
+│  5  Enerji Dengesi      │
+│  6  Tüketim Analizi     │
+│  7  Performans (EnPI)   │
+│  8  Dönüşüm Verimliliği │
+│  9  Maliyet             │
+│ 10  GES                 │
+├─ YÖNETİM ───────────────┤
+│ 11  Hedefler ve Aksiyon │
+│ 12  Raporlar            │
+├─ SİSTEM ────────────────┤
+│ 13  Tanımlar            │   ← sekmeli: varlık ağacı, ölçüm
+│ 14  Ayarlar ve Yedek    │      noktaları, enerji türleri,
+└─────────────────────────┘      katsayılar, EnPI, baz çizgi
+```
+
+**Her ekranda sabit üst şerit:**
+dönem seçici · veri durumu rozeti · yedek uyarısı · tema (açık/koyu) · yazdır.
+
+---
+
+### 9.2 · Ekran 1 — Gösterge Paneli
+
+#### Amaç
+Program açıldığında, tek ekranda **"durumumuz ne?"** sorusunu cevaplamak.
+Karar verdirmez; nereye bakılacağını gösterir.
+
+#### Kullanıcının göreceği bilgiler
+
+**KPI kartları** (seçilen ay; her kart: değer + geçen yılın aynı ayına göre fark
++ son 12 ayın mini grafiği):
+
+| Kart | İçerik |
+|---|---|
+| Toplam enerji | kWh · fark % · mini grafik |
+| Enerji maliyeti | Net ödenen TL (mahsup sonrası) · fark % |
+| EnPI (ana gösterge) | kWh/kg · baz çizgiye göre durum rozeti |
+| Üretim | kg · fark % |
+| Ölçüm kapsamı | % · ölçülmeyen payı |
+| GES katkısı | Mahsup + satış TL |
+
+**Uyarı şeridi** (varsa, KPI'ların hemen altında — E-2):
+eksik veri · şüpheli değer · hedef aşımı · alt toplam > üst toplam · yedek eski.
+
+**Yıllık özet tablosu** (son 3 yıl + bu yılın gerçekleşen kısmı):
+enerji kWh · üretim kg · EnPI · maliyet TL · ortalama birim fiyat.
+
+**Açık aksiyonlar** (ilk 5, geciken olanlar kırmızı ikon + etiketle).
+
+#### Kullanıcının gireceği veriler
+**Yok.** Bu ekran salt okunurdur. Yalnızca dönem seçimi ve grafik zaman aralığı
+değiştirilir. *(Panelde veri girişi olmaması bilinçlidir: bakılan yerle
+yazılan yer ayrıdır.)*
+
+#### Sistemin hesaplayacağı değerler
+Bütün kartlar ve grafikler türetilmiştir (İ-1) — hiçbiri saklanmaz:
+toplam enerji, net maliyet, EnPI, normalize EnPI, ölçüm kapsamı, yıllık
+toplamlar, ortalama birim fiyat, geçen yıla göre farklar.
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk | Not |
+|---|---|---|---|---|
+| G1 | Son 24 ay toplam enerji | Sütun | Tek slot (1) | Tek seri → açıklama yok, başlık seriyi adlandırır |
+| G2 | Son 24 ay EnPI | Çizgi + baz çizgi referans hattı | Tek slot (1) | **G1 ile aynı grafikte değil** — çift eksen yasak (5.7.2) |
+| G3 | Son 12 ay enerji türü dağılımı | Yığılmış sütun | Kategorik (1: elektrik, 2: doğalgaz) | Açıklama + doğrudan etiket |
+| G4 | Son 24 ay CUSUM | Çizgi + kutuplu dolgu | Mavi (tasarruf) / kırmızı (kayıp) | Eğim değişim noktası işaretli |
+| T1 | Yıllık özet | Tablo | — | Hizalı rakam |
+| T2 | Açık aksiyonlar | Tablo | Durum renkleri + ikon | |
+
+#### Yapılabilecek analizler
+- Yıldan yıla ve aydan aya karşılaştırma.
+- EnPI'nin baz çizgiye göre konumu — **iyileştik mi?**
+- CUSUM eğiminden kalıcı sapmanın **başlangıç tarihini** görmek.
+- Ölçüm kapsamı düşükse alt sayaç yatırımı ihtiyacını fark etmek.
+- Enerji türü karmasının değişimi (elektrik ↔ doğalgaz kayması).
+
+#### ISO 50001 ile ilişkisi
+Madde 9.1 *İzleme, ölçme, analiz ve değerlendirme*'nin ana ekranıdır.
+EnPI ve baz çizgi karşılaştırması madde 6.4 ve 6.5'in çıktısını görünür kılar.
+Yönetimin gözden geçirmesi (madde 9.3) için doğrudan girdi üretir.
+
+#### İleride eklenebilecekler
+Kart seçiminin kullanıcı tarafından özelleştirilmesi · birden fazla panel
+(üretim müdürü / enerji yöneticisi görünümü) · panelin tek tuşla PDF özeti ·
+hedefe kalan süre göstergesi · hava durumu/derece-gün bağlamı.
+
+---
+
+### 9.3 · Ekran 2 — Aylık Veri Girişi
+
+> **En çok kullanılacak ekran budur.** Tasarımın ölçüsü: bir ayın bütün
+> verisini en az tuşla, en az hatayla girebilmek.
+
+#### Amaç
+Bir ayın bütün ölçüm noktası değerlerini hızlı ve hatasız girmek; girerken
+hatayı **anında** yakalamak.
+
+#### Dört giriş yöntemi (K-14)
+
+Üstte ay seçici, altında dört sekme:
+
+| Mod | Ne zaman kullanılır | Nasıl çalışır |
+|---|---|---|
+| **A · Tablo** (varsayılan) | Aylık rutin giriş | Excel benzeri tek sayfa; bütün noktalar gruplanmış listede, tek sütun giriş. Tab ile ilerlenir. |
+| **B · Kategori formu** | Tek bir alanı doldururken | Elektrik / Doğalgaz / Üretim / Kojenerasyon / Kazan / Yardımcı / GES sekmeleri |
+| **C · Toplu yapıştırma** | Excel'den aktarırken | Excel'den kopyalanan hücre bloğu yapıştırılır; sistem eşleştirip önizler |
+| **D · Dosya yükleme** | Toplu/geçmiş veri | `.xlsx` sürükle-bırak → Ekran 3'e yönlendirir |
+
+#### Kullanıcının göreceği bilgiler
+
+Tablo modunda her satır:
+
+```
+Ölçüm noktası              Birim   Geçen ay    Geçen yıl    [ GİRİŞ ]   Δ%    Son 12 ay
+─────────────────────────────────────────────────────────────────────────────────────
+▸ ELEKTRİK
+  Şebekeden çekilen         kWh    1.421.220   1.502.800   [        ]   —    ▁▂▄▃▅▆▄▃
+  Elektrik faturası          TL    4.604.030   3.905.600   [        ]   —    ▁▂▃▄▅▆▇█
+▸ DOĞALGAZ
+  İstasyon 1 (Gaz Motoru)    m³       86.680      92.140   [        ]   —    ▅▄▃▂▁▂▃▄
+  İstasyon 1 (Gaz Motoru)   kWh      946.382   1.006.030   [        ]   —    ▅▄▃▂▁▂▃▄  ⚠
+```
+
+- **Geçen ay** ve **geçen yılın aynı ayı** yan yana — en iyi hata yakalama aracı.
+- **Δ%** girdikçe anında hesaplanır; eşik aşılırsa satır sarıya döner.
+- **Son 12 ay mini grafiği** (sparkline) her satırda.
+- **⚠** işareti: doğrulama uyarısı; üstüne gelince nedeni yazar.
+- Varlık ağacına göre gruplanmış, gruplar katlanabilir.
+- Devre dışı varlıkların noktaları **soluk** gösterilir (S6).
+
+**Ekranın altında canlı özet şeridi** — girdikçe güncellenir:
+
+```
+Toplam doğalgaz: 10.377.180 kWh  ·  Toplam enerji: 11.798.400 kWh
+Üretim: 8.042.310 kg  ·  EnPI: 1,467 kWh/kg  (baz çizgi: 1,340 → %9,5 üzerinde ⚠)
+```
+
+Bu şerit girişin **anlamını** anında gösterir; ay sonunda sürpriz olmaz.
+
+#### Kullanıcının gireceği veriler
+Seçilen aya ait bütün ölçüm noktası değerleri. Türetilmiş noktalar
+(toplamlar, buhar kWh, EnPI) **girilemez** — gri gösterilir, hesaplanmış
+oldukları belirtilir.
+
+#### Sistemin hesaplayacağı değerler
+Türetilmiş noktalar anlık · Δ% karşılaştırmaları · doğrulama uyarıları ·
+alt şeritteki canlı özet · doğalgaz kWh/m³ tutarlılık oranı (K-04).
+
+#### Kullanılacak grafikler ve tablolar
+Ana tablo (giriş) · satır içi mini grafikler · canlı özet şeridi.
+Büyük grafik yoktur: bu ekran **giriş** ekranıdır, analiz ekranı değildir (E-1).
+
+#### Yapılabilecek analizler
+- Giriş anında sapma tespiti (geçen ay / geçen yıl karşılaştırması).
+- Doğalgaz m³ ↔ kWh tutarlılık denetimi (K-04): oran ≈ 10,92 beklenir;
+  saparsa uyarı.
+- Alt toplam / üst toplam tutarlılığı (S3).
+- Eksik nokta uyarısı: "Bu ay 7 ölçüm noktası boş."
+
+#### ISO 50001 ile ilişkisi
+Madde 9.1.1 *İzleme ve ölçme* — verinin toplanma noktası. Girişteki doğrulama
+ve uyarı kayıtları, verinin güvenilirliğine dair kanıt üretir.
+
+#### İleride eklenebilecekler
+Klavye kısayolları ve hızlı giriş modu · sık girilen noktalar için "favori"
+listesi · otomatik veri toplama geldiğinde bu ekran **doğrulama** ekranına
+dönüşür (girilen yerine gelen değer onaylanır) · çoklu ay girişi ·
+fotoğraftan sayaç okuma.
+
+---
+
+### 9.4 · Ekran 3 — Veri Aktarma
+
+#### Amaç
+Mevcut Excel verisini sisteme almak; yedek alıp geri yüklemek. Verinin
+sisteme giriş ve çıkış kapısı.
+
+#### Bölüm 1 — Excel içe aktarma (K-15)
+
+**Kullanıcının göreceği bilgiler:**
+sürükle-bırak alanı · şablon indirme bağlantısı · sütun eşleştirme tablosu ·
+**önizleme**.
+
+**Zorunlu davranışlar:**
+
+| Kural | Gerekçe |
+|---|---|
+| **Önizleme zorunlu** — kaç satır geçerli, kaç satır hatalı, hangi satır neden | Kör aktarma veri bozar |
+| **Ya hep ya hiç** — ya bütün geçerli satırlar yazılır ya hiçbiri | Yarım yüklenmiş dosya en kötü veri durumudur |
+| **Aktarmadan önce otomatik güvenlik yedeği** indirilir | Geri dönüş garantisi (5.2) |
+| **Bölüm 6.8'deki bütün doğrulama kuralları burada da çalışır** | İçe aktarma, denetimden kaçış yolu olamaz |
+| Üzerine yazma **açıkça sorulur**: "142 dönem zaten dolu. Ne yapılsın?" | Sessiz veri kaybı olmaz |
+| Eşleşmeyen sütun **atlanmaz, sorulur** | "Bu sütun hangi ölçüm noktası?" |
+
+**Sütun eşleştirme:** Sistem Excel başlıklarını ölçüm noktası adlarıyla
+otomatik eşleştirmeye çalışır; eşleşmeyenleri kullanıcıya sorar ve verilen
+cevabı **hatırlar** (sonraki aktarımda tekrar sormaz).
+
+#### Bölüm 2 — Yedekleme ve geri yükleme (K-10)
+
+| İşlem | Davranış |
+|---|---|
+| **Yedek al** | `enerji-veri-YYYY-AA-GG.json` indirilir. Tanımlar + bütün değerler + katsayılar + EnPI + hedefler + aksiyonlar tek dosyada |
+| **Geri yükle** | Dosya seçilir → **önizleme**: "Bu yedek 2018-01 → 2025-12 arası 8.640 değer içeriyor. Mevcut veriniz silinecek." → onay |
+| **Son yedek bilgisi** | "Son yedek: 12 gün önce" — 7 günden eskiyse uyarı rengi |
+| **Dosyaya doğrudan yazma** (Chrome/Edge, K-11) | Bir kez dosya seçilir; sonrasında otomatik yazılır. İsteğe bağlı, varsayılan kapalı |
+
+#### Sistemin hesaplayacağı değerler
+Aktarım istatistikleri (satır/dönem/nokta sayısı, çakışma sayısı) · yedek
+dosyası boyutu · son yedekten bu yana geçen gün.
+
+#### ISO 50001 ile ilişkisi
+Madde 7.5 *Dokümante edilmiş bilgi* — verinin korunması ve kontrolü.
+Aktarım kayıtları verinin kaynağına dair iz bırakır.
+
+#### İleride eklenebilecekler
+Otomatik periyodik yedek hatırlatması · birden çok yedek sürümünün yönetimi ·
+CSV desteği · bulut yedeği (isteğe bağlı) · seçili dönem aralığını dışa aktarma.
+
+---
+
+### 9.5 · Ekran 4 — Veri Denetimi
+
+#### Amaç
+**"Verim sağlam mı?"** — Bütün veri setinin sağlığını tek ekranda göstermek.
+Analiz ekranlarına güvenmeden önce bakılacak yer.
+
+#### Kullanıcının göreceği bilgiler
+
+**Üstte dört sağlık göstergesi:**
+
+| Gösterge | Örnek |
+|---|---|
+| Doluluk | 96 / 96 ay · %100 |
+| Eksik değer | 7 ölçüm noktası × 3 dönem boş |
+| Şüpheli değer | 4 değer eşik dışı |
+| Tutarsızlık | 12 dönemde alt toplam > üst toplam |
+
+**Eksik veri haritası** — ölçüm noktası (satır) × ay (sütun) matrisi;
+dolu / boş / şüpheli hücreler. Bir bakışta hangi dönemde hangi noktanın
+eksik olduğu görülür. GM-1'in 2025'te durduğu (S6) burada apaçık görünür.
+
+**Bulgular listesi** — her satır: ölçüm noktası, dönem, sorun, değer,
+önerilen işlem, **[Düzelt]** bağlantısı (giriş ekranının o hücresine gider).
+
+#### Kullanıcının gireceği veriler
+Doğrudan giriş yoktur. Bir bulgu için **not** yazılabilir veya
+**"bilinçli, sorun değil"** olarak işaretlenebilir — o bulgu bir daha uyarmaz
+ama kaydı kalır (İ-4).
+
+#### Sistemin hesaplayacağı değerler
+Bölüm 6.8'deki bütün doğrulama kuralları bütün veri seti üzerinde ·
+doluluk oranları · ölçüm kapsamı (6.7) · hiyerarşi tutarlılığı (S3) ·
+doğalgaz kWh/m³ oran sapması (K-04).
+
+#### Kullanılacak grafikler ve tablolar
+
+| # | Grafik | Form | Renk |
+|---|---|---|---|
+| G1 | Eksik veri haritası | Hücre matrisi | Durum renkleri + ikon (renk tek başına anlam taşımaz) |
+| G2 | Ölçüm kapsamı zaman içinde | Sütun | Tek slot (1) |
+| T1 | Bulgular | Tablo | Durum ikonları |
+
+#### Yapılabilecek analizler
+- Hangi dönemlerde veri kalitesi düşük — o dönemlerin analizlerine ne kadar
+  güvenilebilir?
+- Ölçüm kapsamının zaman içindeki değişimi: yeni alt sayaçlar kapsamı artırdı mı?
+- Sistematik boşluklar: bir varlık gerçekten durmuş mu, yoksa veri mi girilmemiş?
+
+#### ISO 50001 ile ilişkisi
+Madde 9.1.1 — kuruluş, izleme ve ölçme sonuçlarının **geçerli** olmasını
+sağlamalıdır. Bu ekran o geçerliliğin kanıtıdır. Denetimde "verinizin
+doğruluğunu nasıl güvence altına alıyorsunuz?" sorusunun cevabıdır.
+
+#### İleride eklenebilecekler
+Eksik değer için tahmin önerisi (işaretlenerek, İ-4) · veri kalitesi skoru ve
+zaman içindeki trendi · otomatik veri geldiğinde haberleşme kesintisi tespiti.
+
+---
+
+### 9.6 — Ekran 5–14
+
+> **Henüz tasarlanmadı.** Ekran 5'ten 14'e kadar aynı şablonla, görüşmenin
+> bir sonraki adımında yazılacak:
+> Enerji Dengesi · Tüketim Analizi · Performans (EnPI & Baz Çizgi) ·
+> Dönüşüm Verimliliği · Maliyet · GES · Hedefler ve Aksiyonlar · Raporlar ·
+> Tanımlar · Ayarlar ve Yedekleme.
 
 ---
 
@@ -726,4 +1134,5 @@ Planlanan ekran listesi (taslak, görüşmede kesinleşecek):
 | Sürüm | Tarih | Değişiklik |
 |---|---|---|
 | 0.1 | 2026-09-17 | İlk taslak. Excel analizi, temel ilkeler, K-01…K-08 kararları, veri modeli çerçevesi, enerji/mali denge ayrımı. |
+| 0.3 | 2026-09-17 | **Görsel dil ve grafik standartları (5.7)**: renk paleti, yasaklar (çift eksen dahil), zorunlu davranışlar, grafik tipleri. **Ekranlar bölümü başladı (9)**: tasarım ilkeleri, navigasyon haritası (14 ekran), Ekran 1–4 tam tasarımı (Gösterge Paneli, Veri Girişi, Veri Aktarma, Veri Denetimi). |
 | 0.2 | 2026-09-17 | **Teknik mimari belirlendi (Bölüm 5).** K-09…K-18 kararları: tek HTML dosyası, iki katmanlı veri saklama, Chrome/Edge, fatura tutarı girişi, GES mahsubunun ayrı kalem olması, dört yöntemli veri girişi, gömülü `.xlsx` okuyucu, saf SVG grafikler. Maliyet ve GES mahsup modeli (6.4b). A-01…A-04 kapatıldı. |
