@@ -95,6 +95,17 @@ input {
   background: #f1f8f4;
 }
 
+.content .warning {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #ecdcb0;
+  border-left: 3px solid #b8860b;
+  border-radius: 6px;
+  background: #fdf8ec;
+}
+
+.warning .warning-note { display: block; margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
 .content .error {
   margin: 0 0 16px;
   padding: 10px 12px;

@@ -12,6 +12,7 @@ from app import (
     config,
     dashboard,
     definitions,
+    direct,
     production,
     readings,
     reports,
@@ -90,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(definitions.router)
     app.include_router(readings.router)
     app.include_router(production.router)
+    app.include_router(direct.router)
     app.include_router(targets.router)
     app.include_router(reports.router)
 

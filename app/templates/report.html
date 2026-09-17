@@ -22,12 +22,28 @@
   · Kırılım: {{ breakdowns[breakdown] }}
 </p>
 
+{% if conflicts %}
+<p class="warning">
+  Aşağıdaki dönemlerde hem doğrudan tüketim hem sayaç tüketimi bulundu.
+  Fabrika toplamında doğrudan tüketim esas alınmıştır; değerler toplanmaz.
+  {% for conflict in conflicts %}
+  <span class="warning-note">
+    {{ ay_adi(conflict.donem) }} · {{ conflict.enerji_turu }}:
+    doğrudan {{ conflict.dogrudan|sayi }} {{ conflict.birim }},
+    sayaç {{ conflict.sayac|sayi }} {{ conflict.birim }}{% if conflict.fark_yuzde is not none %}
+    · Fark: %{{ conflict.fark_yuzde|abs|sayi(1) }}{% endif %}
+  </span>
+  {% endfor %}
+</p>
+{% endif %}
+
 {% if breakdown == "enerji" %}
 <section class="panel">
   <h2>Enerji türüne göre tüketim</h2>
   {% if energy_rows|sum(attribute='total') > 0 %}
   <table>
     <thead><tr><th>Enerji türü</th><th class="right">Tüketim</th><th>Birim</th>
+               <th>Kaynak</th>
                <th class="right">Maliyet ({{ currency }})</th></tr></thead>
     <tbody>
       {% for row in energy_rows %}
@@ -35,19 +51,22 @@
         <td>{{ row.energy_type.name }}</td>
         <td class="right">{{ row.total|sayi }}</td>
         <td>{{ row.energy_type.unit }}</td>
+        <td>{{ row.source }}</td>
         <td class="right">{{ row.cost|sayi }}</td>
       </tr>
       {% endfor %}
       <tr class="total-row">
-        <td colspan="3">Toplam maliyet</td>
+        <td colspan="4">Toplam maliyet</td>
         <td class="right">{{ energy_rows|sum(attribute='cost')|sayi }}</td>
       </tr>
     </tbody>
   </table>
   <p class="muted small">
-    Tüketim, fabrika toplamıdır: bir enerji türünde ana sayaç tanımlıysa
-    yalnızca ana sayaçlar kullanılır. Farklı enerji türleri birbirine
-    dönüştürülmez; yalnızca maliyetleri toplanabilir.
+    Tüketim, fabrika toplamıdır: bir ay için doğrudan tüketim girilmişse o ay
+    doğrudan değer kullanılır, girilmemişse ana sayaç tanımlıysa yalnızca ana
+    sayaçlar kullanılır. "Karışık", aralıktaki ayların bir kısmının doğrudan
+    bir kısmının sayaç verisinden geldiği anlamına gelir. Farklı enerji
+    türleri birbirine dönüştürülmez; yalnızca maliyetleri toplanabilir.
   </p>
   {% else %}
   <p class="muted">Bu aralıkta tüketim verisi yok.</p>
@@ -79,7 +98,8 @@
   </table>
   <p class="muted small">
     Ana ve alt sayaçlar birlikte listelenir. Toplamları fabrika tüketimini
-    aşabileceği için bu tabloda genel toplam gösterilmez.
+    aşabileceği için bu tabloda genel toplam gösterilmez. Bu tablo yalnızca
+    sayaç verilerini gösterir; doğrudan tüketim girişleri burada yer almaz.
   </p>
   {% else %}
   <p class="muted">Bu aralıkta sayaç tüketimi yok.</p>
@@ -112,7 +132,7 @@
       </tr>
       {% endfor %}
       <tr class="total-row">
-        <td>Fabrika toplamı (ana sayaç)</td>
+        <td>Fabrika toplamı</td>
         <td class="right">{{ section.factory_total|sayi }}</td>
         <td>{{ section.energy_type.unit }}</td>
         {# Olcum uyumsuzlugunda satirlarin toplami fabrika toplamini asar;
@@ -122,8 +142,9 @@
     </tbody>
   </table>
   <p class="muted small">
-    Fabrika toplamı ana sayaçlardan, bölüm satırları bölüme bağlı alt
-    sayaçlardan gelir.
+    Fabrika toplamı bu ayın kaynağından (doğrudan tüketim varsa ondan, yoksa
+    ana sayaçlardan), bölüm satırları yalnızca bölüme bağlı alt sayaçlardan
+    gelir.
     {% if section.breakdown.scope_warning %}
     Bölüm sayaçları fabrika toplamından fazla ölçtüğü için paylar %100'ü aşar;
     bu bir ölçüm kapsamı sorunudur, tüketim farkı değildir.

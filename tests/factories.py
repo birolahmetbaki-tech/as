@@ -67,3 +67,19 @@ def production(db, values: dict[str, tuple[float, str]]) -> None:
             )
         )
     db.commit()
+
+
+def direct_consumption(db, energy, year_month: str, quantity: float, note=None):
+    """Bir ay ve enerji turu icin dogrudan tuketim kaydi (ornegin faturadan)."""
+    from app.models import DirectConsumption
+
+    year, month = (int(part) for part in year_month.split("-"))
+    record = DirectConsumption(
+        period_date=date(year, month, 1),
+        energy_type_id=energy.id,
+        quantity=quantity,
+        note=note,
+    )
+    db.add(record)
+    db.commit()
+    return record

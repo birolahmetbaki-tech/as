@@ -34,10 +34,24 @@
 
 <h1>{{ month_label }} · {{ selected_energy.name }}</h1>
 
+{% if summary.conflict %}
+{% set conflict = summary.conflict %}
+<p class="warning">
+  {{ ay_adi(conflict.donem) }} · {{ conflict.enerji_turu }}:
+  Bu dönem için hem doğrudan tüketim ({{ conflict.dogrudan|sayi }} {{ conflict.birim }})
+  hem sayaç tüketimi ({{ conflict.sayac|sayi }} {{ conflict.birim }}) bulundu.
+  Fabrika toplamında doğrudan tüketim esas alınmıştır.
+  {% if conflict.fark_yuzde is not none %}
+  <span class="warning-note">Fark: %{{ conflict.fark_yuzde|abs|sayi(1) }}</span>
+  {% endif %}
+</p>
+{% endif %}
+
 <section class="cards">
   <div class="card">
     <p class="card-label">Dönem tüketimi</p>
     <p class="card-value">{{ summary.total|sayi }} <span class="unit">{{ selected_energy.unit }}</span></p>
+    <p class="card-note muted">Kaynak: {{ summary.source }}</p>
   </div>
 
   <div class="card">
@@ -118,6 +132,8 @@
   <p class="muted small">
     Fabrika toplamı ana sayaçlardan, bölüm dağılımı bölüme bağlı alt sayaçlardan
     gelir. Aradaki fark "ölçülmeyen / dağıtılmamış" olarak gösterilir.
+    Bölüm satırları yalnızca sayaç verisinden hesaplanır; doğrudan tüketim
+    girilen dönemlerde fark "ölçülmeyen / dağıtılmamış" satırına yansır.
   </p>
   {% else %}
   <p class="muted">Bu dönemde bölüm bazında tüketim verisi yok.</p>
@@ -209,7 +225,7 @@
   <h2>Enerji türlerine göre · {{ month_label }}</h2>
   <table>
     <thead>
-      <tr><th>Enerji türü</th><th class="right">Tüketim</th>
+      <tr><th>Enerji türü</th><th class="right">Tüketim</th><th>Kaynak</th>
           <th class="right">Önceki döneme fark</th><th class="right">Maliyet</th></tr>
     </thead>
     <tbody>
@@ -217,6 +233,7 @@
       <tr>
         <td>{{ item.energy_type.name }}</td>
         <td class="right">{{ item.total|sayi }} {{ item.energy_type.unit }}</td>
+        <td>{{ item.source }}</td>
         <td class="right {{ 'up' if item.change.difference > 0 else ('down' if item.change.difference < 0 else '') }}">
           {% if item.change.percent is not none %}
             {{ "+" if item.change.difference > 0 else "" }}{{ item.change.percent|sayi(1) }}%

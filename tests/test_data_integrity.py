@@ -380,7 +380,7 @@ def test_uyumsuz_raporda_celiskili_yuzde_gosterilmez(uyumsuz):
     page = uyumsuz.get("/rapor?baslangic=2026-01-01&bitis=2026-01-31&kirilim=bolum")
     assert page.status_code == 200
     assert "120,0%" in page.text  # bölüm payı olduğu gibi gösterilir
-    assert "Fabrika toplamı (ana sayaç)" in page.text
+    assert "Fabrika toplamı" in page.text
     assert "100,0%" not in page.text  # yanıltıcı toplam yüzdesi yok
     assert "kapsamı sorunudur" in page.text
 
@@ -398,6 +398,6 @@ def test_uyumsuzluk_yokken_toplam_yuzdesi_gosterilir(logged_in_client, db):
     page = logged_in_client.get(
         "/rapor?baslangic=2026-01-01&bitis=2026-01-31&kirilim=bolum"
     )
-    assert "Fabrika toplamı (ana sayaç)" in page.text
+    assert "Fabrika toplamı" in page.text
     assert "100,0%" in page.text
     assert "Ölçülmeyen / dağıtılmamış" in page.text

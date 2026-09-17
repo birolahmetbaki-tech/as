@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from app.calc import SOURCE_DIRECT
 from app.models import Settings
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -83,6 +84,21 @@ def optional_text(raw: str | None, field_label: str, max_length: int) -> str | N
     if len(text) > max_length:
         raise ValueError(f"{field_label} en fazla {max_length} karakter olabilir.")
     return text
+
+
+def source_label(entries: list) -> str:
+    """Tuketim kayitlarinin hangi kaynaktan geldigini yazar.
+
+    Ayni AYDA iki kaynak birden bulunursa o ay dogrudan tuketimle temsil
+    edilir; "Karisik" yalnizca farkli aylarin farkli kaynaktan gelmesi
+    durumunda ortaya cikar.
+    """
+    sources = {entry.source for entry in entries}
+    if not sources:
+        return "—"
+    if len(sources) > 1:
+        return "Karışık"
+    return "Doğrudan" if SOURCE_DIRECT in sources else "Sayaç"
 
 
 def flash(request: Request, message: str) -> None:

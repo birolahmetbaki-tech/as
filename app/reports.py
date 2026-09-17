@@ -16,7 +16,7 @@ from app import calc
 from app.dashboard import department_breakdown, month_bounds, shift_month
 from app.db import get_session
 from app.models import EnergyType, Meter, Settings, Target
-from app.web import month_label, parse_date, render
+from app.web import month_label, parse_date, render, source_label
 
 router = APIRouter(prefix="/rapor")
 
@@ -38,19 +38,19 @@ def _energy_types(db: Session) -> list[EnergyType]:
 
 
 def rows_by_energy_type(db: Session, start: date, end: date) -> list[dict]:
-    """Her enerji turunun fabrika tuketimi ve maliyeti."""
+    """Her enerji turunun fabrika tuketimi, kaynagi ve maliyeti."""
     rows = []
     for energy_type in _energy_types(db):
-        total = calc.total(
-            calc.factory_consumptions(
-                db, start=start, end=end, energy_type_id=energy_type.id
-            )
+        entries = calc.factory_consumptions(
+            db, start=start, end=end, energy_type_id=energy_type.id
         )
+        total = calc.total(entries)
         rows.append(
             {
                 "energy_type": energy_type,
                 "total": total,
                 "cost": calc.cost(total, energy_type.unit_price),
+                "source": source_label(entries),
             }
         )
     return rows
@@ -213,4 +213,5 @@ def report(
         ),
         production_rows=production_rows(db, start, end),
         target_rows=target_rows(db, start, end),
+        conflicts=calc.consumption_conflicts(db, start=start, end=end),
     )

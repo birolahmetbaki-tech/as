@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from app import calc
 from app.db import get_session
 from app.models import EnergyType, Meter, Settings, Target
-from app.web import month_label, render
+from app.web import month_label, render, source_label
 
 router = APIRouter()
 
@@ -104,6 +104,12 @@ def energy_summary(db: Session, energy_type: EnergyType, year_month: str) -> dic
         )
     ).first()
 
+    # Ayni ay ve turde hem dogrudan hem sayac tuketimi varsa kullaniciya
+    # bildirilir; degerler toplanmaz (fabrika toplaminda dogrudan esas alinir).
+    conflicts = calc.consumption_conflicts(
+        db, start=start, end=end, energy_type_id=energy_type.id
+    )
+
     return {
         "energy_type": energy_type,
         "total": total,
@@ -111,6 +117,8 @@ def energy_summary(db: Session, energy_type: EnergyType, year_month: str) -> dic
         "change": _change(total, previous_total),
         "previous_label": month_label(previous_month),
         "target": calc.target_status(total, target.target_value) if target else None,
+        "conflict": conflicts[0] if conflicts else None,
+        "source": source_label(entries),
     }
 
 

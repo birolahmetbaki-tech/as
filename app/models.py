@@ -115,6 +115,27 @@ class Production(Base):
     unit: Mapped[str] = mapped_column(String(20))
 
 
+class DirectConsumption(Base):
+    """Dogrudan tuketim girisi (ornegin faturadan).
+
+    Sayac endeksinden hesaplanmaz; donemin tuketimi dogrudan girilir.
+    Fabrika seviyesindedir: bolumu yoktur. period_date her zaman ilgili ayin
+    ilk gunudur (Ocak 2026 -> 2026-01-01). Miktar, enerji turunun kendi
+    biriminde tutulur.
+    """
+
+    __tablename__ = "direct_consumption"
+    __table_args__ = (UniqueConstraint("period_date", "energy_type_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    period_date: Mapped[Date] = mapped_column(Date, index=True)
+    energy_type_id: Mapped[int] = mapped_column(ForeignKey("energy_type.id"))
+    quantity: Mapped[float] = mapped_column(Float)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    energy_type: Mapped["EnergyType"] = relationship()
+
+
 class Target(Base):
     """Aylik tuketim hedefi (enerji turu bazinda)."""
 

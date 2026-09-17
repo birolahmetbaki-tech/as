@@ -12,8 +12,12 @@ Temel kurallar:
   tarihine gore belirlenir.
 * Bir sayacin ilk okumasi icin tuketim uretilmez (karsilastirilacak onceki
   okuma yoktur).
-* Fabrika toplaminda, bir enerji turunde ana sayac tanimliysa yalnizca ana
-  sayaclar kullanilir; ana sayac yoksa o turdeki tum sayaclar kullanilir.
+* Fabrika toplami, enerji turu ve AY bazinda su oncelikle belirlenir:
+    1. O ay icin dogrudan tuketim (fatura) girilmisse -> dogrudan tuketim
+    2. Yoksa ana sayac tanimliysa -> ana sayaclar
+    3. Yoksa -> o turdeki tum sayaclar
+  Ayni ay ve enerji turu icin iki kaynak birden varsa DEGERLER TOPLANMAZ;
+  dogrudan tuketim esas alinir ve cakisma consumption_conflicts ile bildirilir.
 
 Gruplama islevleri veritabanina dokunmaz; yalnizca hesaplanmis kayitlar
 uzerinde calisir. Bu sayede kolayca test edilebilirler.
@@ -26,9 +30,12 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Meter, MeterReading, Production
+from app.models import DirectConsumption, Meter, MeterReading, Production
 
 UNASSIGNED_DEPARTMENT = "Bölümsüz"
+
+SOURCE_METER = "sayac"
+SOURCE_DIRECT = "dogrudan"
 
 PERIOD_DAY = "gun"
 PERIOD_MONTH = "ay"
@@ -45,17 +52,18 @@ class Consumption:
 
     reading_date: date  # ikinci (yeni) okumanin tarihi - izlenebilirlik icin
     previous_date: date  # birinci (onceki) okumanin tarihi
-    meter_id: int
-    meter_name: str
+    meter_id: int | None  # dogrudan giriste yoktur
+    meter_name: str | None
     energy_type_id: int
     energy_type_name: str
     unit: str
     department_id: int | None
     department_name: str | None
-    previous_index: float
-    index_value: float
-    multiplier: float
+    previous_index: float | None  # dogrudan giriste yoktur
+    index_value: float | None
+    multiplier: float | None
     consumption: float
+    source: str = SOURCE_METER
 
     @property
     def period_date(self) -> date:
@@ -203,20 +211,139 @@ def factory_meter_ids(db: Session, energy_type_id: int | None = None) -> list[in
     return sorted(selected)
 
 
+def direct_consumptions(
+    db: Session,
+    start: date | None = None,
+    end: date | None = None,
+    energy_type_id: int | None = None,
+) -> list[Consumption]:
+    """Dogrudan girilen (fatura) tuketim kayitlari.
+
+    Fabrika seviyesindedir: sayaci ve bolumu yoktur. Donem tarihi, kaydin ait
+    oldugu ayin ilk gunudur.
+    """
+    query = select(DirectConsumption).options(
+        joinedload(DirectConsumption.energy_type)
+    )
+    if energy_type_id is not None:
+        query = query.where(DirectConsumption.energy_type_id == energy_type_id)
+    if start is not None:
+        query = query.where(DirectConsumption.period_date >= start)
+    if end is not None:
+        query = query.where(DirectConsumption.period_date <= end)
+
+    return [
+        Consumption(
+            reading_date=record.period_date,
+            previous_date=record.period_date,
+            meter_id=None,
+            meter_name=None,
+            energy_type_id=record.energy_type_id,
+            energy_type_name=record.energy_type.name,
+            unit=record.energy_type.unit,
+            department_id=None,
+            department_name=None,
+            previous_index=None,
+            index_value=None,
+            multiplier=None,
+            consumption=record.quantity,
+            source=SOURCE_DIRECT,
+        )
+        for record in db.scalars(query.order_by(DirectConsumption.period_date))
+    ]
+
+
+def _month_keys(entries: list[Consumption]) -> set[tuple[int, str]]:
+    """Kayitlarin kapsadigi (enerji turu, ay) ciftleri."""
+    return {
+        (entry.energy_type_id, period_key(entry.period_date, PERIOD_MONTH))
+        for entry in entries
+    }
+
+
 def factory_consumptions(
     db: Session,
     start: date | None = None,
     end: date | None = None,
     energy_type_id: int | None = None,
 ) -> list[Consumption]:
-    """Fabrika toplami icin tuketim kayitlari (ana sayac kurali uygulanir)."""
-    return consumptions(
+    """Fabrika toplami icin tuketim kayitlari.
+
+    Enerji turu ve ay bazinda oncelik: dogrudan tuketim -> ana sayac -> tum
+    sayaclar. Dogrudan tuketim bulunan bir ayda o turun sayac kayitlari
+    fabrika toplamina EKLENMEZ; boylece cift sayim olusmaz.
+    """
+    direct = direct_consumptions(
+        db, start=start, end=end, energy_type_id=energy_type_id
+    )
+    covered = _month_keys(direct)
+
+    meter_entries = consumptions(
         db,
         start=start,
         end=end,
         energy_type_id=energy_type_id,
         meter_ids=factory_meter_ids(db, energy_type_id),
     )
+    entries = direct + [
+        entry
+        for entry in meter_entries
+        if (entry.energy_type_id, period_key(entry.period_date, PERIOD_MONTH))
+        not in covered
+    ]
+    entries.sort(key=lambda entry: (entry.period_date, entry.meter_name or ""))
+    return entries
+
+
+def consumption_conflicts(
+    db: Session,
+    start: date | None = None,
+    end: date | None = None,
+    energy_type_id: int | None = None,
+) -> list[dict]:
+    """Ayni ay ve enerji turunde hem dogrudan hem sayac tuketimi bulunan donemler.
+
+    Degerler toplanmaz; fabrika toplaminda dogrudan tuketim esas alinir. Bu
+    islev yalnizca kullaniciya bildirmek icin farki hesaplar.
+    """
+    direct = direct_consumptions(
+        db, start=start, end=end, energy_type_id=energy_type_id
+    )
+    if not direct:
+        return []
+
+    meter_totals: dict[tuple[int, str], float] = defaultdict(float)
+    for entry in consumptions(
+        db,
+        start=start,
+        end=end,
+        energy_type_id=energy_type_id,
+        meter_ids=factory_meter_ids(db, energy_type_id),
+    ):
+        meter_totals[
+            (entry.energy_type_id, period_key(entry.period_date, PERIOD_MONTH))
+        ] += entry.consumption
+
+    conflicts = []
+    for entry in direct:
+        key = (entry.energy_type_id, period_key(entry.period_date, PERIOD_MONTH))
+        if key not in meter_totals:
+            continue
+        meter_total = meter_totals[key]
+        difference = entry.consumption - meter_total
+        conflicts.append(
+            {
+                "donem": key[1],
+                "enerji_turu_id": entry.energy_type_id,
+                "enerji_turu": entry.energy_type_name,
+                "birim": entry.unit,
+                "dogrudan": entry.consumption,
+                "sayac": meter_total,
+                "fark": difference,
+                "fark_yuzde": (difference / meter_total * 100) if meter_total else None,
+            }
+        )
+    return conflicts
 
 
 # --------------------------------------------------------------------------- #

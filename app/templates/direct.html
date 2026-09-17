@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Doğrudan Tüketim{% endblock %}
+{% block content %}
+<h1>Doğrudan Tüketim</h1>
+
+{% if energy_types %}
+<form class="row-form wrap" method="post" action="/dogrudan-tuketim">
+  <div class="field">
+    <label for="year_month">Ay</label>
+    <input id="year_month" name="year_month" type="month" max="{{ today_period }}"
+           value="{{ form.year_month if form else today_period }}" required>
+  </div>
+  <div class="field">
+    <label for="energy_type_id">Enerji türü</label>
+    <select id="energy_type_id" name="energy_type_id" required
+            onchange="birimiGoster(this)">
+      <option value="">Seçiniz</option>
+      {% for energy_type in energy_types %}
+      <option value="{{ energy_type.id }}" data-birim="{{ energy_type.unit }}"
+        {{ "selected" if form and form.energy_type_id == energy_type.id|string }}>
+        {{ energy_type.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="quantity">Tüketim miktarı <span id="birim-etiketi"></span></label>
+    <input id="quantity" name="quantity" inputmode="decimal"
+           value="{{ form.quantity if form else '' }}" required>
+  </div>
+  <div class="field grow">
+    <label for="note">Not</label>
+    <input id="note" name="note" maxlength="500" placeholder="Fatura no, tedarikçi…"
+           value="{{ form.note if form else '' }}">
+  </div>
+  <button type="submit">Kaydet</button>
+</form>
+{% else %}
+<p class="notice">Doğrudan tüketim girebilmek için önce bir aktif
+  <a href="/tanimlar/enerji-turleri">enerji türü</a> tanımlayın.</p>
+{% endif %}
+
+{% if records %}
+<table>
+  <thead>
+    <tr><th>Ay</th><th>Enerji türü</th><th class="right">Miktar</th><th>Birim</th>
+        <th>Kaynak</th><th>Not</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for item in records %}
+    <tr>
+      <td>{{ item.label }}</td>
+      <td>{{ item.record.energy_type.name }}</td>
+      <td class="right">{{ item.record.quantity|sayi }}</td>
+      <td>{{ item.record.energy_type.unit }}</td>
+      <td>Doğrudan</td>
+      <td class="muted">{{ item.record.note or "" }}</td>
+      <td class="right">
+        <form method="post" action="/dogrudan-tuketim/{{ item.record.id }}/sil"
+              onsubmit="return confirm('{{ item.label }} · {{ item.record.energy_type.name }} doğrudan tüketim kaydı silinecek. Bu aydan sonra o ay için sayaç tüketimi kullanılacaktır. Onaylıyor musunuz?')">
+          <button class="link danger" type="submit">Sil</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">
+  Doğrudan tüketim, o ayın fabrika toplamı olarak kabul edilir. Aynı ay ve enerji
+  türü için sayaç tüketimi de varsa değerler toplanmaz; fabrika toplamında
+  doğrudan tüketim esas alınır ve panelde uyarı gösterilir.
+</p>
+{% else %}
+<p class="muted">Henüz doğrudan tüketim kaydı girilmedi.</p>
+{% endif %}
+
+<script>
+  function birimiGoster(select) {
+    const option = select.options[select.selectedIndex];
+    const birim = option.dataset.birim;
+    document.getElementById("birim-etiketi").textContent = birim ? "(" + birim + ")" : "";
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("energy_type_id");
+    if (select) { birimiGoster(select); }
+  });
+</script>
+{% endblock %}
