@@ -200,7 +200,7 @@ numaralara atıf yapar.
 | **K-20** | Raporlar | Üç rapor: **aylık enerji raporu**, **yönetim gözden geçirme raporu** (ISO 50001 md. 9.3), **serbest rapor oluşturucu**. | Kullanıcı seçimi. ENVER yıllık bildirim özeti ileriye bırakıldı. |
 | **K-21** | Hedefler | Dört hedef türü birden: **EnPI**, **tüketim (kWh)**, **maliyet (TL)**, **tasarruf (baz çizgiye göre %)**. | Farklı muhataplar farklı hedef diliyle konuşur; dördü de aynı motordan beslenir. |
 | **K-22** | Ekran listesi | **15 ekran** (Özet 1 · Veri 4 · Analiz 6 · Yönetim 2 · Sistem 2). | Bkz. 9.1 navigasyon haritası. K-23 ile bir ekran eklendi. |
-| **K-23** | Hesaplanan değerler katmanı | Hesaplanan bütün değerler **ayrı bir katmanda toplanır**; ekranlar veriyi buradan çeker. Katman **açılışta ve her veri değişiminde** baştan üretilir, kullanıcıya **görünür** (Ekran 5) ve dışa aktarılabilir. Yedek dosyasına **yazılmaz**; yazılırsa bile geri yüklemede yok sayılıp yeniden üretilir. | Kullanıcı isteği. Tek bir hesap katmanı, bütün ekranların aynı sayıyı göstermesini yapısal olarak garanti eder (İ-2) ve hesabı denetlenebilir kılar (E-4). Yedeğe yazılmaması, formül değişince bayat değerin geri gelmesini önler. |
+| **K-23** | Hesaplanan değerler katmanı | Hesaplanan bütün değerler **ayrı bir katmanda toplanır**; ekranlar veriyi buradan çeker. Katman **açılışta ve her veri değişiminde** baştan üretilir, kullanıcıya **görünür** (Ekran 5) ve **iki sayfalı Excel** olarak dışa aktarılır (`Ham Veri` + `Hesaplanan`). Yedek dosyasına **yazılmaz**; yazılırsa bile geri yüklemede yok sayılıp yeniden üretilir. | Kullanıcı isteği. Tek bir hesap katmanı, bütün ekranların aynı sayıyı göstermesini yapısal olarak garanti eder (İ-2) ve hesabı denetlenebilir kılar (E-4). Yedeğe yazılmaması, formül değişince bayat değerin geri gelmesini önler. |
 
 ---
 
@@ -1341,8 +1341,20 @@ fiyat/hacim etkileri.
 
 #### Kullanılacak grafikler ve tablolar
 Grafik **yok** — bu bir veri ekranıdır (E-1). Yalnızca tablo:
-filtrelenebilir, sıralanabilir, sütun seçilebilir, **Excel/CSV olarak dışa
-aktarılabilir**.
+filtrelenebilir, sıralanabilir, sütun seçilebilir, dışa aktarılabilir.
+
+**Excel dışa aktarma — iki sayfalı çalışma kitabı:**
+
+```
+enerji-veri-2026-09-17.xlsx
+  ├── Sayfa "Ham Veri"      ← girdiğiniz değerler (dönem × ölçüm noktası)
+  └── Sayfa "Hesaplanan"    ← sistemin ürettiği değerler + formül satırı
+```
+
+Bugün Excel'de tek sayfada yaptığınız işin, ham ile hesaplananın **ayrıldığı**
+hâli. İstediğiniz an bu dosyayı alır, açar, sunuma veya denetçi dosyasına
+koyarsınız. Fark şu: bu dosya bir **çıktıdır**, sistemin hafızası değil —
+her dışa aktarmada o anki ham veriden yeniden üretilir, bayatlamaz.
 
 #### Yapılabilecek analizler
 - **Hesabın denetimi:** bir sayı beklenmedikse formülü ve girdileri görülür.
