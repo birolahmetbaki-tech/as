@@ -31,7 +31,17 @@ if __name__ == "__main__":
     baslangic = time.monotonic()
     while time.monotonic() - baslangic < ZAMAN_ASIMI:
         if hazir_mi(adres):
-            webbrowser.open(adres)
+            try:
+                acildi = webbrowser.open(adres)
+            except Exception:  # noqa: BLE001 - tarayici her turlu hatada elle acilir
+                acildi = False
+            if not acildi:
+                # Varsayilan tarayici tanimli degilse uygulama yine calisir;
+                # kullanicinin adresi gorebilmesi yeter.
+                print(
+                    "Tarayici kendiliginden acilamadi. "
+                    f"Chrome veya Edge acip su adresi yazin: {adres}"
+                )
             raise SystemExit(0)
         time.sleep(0.25)
     print(

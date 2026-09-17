@@ -4,6 +4,25 @@ Tek bir fabrika için sade, tek kullanıcılı enerji izleme ve enerji performan
 takip sistemi. Bütün enerji ve üretim verileri elle girilir; otomatik veri
 toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
 
+## Durum
+
+MVP tamamlandı ve günlük kullanıma hazırdır. Kapsam bilinçli olarak dardır:
+
+- **Tek kullanıcı** — rol, yetki ve kullanıcı yönetimi yoktur.
+- **Manuel veri girişi** — bütün okuma, üretim ve fatura verileri elle girilir.
+  Otomatik veri toplama (sayaç, PLC, SCADA, Modbus, ERP, IoT) **yoktur**.
+- **Yerel web uygulaması** — kendi bilgisayarınızda çalışır, tarayıcıdan
+  `http://127.0.0.1:8000` adresiyle kullanılır (Chrome veya Edge).
+- **İnternet gerektirmez** — ilk kurulumdaki paket indirme dışında hiçbir
+  özellik ağ bağlantısına ihtiyaç duymaz.
+- **Veriler tek bir SQLite dosyasındadır** (`data/enerji.db`); yedekleme
+  kullanıcının sorumluluğundadır ve elle yapılır.
+- **AI asistanı şu an aktif değildir.** `app/ai_tools.py` ve
+  `app/ai_snapshot.py` ileride kullanılmak üzere durur, uygulamanın hiçbir
+  yerinden çağrılmaz.
+- ISO 50001 çalışmasını **destekler**, ancak eksiksiz bir ISO 50001 platformu
+  değildir.
+
 ## Temel ilkeler
 
 - **Ham veri ile hesap ayrıdır.** Veritabanında sayaç endeksi saklanır;
@@ -60,10 +79,34 @@ Python 3.11 · FastAPI · SQLAlchemy · Alembic · SQLite · Jinja2 · pytest
 
 ## Kurulum
 
-Gereken tek şey **Python 3.11 veya üstü**. İnternet yalnızca ilk kurulumda
-(paketleri indirmek için) gerekir; sonrasında uygulama tamamen çevrimdışı çalışır.
+Gereken her şey: **Python 3.11 veya üstü** ve bir tarayıcı (**Chrome** veya
+**Edge**). Docker, Node.js, veritabanı sunucusu, bulut hesabı **gerekmez**.
+Projeyi ZIP olarak indirirseniz Git de gerekmez.
+
+İnternet yalnızca ilk kurulumda (Python ve paketleri indirmek için) gerekir;
+sonrasında uygulama tamamen çevrimdışı çalışır.
 
 ### Windows
+
+**1. Python'u kurun.** <https://www.python.org/downloads/> adresinden Windows
+sürümünü indirin. Kurulum ekranındaki **"Add python.exe to PATH"** kutusunu
+mutlaka işaretleyin. İşaretlenmezse sonraki adımlarda
+`Python was not found` hatası alırsınız.
+
+Kontrol: Başlat → `cmd` → Komut İstemi'nde `python --version` yazın;
+`Python 3.11.x` veya üstü görmelisiniz.
+
+**2. Projeyi indirin.** İki yoldan biri:
+
+- GitHub sayfasında **Code → Download ZIP** deyin ve ZIP'i örneğin
+  `C:\EnerjiIzleme` klasörüne çıkarın (Git gerekmez), **veya**
+- Git kuruluysa: `git clone <depo-adresi> C:\EnerjiIzleme`
+
+Klasör adında Türkçe karakter ve boşluk olabilir, sorun çıkarmaz.
+
+**3. Komut İstemi'ni proje klasöründe açın.** Dosya Gezgini'nde proje
+klasörüne girin, adres çubuğuna `cmd` yazıp Enter'a basın. Aşağıdaki komutları
+bu pencerede, **sırayla** çalıştırın:
 
 ```bat
 python -m venv .venv
@@ -76,6 +119,8 @@ copy .env.example .env
 .venv\Scripts\alembic upgrade head                 :: veritabanını oluşturur
 .venv\Scripts\uvicorn app.main:app
 ```
+
+Son komut uygulamayı başlatır; durdurmak için `Ctrl+C` yapın.
 
 Kurulumdan sonra uygulamayı her seferinde `baslat.bat` dosyasına çift
 tıklayarak açabilirsiniz. Bu dosya önce ortamı denetler (`.env`, anahtarlar,

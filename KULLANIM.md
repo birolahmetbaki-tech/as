@@ -3,6 +3,27 @@
 Bu belge günlük kullanım içindir. Kurulum ve teknik ayrıntılar için
 [README.md](README.md) dosyasına bakın.
 
+## İlk kullanım — kısa sıra
+
+Kurulumu bitirdiyseniz sırasıyla şunları yapın. Her adımın ayrıntısı aşağıda:
+
+| # | Adım | Nerede |
+|---|---|---|
+| 1 | **Başlat** — `baslat.bat` dosyasına çift tıklayın | masaüstü / proje klasörü |
+| 2 | **Tarayıcı** açılır, giriş yapın | `http://127.0.0.1:8000` |
+| 3 | **Enerji türü** ekleyin (Elektrik / kWh, Doğal Gaz / Sm³) | Enerji Türleri |
+| 4 | **Departman** ekleyin (Pres, Paketleme…) | Bölümler |
+| 5 | **Sayaç** ekleyin (ana ve alt sayaçlar, çarpan) | Sayaçlar |
+| 6 | **Okuma** girin (ilk endeks, sonra her ayın 1'i) | Okumalar |
+| 7 | **Üretim** girin (ton, adet…) | Üretim |
+| 8 | **Katsayı** girin (yalnızca Sm³, kg gibi birimler için) | Katsayılar |
+| 9 | **Hedef** girin (isteğe bağlı) | Hedefler |
+| 10 | **Dashboard / Rapor** ile sonuçlara bakın | Panel, Rapor |
+| 11 | **Yedek** alın (`yedekle.bat`) | proje klasörü |
+
+Sayacı olmayan bir enerji türünüz varsa 6. adım yerine **Doğrudan Tüketim**
+ekranından ayın tüketimini girin.
+
 ## Uygulamayı açma
 
 Windows'ta `baslat.bat` dosyasına çift tıklayın. Tarayıcı, sunucu hazır olur
@@ -163,8 +184,14 @@ Ayda bir, mümkünse her veri girişinden sonra yedek alın ve yedeği **ayrıca
 USB belleğe kopyalayın**. Aynı bilgisayarda kalan yedek, disk arızasında
 veriyle birlikte kaybolur.
 
-> `data\enerji.db` dosyasını Dosya Gezgini'nden elle kopyalamayın: uygulama
-> açıkken bu kopya eksik olur. Her zaman yedekleme betiğini kullanın.
+> **`data\enerji.db` dosyasını Windows Dosya Gezgini'nden kopyalayıp yedek
+> saymayın.** Uygulama SQLite'ı WAL kipinde çalıştırır; son girdiğiniz kayıtlar
+> henüz ana dosyaya yazılmamış, yanındaki `enerji.db-wal` dosyasında bekliyor
+> olabilir. Uygulama açıkken yapılan böyle bir kopya **sessizce eksik** olur ve
+> bunu ancak geri yüklemeye çalıştığınızda fark edersiniz. Her zaman
+> `yedekle.bat` dosyasını (veya `scripts/backup.py`) kullanın: bu yöntem
+> SQLite'ın kendi yedekleme arayüzünü kullandığı için uygulama açıkken de tam
+> ve tutarlı bir kopya üretir.
 
 **Geri yüklemek:** önce uygulamayı kapatın, sonra:
 
