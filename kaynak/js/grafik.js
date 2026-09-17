@@ -670,3 +670,37 @@ export function oranCubugu(oran, { en = 120, boy = 8, cizgiRenk = "var(--s1)" } 
     rx:boy / 2, fill:cizgiRenk }));
   return svg;
 }
+
+/* ============================================================== ÖLÇER */
+/**
+ * Hedefe uzaklık ölçeri (9.13 G2) — kadran değil, doğrusal "bullet" biçimi.
+ * Kadran, açıyı büyüklük sanmaya yol açar; doğrusal ölçek okunur ve dürüsttür.
+ * @param deger gerçekleşen · hedef hedef değeri · yon "azalt" | "artir"
+ */
+export function olcer(kap, { deger, hedef, birim = "", ondalik = 0, yon = "azalt",
+                             ad = "" } = {}) {
+  kap = kap || el("div");
+  if (!Number.isFinite(deger) || !Number.isFinite(hedef)) {
+    kap.append(el("p.mini.sessiz", { metin:"Ölçülecek veri yok." }));
+    return kap;
+  }
+  const tuttu = yon === "azalt" ? deger <= hedef : deger >= hedef;
+  const enb = Math.max(deger, hedef) * 1.15;
+  const yuz = v => Math.max(0, Math.min(100, (v / enb) * 100));
+  const renk = tuttu ? "var(--iyi)" : "var(--ciddi)";
+
+  const cubuk = el("div.olcer", {},
+    el("div.dolgu", { stil:{ width:yuz(deger).toFixed(1) + "%", background:renk } }),
+    el("div.isaret", { stil:{ left:yuz(hedef).toFixed(1) + "%" },
+      title:`Hedef: ${say(hedef, ondalik)} ${birim}` }));
+
+  kap.append(el("div", { stil:{ margin:"8px 0" } },
+    ad ? el("div.mini.sessiz", { metin:ad }) : null,
+    cubuk,
+    el("div.satir", { stil:{ justifyContent:"space-between", marginTop:"5px",
+      fontSize:"12px" } },
+      el("span", {}, el("b", { metin:(tuttu ? "✓ " : "✕ ") }),
+        `gerçekleşen ${say(deger, ondalik)} ${birim}`),
+      el("span.sessiz", { metin:`hedef ${say(hedef, ondalik)} ${birim}` }))));
+  return kap;
+}

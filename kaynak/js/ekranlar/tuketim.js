@@ -9,6 +9,7 @@ import { nokta, varlik, agac, altAgac, varlikNoktalari, cevir,
 import * as H from "../hesap.js";
 import { sonEnerjiDonemi } from "../hesaplanan.js";
 import * as G from "../grafik.js";
+import { aksiyonAc } from "./hedefler.js";
 
 let f = null;   // filtre durumu
 
@@ -163,6 +164,21 @@ function cizPareto(k) {
   if (!kalemler.length) { kart.append(bosDurum("Kırılacak kalem yok",
     "Seçilen varlığın altında ölçüm noktası bulunan alt varlık yok.")); return; }
   G.pareto(kart, { kalemler, birim:f.birim });
+
+  // Analizden eyleme köprüsü (9.13): en büyük kalem doğrudan aksiyona dönüşür
+  const enb = [...kalemler].sort((a, b) => b.deger - a.deger)[0];
+  const toplam = kalemler.reduce((t2, x) => t2 + x.deger, 0);
+  if (enb && toplam)
+    kart.append(el("div", { stil:{ marginTop:"10px" } },
+      el("span.mini.sessiz", { stil:{ marginRight:"8px" },
+        metin:`En büyük kalem ${enb.ad}: toplamın ${yuzde(enb.deger / toplam * 100, 1)}'i.` }),
+      el("button.dugme.kucuk", { metin:"→ Aksiyon aç", onclick:() => aksiyonAc({
+        baslik:`${enb.ad} tüketimini azalt`,
+        aciklama:`${varlik(f.varlik)?.ad} altındaki en büyük kalem: ` +
+          `${say(enb.deger, 0)} ${f.birim} (toplamın ${yuzde(enb.deger / toplam * 100, 1)}'i). ` +
+          "Pareto sıralamasında ilk sırada olduğu için iyileştirmenin en yüksek " +
+          "getirili olduğu yerdir.",
+        baglam:{ kaynak:`Ekran 7 · Pareto (${varlik(f.varlik)?.ad})`, varlik:f.varlik } }) })));
 }
 
 /* --------------------------------------------------- dönem karşılaştırma */

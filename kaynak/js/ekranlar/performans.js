@@ -10,6 +10,8 @@ import { nokta } from "../model.js";
 import * as H from "../hesap.js";
 import { katman, hucre, sonEnerjiDonemi } from "../hesaplanan.js";
 import * as G from "../grafik.js";
+import { aksiyonAc } from "./hedefler.js";
+import { kokenDugmesi } from "../koken.js";
 import { OZEL } from "../hesap.js";
 
 let ar2 = null;
@@ -329,4 +331,30 @@ function bolum4Cusum(k, bz) {
       el("b", { metin:`${isaretler.length} eğim kırılımı bulundu: ` }),
       isaretler.map(i => i.ad).join(", ") + ". ",
       "Bu tarihlerde ne olduğunu araştırın — ekipman değişikliği, arıza veya işletme kararı."));
+
+  // Analizden eyleme köprüsü (9.13): kırılım bulunmasa bile, dönem sonu
+  // birikimi anlamlıysa tespit bir aksiyona dönüştürülebilir.
+  if (Number.isFinite(son) && Math.abs(son) > 0) {
+    const fiyat2 = hucre("BIRIM_FIYAT_ELK", ar2.son.yil, ar2.son.ay);
+    kart.append(el("div", { stil:{ marginTop:"10px" } },
+      el("button.dugme.kucuk", {
+        metin: son > 0 ? "→ Bu kayıptan aksiyon aç" : "→ Bu tasarrufu aksiyon olarak kaydet",
+        onclick:() => aksiyonAc({
+          baslik: son > 0
+            ? `Baz çizgiye göre kalıcı sapma (${ar2.bas.yil}-${ar2.son.yil})`
+            : `Baz çizgiye göre kalıcı iyileşme (${ar2.bas.yil}-${ar2.son.yil})`,
+          aciklama:
+            `Baz çizgi "${bz.ad}" üzerinden kümülatif sapma dönem sonunda ` +
+            `${son > 0 ? "+" : "−"}${say(Math.abs(son), 0)} kWh` +
+            (Number.isFinite(fiyat2) ? ` ≈ ${say(Math.abs(son) * fiyat2, 0)} TL` : "") + ". " +
+            (isaretler.length
+              ? `Eğim kırılımı: ${isaretler.map(i => i.ad).join(", ")}. Bu tarihlerde yapılan ` +
+                "ekipman, işletme veya bakım değişikliği araştırılmalı."
+              : "Eğim dönem boyunca aynı yönde; tek bir olaydan değil, kalıcı bir " +
+                "işletme durumundan kaynaklanıyor."),
+          baglam:{ kaynak:`Ekran 8 · CUSUM (${ar2.bas.yil}-${ar2.son.yil})`,
+                   donem:`${ar2.bas.yil}-${ar2.son.yil}` },
+          beklenen: (son > 0 && Number.isFinite(fiyat2)) ? Math.abs(son) * fiyat2 : null,
+        }) })));
+  }
 }

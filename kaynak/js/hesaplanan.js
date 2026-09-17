@@ -213,3 +213,27 @@ export function otomatikUret() {
   dinle(() => uret());
   uret();
 }
+
+/* ------------------------------------------------ izlenebilirlik (E-4) */
+/**
+ * Bir hesaplanan sütun hücresinin kökeni: formül, kural, katkıda bulunan
+ * ölçüm noktaları ve onların köken ağaçları.
+ * "Bu sayı nereden geliyor?" sorusunun makine tarafındaki cevabıdır.
+ */
+export function sutunKokeni(sutunKod, yil, ay) {
+  const s = katman.sutunlar.find(x => x.kod === sutunKod);
+  if (!s) return null;
+  const sat = satir(yil, ay);
+  const kaynaklar = (s.kaynak ? s.kaynak() : [])
+    .map(x => String(x).split(" ")[0])        // "KOD (ad)" → "KOD"
+    .filter(k => nokta(k));
+  return {
+    sutun:s, yil, ay,
+    deger: sat ? sat[sutunKod] ?? null : null,
+    eksik: sat ? sat["_eksik_" + sutunKod] || null : null,
+    bosluk: sat ? sat["_bosluk_" + sutunKod] || null : null,
+    agac: [...new Set(kaynaklar)].map(k => H.noktaKokeni(k, yil, ay)),
+    ozelKaynaklar: (s.kaynak ? s.kaynak() : [])
+      .map(x => String(x).split(" ")[0]).filter(k => !nokta(k)),
+  };
+}

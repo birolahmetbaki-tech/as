@@ -10,6 +10,7 @@ import { varlik } from "../model.js";
 import * as H from "../hesap.js";
 import { sonEnerjiDonemi } from "../hesaplanan.js";
 import * as G from "../grafik.js";
+import { aksiyonAc } from "./hedefler.js";
 
 let secilenYil = null;
 
@@ -255,7 +256,18 @@ function kartlar(k, satirlar) {
       kart.append(uyari(r.puanFark < -3 ? "ciddi" : "dikkat",
         `Verim ${secilenYil - 1}'e göre ${say(Math.abs(r.puanFark), 1)} puan düştü. ` +
         `${kisa(r.s.yakit, 1)} kWh yakıt üzerinden ≈ ${kisa(kayip, 1)} kWh/yıl kayıp` +
-        (fy ? ` ≈ ${kisa(kayip * fy.fiyat, 1)} TL` : "") + "."));
+        (fy ? ` ≈ ${kisa(kayip * fy.fiyat, 1)} TL` : "") + ".",
+        el("div", { stil:{ marginTop:"7px" } },
+          el("button.dugme.kucuk", { metin:"→ Aksiyon aç", onclick:() => aksiyonAc({
+            baslik:`${r.ad} verim düşüşü (${secilenYil})`,
+            aciklama:`Toplam verim ${yuzde(r.so.toplamVerim * 100, 1)} → ` +
+              `${yuzde(r.s.toplamVerim * 100, 1)} (${say(Math.abs(r.puanFark), 1)} puan). ` +
+              `Yıllık kayıp ≈ ${say(kayip, 0)} kWh` +
+              (fy ? ` ≈ ${say(kayip * fy.fiyat, 0)} TL` : "") + ". " +
+              "Bakım durumu, yük dağılımı ve çalışma noktası incelenmeli.",
+            baglam:{ kaynak:`Ekran 9 · Dönüşüm Verimliliği (${secilenYil})`,
+                     varlik:r.kod, donem:String(secilenYil) },
+            beklenen: fy ? kayip * fy.fiyat : null }) }))));
     }
     if (v.not) kart.append(el("p.mini.sessiz", { stil:{ marginTop:"8px" }, metin:v.not }));
 

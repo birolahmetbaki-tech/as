@@ -19,6 +19,8 @@ import { ekranPerformans } from "./ekranlar/performans.js";
 import { ekranVerimlilik } from "./ekranlar/verimlilik.js";
 import { ekranMaliyet }    from "./ekranlar/maliyet.js";
 import { ekranGes }        from "./ekranlar/ges.js";
+import { ekranHedefler }   from "./ekranlar/hedefler.js";
+import { ekranRaporlar }   from "./ekranlar/raporlar.js";
 
 /* ------------------------------------------------ ekran kayıtları (9.1) */
 const YAKINDA = (no, ad, faz, aciklama) => ({
@@ -43,8 +45,8 @@ export const EKRANLAR = [
   { no:10, ad:"Maliyet",             hazir:true, ciz:ekranMaliyet },
   { no:11, ad:"GES",                 hazir:true, ciz:ekranGes },
   { grup:"YÖNETİM" },
-  YAKINDA(12,"Hedefler ve Aksiyonlar",5,"Dört hedef türü ve tespitlerin sahibi ile termini olan aksiyonlar."),
-  YAKINDA(13,"Raporlar",5,"Aylık enerji raporu, yönetim gözden geçirme raporu ve serbest rapor oluşturucu."),
+  { no:12, ad:"Hedefler ve Aksiyonlar", hazir:true, ciz:ekranHedefler },
+  { no:13, ad:"Raporlar", hazir:true, ciz:ekranRaporlar },
   { grup:"SİSTEM" },
   { no:14, ad:"Tanımlar",             hazir:true, ciz:ekranTanimlar },
   { no:15, ad:"Ayarlar ve Yedekleme", hazir:true, ciz:ekranAyarlar  },
@@ -57,7 +59,7 @@ function menuCiz() {
   const m = bosalt($("#menu"));
   m.append(el("div.marka", {},
     el("b", { metin:"Enerji Yönetim" }),
-    el("span", { metin:"Faz 4 · Anlama" })));
+    el("span", { metin:"Faz 5 · Yönetme" })));
   for (const e of EKRANLAR) {
     if (e.grup) { m.append(el("div.menu-grup", { metin:e.grup })); continue; }
     m.append(el("button.menu-og", {

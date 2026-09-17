@@ -2,7 +2,7 @@
    Hiçbir ekran kendi hesabını yapmaz; hepsi buradan okur.
    El Kitabı: 7.1, 8.1-8.7, K-24 (rol filtresi), İ-1, İ-3 */
 
-import { durum, deger } from "./veri.js";
+import { durum, deger, degerKayit } from "./veri.js";
 import { nokta, varlik, altAgac, varlikNoktalari, cevir, katsayi, formulCoz,
          ROLLER, enerjiBirimiMi } from "./model.js";
 
@@ -582,4 +582,200 @@ export function atanmamisYakit(donemler) {
                  atanmamis:s - e, oran: s ? (s - e) / s : null });
   }
   return sonuc;
+}
+
+/* ===================================================================
+   FAZ 5 — İZLENEBİLİRLİK (E-4)
+   "Bu sayı nereden geliyor?" sorusunun tek tıkla cevabı.
+   =================================================================== */
+
+/** Bir formüldeki ölçüm noktası kodları ve KATSAYI() çağrıları */
+export function formulBilesenleri(formul) {
+  const metin = String(formul || "");
+  const katsayilar = [];
+  const temiz = metin.replace(/KATSAYI\(\s*([A-Za-z_]+)\s*,\s*([^,)]+)\s*,\s*([^)]+)\s*\)/g,
+    (_, tur, kay, hed) => {
+      katsayilar.push({ tur:tur.trim(), kaynak:kay.trim(), hedef:hed.trim() });
+      return " ";
+    });
+  const kodlar = [...new Set((temiz.match(/\b[A-Z][A-Z0-9_]*\b/g) || [])
+    .filter(k => nokta(k)))];
+  return { kodlar, katsayilar };
+}
+
+/**
+ * Bir ölçüm noktasının bir dönemdeki KÖKEN AĞACI.
+ * Ölçülen nokta yaprak olur (değer + kalite + not);
+ * hesaplanan nokta formülüyle birlikte çocuklarına iner.
+ * `derinlik` sonsuz döngüye karşı sınırdır.
+ */
+export function noktaKokeni(kod, yil, ay, derinlik = 4, ziyaret = null) {
+  const n = nokta(kod);
+  if (!n) return { kod, eksik:`${kod} tanımlı değil` };
+  const r = noktaDeger(kod, yil, ay);
+  const dugum = {
+    kod, ad:n.ad, birim:n.birim, veri_tipi:n.veri_tipi, rol:n.rol,
+    varlik:n.varlik, deger:r.deger ?? null,
+    eksik:r.eksik || null, veriYok:!!r.veriYok, sebep:r.sebep || null,
+    cocuklar:[], katsayilar:[],
+  };
+  if (n.veri_tipi === "olculen" || n.veri_tipi === "tahmini") {
+    const k = degerKayit(kod, yil, ay);
+    dugum.kalite = k?.k || (k ? "girildi" : null);
+    dugum.not = k?.not || null;
+    dugum.kaynakTipi = "ham";
+    return dugum;
+  }
+  dugum.kaynakTipi = n.veri_tipi === "dagitilmis" ? "dagitim" : "formul";
+  dugum.formul = n.formul || null;
+  const z = ziyaret || new Set();
+  if (z.has(kod) || derinlik <= 0) { dugum.kesildi = true; return dugum; }
+  z.add(kod);
+  const b = formulBilesenleri(n.formul);
+  for (const c of b.kodlar) dugum.cocuklar.push(noktaKokeni(c, yil, ay, derinlik - 1, z));
+  for (const kt of b.katsayilar) {
+    const k = katsayi(kt.tur, kt.kaynak, kt.hedef, yil, ay);
+    dugum.katsayilar.push({ ...kt, kayit:k || null });
+  }
+  z.delete(kod);
+  return dugum;
+}
+
+/** Ortak birime çevrilirken kullanılan katsayı (toplamların kökeni için) */
+export function noktaCevrimKatsayisi(kod, hedefBirim, yil, ay) {
+  const n = nokta(kod);
+  if (!n || n.birim === hedefBirim) return null;
+  return katsayi(n.enerji_turu, n.birim, hedefBirim, yil, ay);
+}
+
+/* ===================================================================
+   FAZ 5 — HEDEFLER VE AKSİYONLAR (9.13, K-21)
+   Dört hedef türü de aynı motordan beslenir.
+   =================================================================== */
+
+export const HEDEF_TURLERI = {
+  enpi:     { ad:"EnPI hedefi",     birim:"", yon:"azalt",
+              aciklama:"Üretim dalgalanmasından arındırılmış performans" },
+  tuketim:  { ad:"Tüketim hedefi",  birim:"kWh", yon:"azalt",
+              aciklama:"Mutlak kWh — üretim düşerse kendiliğinden tutar" },
+  maliyet:  { ad:"Maliyet hedefi",  birim:"TL", yon:"azalt",
+              aciklama:"TL — fiyat piyasadan gelir, hepsi bizim başarımız değildir" },
+  tasarruf: { ad:"Tasarruf hedefi", birim:"%", yon:"artir",
+              aciklama:"Baz çizgiye göre iyileşme yüzdesi" },
+};
+
+/**
+ * Bir hedefin dönem dönem gerçekleşmesi ve durumu.
+ * Oranlar (EnPI, tasarruf) TOPLANMAZ; dönemin tamamı için yeniden hesaplanır.
+ */
+export function hedefDurumu(h) {
+  const d = [];
+  let y = h.bas.yil, a = h.bas.ay, guvenlik = 0;
+  while ((y < h.son.yil || (y === h.son.yil && a <= h.son.ay)) && guvenlik++ < 600) {
+    d.push({ yil:y, ay:a });
+    const t = y * 12 + a; y = Math.floor(t / 12); a = (t % 12) + 1;
+  }
+  if (!d.length) return { hata:"Hedef dönemi boş" };
+
+  const seri = d.map(x => ({ ...x, deger: hedefOlcumu(h, [x]) }));
+  const gercek = hedefOlcumu(h, d);
+  const tur = HEDEF_TURLERI[h.tur];
+  const yon = h.yon || tur?.yon || "azalt";
+  if (!Number.isFinite(gercek)) return { seri, donemler:d, gercek:null, yon };
+
+  const fark = yon === "azalt" ? h.deger - gercek : gercek - h.deger;
+  return {
+    seri, donemler:d, gercek, yon,
+    tuttu: fark >= 0,
+    kalan: Math.abs(fark),
+    // hedefe ne kadar yaklaşıldı: 1,00 = hedef tam tutuyor
+    oran: h.deger ? (yon === "azalt" ? h.deger / gercek : gercek / h.deger) : null,
+    doluAy: seri.filter(s => Number.isFinite(s.deger)).length,
+  };
+}
+
+/** Bir hedefin ölçüsünü verilen dönemler için üretir */
+export function hedefOlcumu(h, donemler) {
+  if (h.tur === "tuketim" || h.tur === "maliyet") {
+    let t = 0, varMi = false;
+    for (const x of donemler) {
+      const r = h.tur === "maliyet"
+        ? (h.ifade && h.ifade !== "@TOPLAM_MALIYET_TL"
+            ? noktaDeger(h.ifade, x.yil, x.ay) : toplamMaliyet(x.yil, x.ay))
+        : (h.ifade && h.ifade !== "@TOPLAM_ENERJI_KWH"
+            ? noktaDeger(h.ifade, x.yil, x.ay) : toplamEnerji(x.yil, x.ay, "kWh"));
+      if (Number.isFinite(r?.deger)) { t += r.deger; varMi = true; }
+    }
+    return varMi ? t : null;
+  }
+  if (h.tur === "enpi") {
+    // Dönem EnPI'si = dönem payı ÷ dönem paydası (aylık oranların ortalaması DEĞİL)
+    const t = durum.enpi_tanimlari.find(x => x.kod === h.ifade);
+    if (!t) return null;
+    let pay = 0, payda = 0, varMi = false;
+    for (const x of donemler) {
+      const p = enpiTerimi(t.pay, x.yil, x.ay), q = enpiTerimi(t.payda, x.yil, x.ay);
+      if (Number.isFinite(p?.deger) && Number.isFinite(q?.deger)) {
+        pay += p.deger; payda += q.deger; varMi = true;
+      }
+    }
+    return varMi && payda ? pay / payda : null;
+  }
+  if (h.tur === "tasarruf") {
+    // Baz çizgiye göre iyileşme: (1 − gerçek/beklenen) × 100
+    const bz = durum.baz_cizgiler.find(b => b.kod === h.ifade) || etkinBazCizgi();
+    if (!bz) return null;
+    let g = 0, b = 0, varMi = false;
+    for (const x of donemler) {
+      const r = bazCizgiDegerlendir(bz, x.yil, x.ay);
+      if (r) { g += r.gercek; b += r.beklenen; varMi = true; }
+    }
+    return varMi && b ? (1 - g / b) * 100 : null;
+  }
+  return null;
+}
+
+/** Aksiyon durumları ve gecikme (9.13) */
+export const AKSIYON_DURUMLARI = {
+  acik:    { ad:"Açık",    ikon:"○", acikMi:true },
+  devam:   { ad:"Devam",   ikon:"◐", acikMi:true },
+  kapandi: { ad:"Kapandı", ikon:"●", acikMi:false },
+  iptal:   { ad:"İptal",   ikon:"×", acikMi:false },
+};
+
+export function aksiyonGecikti(a, bugunISO) {
+  if (!AKSIYON_DURUMLARI[a.durum]?.acikMi || !a.termin) return false;
+  return a.termin < bugunISO;
+}
+
+export function aksiyonOzeti(bugunISO) {
+  const hepsi = durum.aksiyonlar;
+  const acik = hepsi.filter(a => AKSIYON_DURUMLARI[a.durum]?.acikMi);
+  const geciken = acik.filter(a => aksiyonGecikti(a, bugunISO));
+  const kapanan = hepsi.filter(a => a.durum === "kapandi");
+  const topla = (liste, alan) => liste.reduce((t, a) =>
+    Number.isFinite(a[alan]?.deger) ? t + a[alan].deger : t, 0);
+  return {
+    toplam:hepsi.length, acik:acik.length, geciken:geciken.length,
+    kapanan:kapanan.length, gecikenler:geciken,
+    beklenenTL: topla(hepsi.filter(a => a.durum !== "iptal"), "beklenen"),
+    gerceklesenTL: topla(kapanan, "gerceklesen"),
+  };
+}
+
+/* --------------------------------------------- veri kalitesi notu (İ-4) */
+/**
+ * Bir dönem aralığında kaç değer tahmin edilmiş, kaç değer boş.
+ * Her rapor bu notu taşımak ZORUNDADIR (9.14).
+ */
+export function veriKalitesi(donemler) {
+  const kod = new Set(donemler.map(d => `${d.yil}-${String(d.ay).padStart(2, "0")}`));
+  let girildi = 0, duzeltildi = 0, tahmin = 0;
+  for (const v of durum.degerler) {
+    if (!kod.has(`${v.y}-${String(v.a).padStart(2, "0")}`)) continue;
+    if (v.k === "tahmin") tahmin++;
+    else if (v.k === "duzeltildi") duzeltildi++;
+    else girildi++;
+  }
+  return { girildi, duzeltildi, tahmin, toplam:girildi + duzeltildi + tahmin };
 }

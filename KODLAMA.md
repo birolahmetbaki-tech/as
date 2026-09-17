@@ -6,7 +6,8 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 ## Durum
 
 **Faz 1 · Çekirdek** ✅  **Faz 2 · Veri** ✅  **Faz 3 · Görme** ✅
-**Faz 4 · Anlama** ✅ (El Kitabı Bölüm 12)
+**Faz 4 · Anlama** ✅  **Faz 5 · Yönetme** ✅ — **yol haritası tamamlandı**
+(El Kitabı Bölüm 12)
 
 | Adım | İçerik | Durum |
 |---|---|---|
@@ -40,9 +41,34 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 | 4.4 | Ekran 10 — Maliyet (fiyat/hacim ayrıştırması) | ✅ |
 | 4.5 | Ekran 11 — GES | ✅ |
 
-**Excel'e ihtiyaç kalmadı, veri görünür oldu ve artık "neden" sorusu
-cevaplanabiliyor.** Sıradaki: **Faz 5 — Yönetme** (Ekran 12 Hedefler ve
-Aksiyonlar, Ekran 13 Raporlar, izlenebilirlik).
+| Adım | İçerik | Durum |
+|---|---|---|
+| 5.1 | Ekran 12 — Hedefler ve Aksiyonlar | ✅ |
+| 5.2 | Ekran 13 — Raporlar (üç rapor) | ✅ |
+| 5.3 | İzlenebilirlik (E-4): her sayıdan ham veriye iniş | ✅ |
+
+**15 ekranın hepsi çalışıyor.** Excel'e ihtiyaç kalmadı, veri görünür oldu,
+"neden" sorusu cevaplanabiliyor ve tespitler artık sahibi ile termini olan
+aksiyonlara bağlanıyor.
+
+## İzlenebilirlik (E-4) — `js/koken.js`
+
+Her türetilmiş sayının yanındaki `?` düğmesi, o sayının **formülünü, kuralını,
+katkıda bulunan ölçüm noktalarını ham değerleriyle ve kullanılan tarihli
+katsayıları** gösterir (K-28). Köken ağacı hesaplanan noktalardan ham veriye
+kadar iner: `TOPLAM_URETIM → TOPLAM_KAKAO → KAKAO_YAG/TOZ/LIKOR`.
+
+Pencerede her düğüm bir rozet taşır: `ham veri` · `hesaplanan` ·
+`dağıtılmış — ölçüm değil` · `TAHMİN` · `girilmemiş` · `üretilemedi`.
+Katsayı satırı hangi katsayının hangi tarihten geçerli olduğunu yazar —
+S12'deki 2025 değişimi bu pencerede kendiliğinden görünür.
+
+## Analizden eyleme köprüsü
+
+Üç ekrandaki tespitten doğrudan aksiyon açılabilir (9.13):
+Ekran 7'de Pareto'nun ilk sırası · Ekran 8'de CUSUM birikimi ve eğim
+kırılımı · Ekran 9'da verim düşüşü. Aksiyon formu başlığı, açıklamayı,
+kaynağı ve beklenen tasarrufu önceden doldurulmuş gelir.
 
 ## Faz 4'te gerçek veride bulunanlar
 
@@ -122,6 +148,7 @@ python3 betikler/kabul.py    # El Kitabı Bölüm 13 kabul kriterleri
 python3 betikler/faz2.py     # uçtan uca: Excel aktarımı + 8 yılın altın sayıları
 python3 betikler/faz3.py     # grafik ekranları
 python3 betikler/faz4.py     # Faz 4 ekranları + 8.8 vakasının altın sayıları
+python3 betikler/faz5.py     # Faz 5 ekranları + izlenebilirlik + hedef motoru
 ```
 
 `kabul.py`, gerçek 2024 Haziran verisiyle programın **altın sayıları** üretip
@@ -154,6 +181,19 @@ elektrik faturası 55.712.474 TL, GES mahsubu 25.723.468 TL, toplam maliyet
 artışı 11 kat. Ayrıca S12 katsayı ayrıştırması, S13 imkânsız verim işaretlemesi
 ve GES üretiminin toplam enerjiye girmediği (K-03) sınanır.
 **80 kontrol, hepsi geçiyor.**
+
+`faz5.py` hedef motorunu (dört türün dördü de), aksiyon gecikme takibini,
+üç raporu, veri kalitesi notunu (İ-4) ve köken ağacını sınar. Baz çizgi
+altın sayıları da burada doğrulanır: `a = 0,5025 · b = 6.021.966 · R² = 0,43`
+(35 nokta), normalize EnPI 1,119, CUSUM yıl sonu +14.605.848 kWh, işaret
+değişimi Şubat 2025. **72 kontrol, hepsi geçiyor.**
+
+> **Baz çizgi sayıları neden değişti?** El Kitabı 8.8/13.4'teki eski değerler
+> (`a = 0,4254 · b = 6.774.643 · R² = 0,40`) Excel'in kendi `Toplam Üretim`
+> sütunuyla, 36 ay üzerinden hesaplanmıştı. Program 2024 Ağustos'un üretimini
+> S10 yüzünden üretemediği için o ay regresyona giremez; doğru model 35
+> noktalıdır. Aradaki fark, tek bir bozuk hücrenin baz çizgiyi ne kadar
+> kaydırdığının ölçüsüdür.
 
 > `derle.py` artık çıktıyı `node --check` ile ayrıştırır; sözdizimi hatası
 > varsa dosya **yazılmaz**. Bozuk bir paket teslim edilemez.

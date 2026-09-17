@@ -9,6 +9,7 @@ import { nokta, varlik } from "../model.js";
 import * as H from "../hesap.js";
 import { katman, hucre, sonEnerjiDonemi } from "../hesaplanan.js";
 import * as G from "../grafik.js";
+import { kokenDugmesi } from "../koken.js";
 
 let donem = null;
 
@@ -63,11 +64,12 @@ function son12(sutun) {
 }
 
 function kart(baslik, deger, birim, { ondalik = 0, gecenYil = null, seri = null,
-                                      alt = null, rozet = null } = {}) {
+                                      alt = null, rozet = null, koken = null } = {}) {
   const d = gecenYil !== null && gecenYil !== 0 && Number.isFinite(deger)
     ? (deger / gecenYil - 1) * 100 : null;
   return el("div.kart", { stil:{ flex:"1 1 210px", margin:"0", minWidth:"190px" } },
-    el("div.mini.sessiz", { metin:baslik }),
+    el("div.mini.sessiz", { metin:baslik },
+      koken ? kokenDugmesi(koken, donem.yil, donem.ay) : null),
     el("div", { stil:{ fontSize:"23px", fontWeight:"600", margin:"5px 0 2px",
                        fontVariantNumeric:"tabular-nums" },
       metin:Number.isFinite(deger) ? say(deger, ondalik) : "—" },
@@ -78,6 +80,18 @@ function kart(baslik, deger, birim, { ondalik = 0, gecenYil = null, seri = null,
         metin:fark(d) + " (geçen yıl)" }) : el("span.mini.sessiz", { metin:alt || "" }),
       rozet),
     seri ? el("div", { stil:{ marginTop:"6px" } }, G.miniGrafik(seri, { en:170, boy:24 })) : null);
+}
+
+/** Ana EnPI kartının rozeti: baz çizgi var mı, normalize EnPI ne diyor? */
+function bazRozeti() {
+  const bz = H.etkinBazCizgi();
+  if (!bz) return el("span.rozet.dikkat", {
+    title:"Normalize EnPI için baz çizgi gerekir (Ekran 8)", metin:"baz çizgi yok" });
+  const n = hucre("NORM_ENPI", donem.yil, donem.ay);
+  if (!Number.isFinite(n)) return el("span.rozet", { title:bz.ad, metin:"baz: " + bz.ad });
+  return el("span.rozet" + (n > 1.02 ? ".dikkat" : n < 0.98 ? ".iyi" : ""),
+    { title:`Normalize EnPI — 1,00 = baz performans · ${bz.ad}`,
+      metin:"norm. " + say(n, 3) });
 }
 
 function kartlar(k) {
@@ -98,16 +112,16 @@ function kartlar(k) {
   k.append(el("div", { stil:{ display:"grid", marginBottom:"16px", gap:"12px",
     gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))" } },
     kart("Toplam enerji", al("TOPLAM_ENERJI"), "kWh",
-      { gecenYil:alGY("TOPLAM_ENERJI"), seri:son12("TOPLAM_ENERJI") }),
+      { gecenYil:alGY("TOPLAM_ENERJI"), seri:son12("TOPLAM_ENERJI"), koken:"TOPLAM_ENERJI" }),
     kart("Enerji maliyeti", al("TOPLAM_MALIYET"), "TL",
       { gecenYil:alGY("TOPLAM_MALIYET"), seri:son12("TOPLAM_MALIYET"),
-        alt:"net (GES mahsubu sonrası)" }),
+        alt:"net (GES mahsubu sonrası)", koken:"TOPLAM_MALIYET" }),
     enpiSutun ? kart(enpiTanim?.ad || "EnPI", al(enpiSutun), enpiTanim?.birim || "",
       { ondalik:enpiTanim?.ondalik ?? 4, gecenYil:alGY(enpiSutun), seri:son12(enpiSutun),
-        rozet:el("span.rozet", { title:"Baz çizgi Faz 4'te gelecek", metin:"baz çizgi yok" }) }) : null,
+        koken:enpiSutun, rozet:bazRozeti() }) : null,
     kart("Üretim", H.noktaDeger("TOPLAM_URETIM", donem.yil, donem.ay).deger, "kg",
       { gecenYil:H.noktaDeger("TOPLAM_URETIM", gy.yil, gy.ay).deger,
-        seri:son12("TOPLAM_URETIM") }),
+        seri:son12("TOPLAM_URETIM"), koken:"TOPLAM_URETIM" }),
     kart("Ölçüm kapsamı", kapsam === null ? null : kapsam * 100, "%",
       { ondalik:1, alt:`${sayac} alt sayaç · ${kapsam !== null ? yuzde((1 - kapsam) * 100, 1) : "—"} ölçülmüyor`,
         rozet:kapsam !== null && kapsam < 0.5

@@ -97,6 +97,18 @@ export function donemAraligi(by, ba, sy, sa) {
 export const bugun = () => { const d = new Date();
   return { yil: d.getFullYear(), ay: d.getMonth() + 1 }; };
 
+/** Yerel takvime göre bugünün ISO tarihi (YYYY-AA-GG) — saat içermez.
+    Termin karşılaştırmaları metin olarak yapılır; saat dilimi kaydırmaz. */
+export const bugunISO = () => { const d = new Date(), p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+
+/** Yalnız tarih — termin ve tarih alanları için */
+export function tarihKisa(iso) {
+  if (!iso) return "—";
+  const [y, a, g] = String(iso).slice(0, 10).split("-");
+  return (y && a && g) ? `${g}.${a}.${y}` : String(iso);
+}
+
 export function tarihMetni(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -182,6 +194,20 @@ export function onayla(baslik, mesaj, onayMetni = "Onayla", tehlike = false) {
           el("button.dugme", { metin: "Vazgeç", onclick: () => kapat(false) }),
           el("button.dugme" + (tehlike ? ".tehlike" : ".ana"),
              { metin: onayMetni, onclick: () => kapat(true) }))));
+    document.body.append(ortu);
+  });
+}
+
+/** Salt okunur pencere — seçim sormaz, tek düğmesi vardır. */
+export function goster(baslik, icerik, kapatMetni = "Kapat") {
+  return new Promise(coz => {
+    const kapat = () => { ortu.remove(); coz(); };
+    const ortu = el("div.ortu", { onclick: e => { if (e.target === ortu) kapat(); } },
+      el("div.modal", {},
+        el("h2", { metin: baslik }),
+        typeof icerik === "string" ? el("p", { metin: icerik }) : icerik,
+        el("div.satir", { stil: { marginTop: "18px", justifyContent: "flex-end" } },
+          el("button.dugme.ana", { metin: kapatMetni, onclick: kapat }))));
     document.body.append(ortu);
   });
 }

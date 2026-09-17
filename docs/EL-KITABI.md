@@ -7,8 +7,8 @@
 
 | | |
 |---|---|
-| **Sürüm** | 1.0 — Faz 1–4 kodlandı |
-| **Durum** | Kodlama sürüyor: Faz 1–4 bitti, **Faz 5 (Yönetme) kaldı**. |
+| **Sürüm** | 1.1 — Faz 1–5 kodlandı |
+| **Durum** | **Yol haritasının beş fazı da bitti.** 15 ekranın hepsi çalışıyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
 | **Kaynak veri** | `veri.xlsx` — tek sayfa, 108 sütun, 2018-01 → 2025-12 (96 ay) |
@@ -279,6 +279,7 @@ numaralara atıf yapar.
 | **K-25** | İmkânsız verim | Bir dönüşüm ekipmanının faydalı enerjisi yakıtından büyükse (verim >%102) bu sonuç **performans sayılmaz**: sayı gizlenmez, kırmızı işaretlenir, nedeni yazılır ve o ekipman **yıllar arası karşılaştırmadan çıkarılır**. | Gerçek veride görüldü (S13: Kazan-1 %137, Kazan-2 %145). Sayıyı saklamak denetlenebilirliği (E-4), performans saymak ise kararı bozar. İkisi arasındaki tek dürüst yol, göstermek ama saymamaktır (İ-3). |
 | **K-26** | Yıllar arası verim karşılaştırması | Karşılaştırma **tek bir birleşik verim yüzdesiyle yapılmaz**. Yalnız iki dönemde de çalışan ve verisi tutarlı ekipmanlar, **ekipman ekipman** karşılaştırılır; toplanan büyüklük yüzde değil **kaçınılabilir yakıttır (kWh)**. Ekipman kümesi değiştiyse bu ayrıca uyarı olarak söylenir. | Birleşik yüzde karışıma bağlıdır: 2025'te yük türbine kayınca ve gaz motorları durunca, hiçbir ekipmanın verimi değişmese bile karma toplam oynar — gerçek veride bozulma **iyileşme gibi** göründü. kWh cinsinden kaçınılabilir yakıt toplanabilir ve karışımdan bağımsızdır. |
 | **K-27** | Fatura ↔ tüketim bağı | Rolü `maliyet` olan her nokta, faturalandırdığı tüketim noktalarını `fatura_tuketim` alanında taşır. Birim fiyat ve fiyat/hacim ayrıştırması **faturanın kendi biriminde** yapılır (elektrik kWh, doğalgaz m³); karşılaştırmalı birim fiyat grafiği için TL/kWh'e çevrilir. | Ayrıştırma çevrilmiş birimde yapılırsa dönüşüm katsayısının hatası fiyat ve hacim etkilerine karışır. Alan boşsa tutar yine toplanır ama birim fiyat **üretilmez** (İ-3). |
+| **K-28** | İzlenebilirlik düğmesi | Her türetilmiş sayının yanında bir `?` durur; açılan pencere sayının **formülünü, kuralını, katkıda bulunan ölçüm noktalarını ham değerleriyle, kullanılan tarihli katsayıları ve veri kalitesi işaretlerini** gösterir. Köken ağacı hesaplanan noktalardan ham veriye kadar iner. | E-4'ün somut hâli. ISO 50001 denetiminde sorulan ilk soru "bu sayı nereden geliyor?"dur; cevabı bir ekran gezintisi değil, tek tık olmalıdır. Aynı pencere, S12 gibi katsayı değişimlerini de kendiliğinden görünür kılar. |
 
 ---
 
@@ -660,6 +661,33 @@ Excel'deki 6 sütunu onun 6 ölçüm noktasıdır:
 > faturalama (fatura doğrulama, 9.11) eklenirse devreye girer. Yapısı şimdiden
 > tanımlıdır ki sonradan şema değişikliği gerekmesin.
 
+**`hedef` — enerji hedefi (K-21, 9.13)**
+
+| Alan | Açıklama |
+|---|---|
+| `kod` | Benzersiz kod |
+| `ad` | "2027 enerji bütçesi" |
+| `tur` | `enpi` / `tuketim` / `maliyet` / `tasarruf` |
+| `ifade` | Neyin hedefi: EnPI kodu · baz çizgi kodu · ölçüm noktası kodu · `@TOPLAM_ENERJI_KWH` / `@TOPLAM_MALIYET_TL` |
+| `deger` | Hedef değer |
+| `yon` | `azalt` / `artir` — tutma yönü |
+| `bas`, `son` | `{yil, ay}` — hedef dönemi |
+| `sorumlu`, `not` | |
+| | **Kural:** oran hedefleri (EnPI, tasarruf) dönem için **yeniden hesaplanır**, aylık değerlerin ortalaması alınmaz |
+
+**`aksiyon` — eylem planı kaydı (9.13, ISO 50001 md. 6.2.2)**
+
+| Alan | Açıklama |
+|---|---|
+| `kod` | Benzersiz kod |
+| `baslik`, `aciklama` | Ne yapılacak |
+| `baglam` | `{kaynak, varlik?, donem?}` — hangi tespitten doğdu (örn. "Ekran 9 · Dönüşüm Verimliliği") |
+| `sorumlu`, `termin` | Kim, ne zaman (`YYYY-AA-GG`) |
+| `durum` | `acik` / `devam` / `kapandi` / `iptal` |
+| `beklenen`, `gerceklesen` | `{deger, birim}` — tasarruf; boş bırakılabilir (İ-3) |
+| `sonuc_notu`, `olusturma`, `kapanis` | |
+| | **Gecikme:** durumu açık **ve** `termin < bugün` ise gecikmiştir; ikon **ve** etiketle gösterilir (renk tek başına yetmez) |
+
 ### 6.4 Enerji rolleri (K-07)
 
 Her ölçüm noktası bir **rol** seçer. Rol, varsayılan davranışı belirler;
@@ -1010,42 +1038,53 @@ enerji yönetiminin başarısızlığı gibi görünür.
 **Soru:** 2025'te EnPI 1,173'ten 1,367'ye çıktı (%+16,5). Gerçek verimsizlik mi,
 yoksa üretim düştüğü için mi?
 
-**Adım 1 — Baz çizgi (2022–2024, 36 ay):**
+**Adım 1 — Baz çizgi (2022–2024, kullanılabilir 35 ay):**
 
 ```
-beklenen_enerji = 0,4254 × üretim_kg + 6.774.643        R² = 0,40
+beklenen_enerji = 0,5025 × üretim_kg + 6.021.966        R² = 0,43
 ```
 
-- Değişken enerji: **0,4254 kWh/kg**
-- **Sabit / baz yük: 6.774.643 kWh/ay → yılda 81,3 milyon kWh**
-- Baz yükün ortalama aylık tüketimdeki payı: **%63,4**
+- Değişken enerji: **0,5025 kWh/kg**
+- **Sabit / baz yük: 6.021.966 kWh/ay → yılda 72,3 milyon kWh**
+- Baz yükün ortalama aylık tüketimdeki payı: **%56,3**
 
-> ⚠ **R² = 0,40 < 0,50.** Kural gereği (8.3) açık uyarı: bu model tüketimin
-> yalnızca %40'ını üretimle açıklıyor. Yani tüketimin çoğunu belirleyen şey
+> ⚠ **R² = 0,43 < 0,50.** Kural gereği (8.3) açık uyarı: bu model tüketimin
+> yalnızca %43'ünü üretimle açıklıyor. Yani tüketimin çoğunu belirleyen şey
 > üretim miktarı **değil**. Bu bulgunun kendisi değerlidir: başka bir sürükleyici
 > (mevsim, ürün karması, ekipman durumu) baskındır. Aşağıdaki sayı bu nedenle
 > **işaret**tir, kanıt değildir.
 >
 > Aynı belirsizlik **sabit yük (`b`) tahminini de kapsar**: düşük R²'de kesişim
-> noktasının güven aralığı geniştir. "%63,4" bir büyüklük mertebesidir —
-> *"tüketimin yarısından fazlası üretimden bağımsız"* denebilir, "%63,4'tür"
+> noktasının güven aralığı geniştir. "%56,3" bir büyüklük mertebesidir —
+> *"tüketimin yarısından fazlası üretimden bağımsız"* denebilir, "%56,3'tür"
 > denemez. Kesinleştirmenin yolu modele ikinci bir değişken eklemektir
 > (dış sıcaklık / derece-gün, ürün karması) — bkz. 9.9 "ileride eklenebilecekler".
+
+> **Neden 36 değil 35 ay?** 2024 Ağustos'un toplam üretimi bozuk hücre yüzünden
+> **üretilemiyor** (S10, bkz. 2.5); o ay regresyona giremez. Aynı regresyon
+> Excel'in kendi `Toplam Üretim` sütunuyla kurulsaydı 36 nokta olur ve
+> `a = 0,4254 · b = 6.774.643 · R² = 0,40` çıkardı — çünkü Excel'in `SUM`'ı
+> bozuk hücreyi sessizce atlayıp o aya **eksik bir üretim** yazıyor. Program
+> eksik üretimi doğru sayı gibi kullanmaz (İ-3); **bu farkın kendisi, tek bir
+> bozuk hücrenin baz çizgiyi nasıl kaydırdığının ölçüsüdür.** Hücre
+> düzeltildiğinde model yeniden kurulmalıdır.
 
 **Adım 2 — Sonuç:**
 
 | | Değer |
 |---|---|
 | Ham EnPI kötüleşmesi | **%+16,5** |
-| Normalize EnPI (2025) | **1,107** → gerçek kötüleşme **%+10,7** |
-| Üretim hacminden gelen kısım | ≈ %6 |
+| Normalize EnPI (2025) | **1,119** → gerçek kötüleşme **%+11,9** |
+| Üretim hacminden gelen kısım | ≈ %4,6 |
 
-Yani bozulmanın **yaklaşık üçte ikisi gerçek**, üçte biri üretim düşüşünün
-yarattığı görüntü. Ham EnPI tek başına bakılsaydı sorun %16,5 sanılırdı.
+Yani bozulmanın **büyük kısmı gerçek**, küçük bir kısmı üretim düşüşünün
+yarattığı görüntü. Ham EnPI tek başına bakılsaydı sorun %16,5 sanılırdı;
+normalize edilince %11,9'a iniyor ama **kaybolmuyor**.
 
-**Adım 3 — CUSUM tarihi verdi:** sapma **Şubat 2025**'te başlıyor ve yıl boyu
-düzenli yukarı eğimle sürüyor (yıl sonu birikimi +13,3 milyon kWh). Tek bir
-kötü ay değil, **kalıcı bir değişiklik**.
+**Adım 3 — CUSUM tarihi verdi:** Ocak 2025 hâlâ baz çizginin altında
+(−334.342 kWh); **Şubat 2025**'te işaret değişiyor ve birikim yıl boyu düzenli
+yukarı eğimle sürüyor (yıl sonu birikimi **+14.605.848 kWh**). Tek bir kötü ay
+değil, **kalıcı bir değişiklik**.
 
 **Adım 4 — Dönüşüm verimliliği nedeni buldu:**
 
@@ -1060,8 +1099,8 @@ kötü ay değil, **kalıcı bir değişiklik**.
 
 **Bulgu:** Gaz motorları durdu, yük türbine kaydı ve **türbin daha düşük verimle
 çalışıyor**. 80,6 milyon kWh gaz üzerinden 6,9 puanlık verim kaybı ≈
-**yılda 5,6 milyon kWh**. Bu, baz çizgiye göre 13,3 milyon kWh'lik toplam
-sapmanın **yaklaşık %42'sidir**.
+**yılda 5,6 milyon kWh**. Bu, baz çizgiye göre 14,6 milyon kWh'lik toplam
+sapmanın **yaklaşık %38'idir**.
 
 > Verim düşüşü bir **model tahmini değil, doğrudan ölçümdür** — R² uyarısı bu
 > bulguyu etkilemez. Regresyon "ne kadar" sorusuna işaret verdi; dönüşüm
@@ -1622,9 +1661,9 @@ Dört bölüm hâlinde:
 
 **Bölüm 1 — Baz çizgi modeli**
 ```
-Beklenen enerji = 0,4254 × üretim (kg) + 6.774.643        R² = 0,40
-Değişken enerji: 0,4254 kWh/kg    Sabit/baz yük: 6.774.643 kWh/ay (%63,4)
-⚠ Bu model tüketimin yalnızca %40'ını açıklıyor. Tek başına karar vermeyin.
+Beklenen enerji = 0,5025 × üretim (kg) + 6.021.966        R² = 0,43
+Değişken enerji: 0,5025 kWh/kg    Sabit/baz yük: 6.021.966 kWh/ay (%56,3)
+⚠ Bu model tüketimin yalnızca %43'ünü açıklıyor. Tek başına karar vermeyin.
 ```
 R² uyarısı **gizlenmez, sonucun yanında durur** (İ-4, 8.3).
 
@@ -2200,13 +2239,13 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 | 4.4 | **Ekran 10 — Maliyet**: fiyat/hacim ayrıştırması (8.7) | ✔ |
 | 4.5 | **Ekran 11 — GES** | ✔ |
 
-### Faz 5 — Yönetme
+### Faz 5 — Yönetme ✔ bitti
 
-| Adım | İçerik |
-|---|---|
-| 5.1 | **Ekran 12 — Hedefler ve Aksiyonlar** |
-| 5.2 | **Ekran 13 — Raporlar** (K-20) |
-| 5.3 | İzlenebilirlik (E-4): her sayıdan ham veriye iniş |
+| Adım | İçerik | Durum |
+|---|---|---|
+| 5.1 | **Ekran 12 — Hedefler ve Aksiyonlar** | ✔ · dört hedef türü, ölçer, gecikme takibi |
+| 5.2 | **Ekran 13 — Raporlar** (K-20) | ✔ · üç rapor, yazdırma dostu, veri kalitesi notlu |
+| 5.3 | İzlenebilirlik (E-4): her sayıdan ham veriye iniş | ✔ · `?` düğmesi + köken ağacı |
 
 > **Not:** Faz 1–2 bittiğinde elinizde Excel'in yerini alan çalışan bir program
 > olur. Faz 3–4, Excel'in hiç yapamadığını yapar. Faz 5, ISO 50001 dosyasını
@@ -2275,14 +2314,21 @@ maliyet **863.964.489 TL**
 
 | Hesap | Beklenen sonuç |
 |---|---|
-| Baz çizgi 2022–2024 regresyonu (8.3) | `a = 0,4254` · `b = 6.774.643` · `R² = 0,40` |
-| Normalize EnPI 2025 (8.4) | **1,107** |
-| CUSUM 2025 yıl sonu (8.5) | **+13.319.837 kWh** |
+| Baz çizgi 2022–2024 regresyonu (8.3) | `a = 0,5025` · `b = 6.021.966` · `R² = 0,43` · **35 nokta** ⚠ |
+| Normalize EnPI 2025 (8.4) | **1,119** |
+| CUSUM 2025 yıl sonu (8.5) | **+14.605.848 kWh** |
 | CUSUM işaret değiştirdiği ay | **Şubat 2025** |
 | Türbin toplam verimi 2024 / 2025 (8.6) | **%57,2 / %50,3** |
 | Elektrik fiyat etkisi 2024→2025 (8.7) | **+10.682.663 TL** |
 | Elektrik hacim etkisi 2024→2025 | **−5.500.767 TL** |
 | Doğalgaz hacim etkisi 2024→2025 | **+13.475.761 TL** |
+
+> ⚠ **Baz çizgi satırı 2024 Ağustos'suz kurulur.** O ayın toplam üretimi bozuk
+> hücre yüzünden üretilemediği için (S10, bkz. 2.5) regresyon 36 değil **35**
+> nokta kullanır. Excel'in kendi `Toplam Üretim` sütunuyla aynı regresyon
+> `a = 0,4254 · b = 6.774.643 · R² = 0,40` verir; aradaki fark, tek bir bozuk
+> hücrenin baz çizgiyi ne kadar kaydırdığıdır. Hücre düzeltildiğinde bu satırın
+> beklenen değerleri de güncellenmelidir.
 
 ### 13.5 Davranış kontrolleri
 
@@ -2319,6 +2365,7 @@ gözden geçirilir.
 | 0.8 | 2026-09-17 | **Faz 2 kodlandı.** Gerçek Excel aktarımında kaynak veride iki hata bulundu ve belgeye işlendi: **S10** (2024 Ağustos çikolata hücresi metin — Excel sessizce atlamış, 2024 EnPI'si yanlış) ve **S11** (6 negatif doğalgaz değeri). Yeni bölüm 2.5. Kabul kriterlerindeki 2024 üretim beklentisi, programın doğru davranışına göre düzeltildi (13.1, 13.2). |
 | 0.7 | 2026-09-17 | **Bölüm bölüm gözden geçirme tamamlandı.** D-01: 2.4'teki Bölüm 7 atfı Bölüm 8 olarak düzeltildi. **D-02 (K-24): motorin toplam enerjiye ve toplam maliyete dahil edildi** ve kural sabit listeden **rol filtresine** genelleştirildi; eksik değer/katsayı kenar durum kuralı yazıldı; A-07 kapandı, A-12 açıldı. D-03: 6.5'te tablo dışına düşmüş satır tabloya alındı. D-04: geçersiz `(S-2.3)` atfı düzeltildi. |
 | 1.0 | 2026-09-17 | **Faz 4 kodlandı.** Ekran 9 (Dönüşüm Verimliliği), Ekran 10 (Maliyet, fiyat/hacim ayrıştırması) ve Ekran 11 (GES) yazıldı. Gerçek veride iki yeni bulgu: **S12** (buhar entalpi varsayımı 2025'te 600 → 560 kcal/kg) ve **S13** (2025 kazan verimleri %100'ü aşıyor, gazın %12,9'u ekipmana atanmamış). Bunlara karşılık **K-25** (imkânsız verim performans sayılmaz), **K-26** (yıllar arası karşılaştırma birleşik yüzdeyle değil, ekipman bazında kaçınılabilir yakıtla) ve **K-27** (fatura ↔ tüketim bağı) kararları eklendi. A-05 ve A-08 somutlaştırıldı. 8.8 vakası S12/S13 çekinceleriyle güncellendi. 80 kabul sınaması geçiyor.
+| 1.1 | 2026-09-17 | **Faz 5 kodlandı — yol haritası tamamlandı.** Ekran 12 (Hedefler ve Aksiyonlar), Ekran 13 (Raporlar: aylık · yönetim gözden geçirme · serbest) ve izlenebilirlik (E-4) yazıldı; **K-28** eklendi, `hedef` ve `aksiyon` şemaları 6.3'e girdi. **Düzeltme:** 8.8 ve 13.4'teki baz çizgi sayıları, Excel'in kendi `Toplam Üretim` sütunuyla kurulmuş 36 noktalı bir regresyondan geliyordu; program S10 yüzünden 2024 Ağustos'u kullanamadığı için doğru model **35 nokta** üzerinden `a = 0,5025 · b = 6.021.966 · R² = 0,43`tür. Buna bağlı normalize EnPI (1,107 → **1,119**), CUSUM yıl sonu (13,3 → **14,6 milyon kWh**) ve türbin payı (%42 → **%38**) güncellendi. Bulgunun yönü değişmedi. 218 kabul sınaması geçiyor (16 + 36 + 14 + 80 + 72).
 | 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
 | 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |
 | 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |

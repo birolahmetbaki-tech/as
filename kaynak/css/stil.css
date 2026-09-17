@@ -209,3 +209,28 @@ tbody tr:hover{background:var(--yuzey-2)}
   body{background:#fff;color:#000}
   .kart{border:1px solid #ccc;break-inside:avoid}
 }
+
+/* izlenebilirlik düğmesi (E-4) */
+.koken{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;margin-left:5px;padding:0;
+  font-size:10px;font-weight:700;line-height:1;
+  color:var(--ink-mut);background:transparent;
+  border:1px solid var(--kilavuz);border-radius:50%;cursor:pointer;
+  vertical-align:middle;
+}
+.koken:hover{color:var(--s1);border-color:var(--s1)}
+
+/* hedef ölçeri (9.13 G2) */
+.olcer{position:relative;height:10px;border-radius:5px;background:var(--kilavuz);overflow:visible}
+.olcer .dolgu{position:absolute;inset:0 auto 0 0;border-radius:5px}
+.olcer .isaret{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--taban)}
+
+/* rapor: yazdırma dostu tek sütun */
+.rapor{max-width:860px}
+.rapor h2{margin-top:22px}
+.rapor .kart{break-inside:avoid}
+@media print{
+  .rapor{max-width:none}
+  .koken{display:none!important}
+}
