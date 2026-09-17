@@ -473,6 +473,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "N",
+   "fatura_tuketim": [],
    "not": "Excel N"
   },
   {
@@ -487,6 +488,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "V",
+   "fatura_tuketim": [],
    "not": "Excel V"
   },
   {
@@ -501,6 +503,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "X",
+   "fatura_tuketim": [],
    "not": "Excel X"
   },
   {
@@ -515,6 +518,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "Z",
+   "fatura_tuketim": [],
    "not": "Excel Z"
   },
   {
@@ -529,6 +533,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AE",
+   "fatura_tuketim": [],
    "not": "Excel AE - K-24: toplama dahil"
   },
   {
@@ -543,6 +548,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "W",
+   "fatura_tuketim": [],
    "not": "Excel W - kWh ile tutarlilik denetlenir"
   },
   {
@@ -557,6 +563,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "Y",
+   "fatura_tuketim": [],
    "not": "Excel Y"
   },
   {
@@ -571,6 +578,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AA",
+   "fatura_tuketim": [],
    "not": "Excel AA"
   },
   {
@@ -585,6 +593,9 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "O",
+   "fatura_tuketim": [
+    "SEBEKE_ELK"
+   ],
    "not": "Excel O - K-13 mahsup oncesi brut"
   },
   {
@@ -599,6 +610,11 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AD",
+   "fatura_tuketim": [
+    "IST1_DG_M3",
+    "IST2_DG_M3",
+    "IST3_DG_M3"
+   ],
    "not": "Excel AD"
   },
   {
@@ -613,6 +629,9 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AF",
+   "fatura_tuketim": [
+    "MOTORIN_KG"
+   ],
    "not": "Excel AF - K-24"
   },
   {
@@ -627,6 +646,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "R",
+   "fatura_tuketim": [],
    "not": "Excel R"
   },
   {
@@ -641,6 +661,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "S",
+   "fatura_tuketim": [],
    "not": "Excel S - A-11: mahsup/satis ayrismamis"
   },
   {
@@ -655,6 +676,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "T",
+   "fatura_tuketim": [],
    "not": "Excel T"
   },
   {
@@ -669,6 +691,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "U",
+   "fatura_tuketim": [],
    "not": "Excel U"
   },
   {
@@ -683,6 +706,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "G",
+   "fatura_tuketim": [],
    "not": "Excel G"
   },
   {
@@ -697,6 +721,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "H",
+   "fatura_tuketim": [],
    "not": "Excel H"
   },
   {
@@ -711,6 +736,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "I",
+   "fatura_tuketim": [],
    "not": "Excel I"
   },
   {
@@ -725,6 +751,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "J",
+   "fatura_tuketim": [],
    "not": "Excel J"
   },
   {
@@ -739,6 +766,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "L",
+   "fatura_tuketim": [],
    "not": "Excel L"
   },
   {
@@ -753,6 +781,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AI",
+   "fatura_tuketim": [],
    "not": "Excel AI - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -767,6 +796,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AJ",
+   "fatura_tuketim": [],
    "not": "Excel AJ"
   },
   {
@@ -781,6 +811,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AK",
+   "fatura_tuketim": [],
    "not": "Excel AK"
   },
   {
@@ -795,6 +826,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AL",
+   "fatura_tuketim": [],
    "not": "Excel AL"
   },
   {
@@ -809,6 +841,7 @@
    "formul": "TURBIN_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -823,6 +856,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AN",
+   "fatura_tuketim": [],
    "not": "Excel AN - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -837,6 +871,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AO",
+   "fatura_tuketim": [],
    "not": "Excel AO"
   },
   {
@@ -851,6 +886,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AP",
+   "fatura_tuketim": [],
    "not": "Excel AP"
   },
   {
@@ -865,6 +901,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AQ",
+   "fatura_tuketim": [],
    "not": "Excel AQ"
   },
   {
@@ -879,6 +916,7 @@
    "formul": "GM1_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -893,6 +931,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AS",
+   "fatura_tuketim": [],
    "not": "Excel AS"
   },
   {
@@ -907,6 +946,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AT",
+   "fatura_tuketim": [],
    "not": "Excel AT - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -921,6 +961,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AU",
+   "fatura_tuketim": [],
    "not": "Excel AU"
   },
   {
@@ -935,6 +976,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AV",
+   "fatura_tuketim": [],
    "not": "Excel AV"
   },
   {
@@ -949,6 +991,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AW",
+   "fatura_tuketim": [],
    "not": "Excel AW"
   },
   {
@@ -963,6 +1006,7 @@
    "formul": "GM2_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -977,6 +1021,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AY",
+   "fatura_tuketim": [],
    "not": "Excel AY"
   },
   {
@@ -991,6 +1036,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "AZ",
+   "fatura_tuketim": [],
    "not": "Excel AZ - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -1005,6 +1051,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BA",
+   "fatura_tuketim": [],
    "not": "Excel BA"
   },
   {
@@ -1019,6 +1066,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BB",
+   "fatura_tuketim": [],
    "not": "Excel BB"
   },
   {
@@ -1033,6 +1081,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BC",
+   "fatura_tuketim": [],
    "not": "Excel BC"
   },
   {
@@ -1047,6 +1096,7 @@
    "formul": "GM3_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -1061,6 +1111,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BE",
+   "fatura_tuketim": [],
    "not": "Excel BE"
   },
   {
@@ -1075,6 +1126,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BF",
+   "fatura_tuketim": [],
    "not": "Excel BF - alt kirilim"
   },
   {
@@ -1089,6 +1141,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BG",
+   "fatura_tuketim": [],
    "not": "Excel BG"
   },
   {
@@ -1103,6 +1156,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BH",
+   "fatura_tuketim": [],
    "not": "Excel BH"
   },
   {
@@ -1117,6 +1171,7 @@
    "formul": "KAZAN1_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6"
   },
   {
@@ -1131,6 +1186,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BJ",
+   "fatura_tuketim": [],
    "not": "Excel BJ - alt kirilim"
   },
   {
@@ -1145,6 +1201,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BK",
+   "fatura_tuketim": [],
    "not": "Excel BK"
   },
   {
@@ -1159,6 +1216,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BL",
+   "fatura_tuketim": [],
    "not": "Excel BL"
   },
   {
@@ -1173,6 +1231,7 @@
    "formul": "KAZAN2_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6"
   },
   {
@@ -1187,6 +1246,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BN",
+   "fatura_tuketim": [],
    "not": "Excel BN - alt sayac, kapsama girer"
   },
   {
@@ -1201,6 +1261,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BO",
+   "fatura_tuketim": [],
    "not": "Excel BO - alt sayac, kapsama girer"
   },
   {
@@ -1215,6 +1276,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BP",
+   "fatura_tuketim": [],
    "not": "Excel BP - alt sayac, kapsama girer"
   },
   {
@@ -1229,6 +1291,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BQ",
+   "fatura_tuketim": [],
    "not": "Excel BQ - alt sayac, kapsama girer"
   },
   {
@@ -1243,6 +1306,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BR",
+   "fatura_tuketim": [],
    "not": "Excel BR - alt sayac, kapsama girer"
   },
   {
@@ -1257,6 +1321,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BS",
+   "fatura_tuketim": [],
    "not": "Excel BS - alt sayac, kapsama girer"
   },
   {
@@ -1271,6 +1336,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BT",
+   "fatura_tuketim": [],
    "not": "Excel BT - alt sayac, kapsama girer"
   },
   {
@@ -1285,6 +1351,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BU",
+   "fatura_tuketim": [],
    "not": "Excel BU - alt sayac, kapsama girer"
   },
   {
@@ -1299,6 +1366,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BV",
+   "fatura_tuketim": [],
    "not": "Excel BV - alt sayac, kapsama girer"
   },
   {
@@ -1313,6 +1381,7 @@
    "formul": null,
    "aktif": true,
    "excel_sutun": "BW",
+   "fatura_tuketim": [],
    "not": "Excel BW - alt sayac, kapsama girer"
   },
   {
@@ -1327,6 +1396,7 @@
    "formul": "CEKIRDEK_KG * 0.34",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "2.2 - olcum degil, sabit oranla dagitim"
   },
   {
@@ -1341,6 +1411,7 @@
    "formul": "CEKIRDEK_KG * 0.12",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "2.2"
   },
   {
@@ -1355,6 +1426,7 @@
    "formul": "CEKIRDEK_KG * 0.32",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "2.2"
   },
   {
@@ -1369,6 +1441,7 @@
    "formul": "CEKIRDEK_KG * 0.22",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "2.2 - S7: Excel'de basligi yanlis"
   },
   {
@@ -1383,6 +1456,7 @@
    "formul": "KAKAO_YAG + KAKAO_TOZ + KAKAO_LIKOR",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6"
   },
   {
@@ -1397,6 +1471,7 @@
    "formul": "TOPLAM_KAKAO + CIKOLATA_KG",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6"
   },
   {
@@ -1411,6 +1486,7 @@
    "formul": "TURBIN_EL + GM1_EL + GM2_EL + GM3_EL",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "6.6"
   },
   {
@@ -1425,6 +1501,7 @@
    "formul": "MOTORIN_KG * KATSAYI(MOT,kg,kWh)",
    "aktif": true,
    "excel_sutun": null,
+   "fatura_tuketim": [],
    "not": "K-24, A-12 - katsayi tanimsiz"
   }
  ],
@@ -1446,6 +1523,15 @@
    "gecerli_baslangic": "2018-01",
    "kaynak": "Excel formülü: kg × 600 / 860",
    "not": "600 kcal/kg entalpi ÷ 860 kcal/kWh = 0,697674 kWh/kg. A-08: basınca göre değişken mi, teyit bekliyor."
+  },
+  {
+   "enerji_turu": "BUH",
+   "kaynak_birim": "kg",
+   "hedef_birim": "kWh",
+   "katsayi": 0.6511627906976745,
+   "gecerli_baslangic": "2025-01",
+   "kaynak": "Excel'in 2025 satirlarindaki kWh/kg orani (S12)",
+   "not": "560 kcal/kg ÷ 860 = 0,651163 kWh/kg. Excel 2025 Ocak'tan itibaren butun ekipmanlarda entalpi varsayimini 600'den 560 kcal/kg'a dusurmus. Tarihli katsayi bu yuzden var (6.6, I-5). A-08: hangi entalpinin dogru oldugu ve degisimin gerekcesi teyit bekliyor; 2024->2025 verim karsilastirmasinin 1,7 puani bu varsayim degisiminden gelir."
   }
  ],
  "enpi_tanimlari": [

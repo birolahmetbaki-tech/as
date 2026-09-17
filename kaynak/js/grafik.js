@@ -438,6 +438,206 @@ export function sankey(kap, { dugumler, akislar, birim = "", boy = 380 } = {}) {
                         kutu.get(a.hedef)?.d.ad || a.hedef, a.deger])));
 }
 
+
+/* ============================================================== DAĞILIM */
+/**
+ * Dağılım + regresyon doğrusu (8.3).
+ * TÜM-ÇİFTLER kuralı: dağılım grafiğinde en fazla 3 seri (5.7.1).
+ * @param seriler [{ad, noktalar:[{x,y,etiket}]}]
+ * @param dogru   {a, b, r2, n, zayif} — regresyon
+ */
+export function dagilim(kap, { seriler, dogru = null, xAd = "", yAd = "",
+                               boy = 320, baslik = "" } = {}) {
+  kap = kap || el("div");
+  if (seriler.length > 3) seriler = seriler.slice(0, 3);   // tüm-çiftler kapağı
+  const { svg, ic } = iskelet(kap, { boy, baslik });
+  const hepsi = seriler.flatMap(d => d.noktalar);
+  if (!hepsi.length) { kap.append(el("p.sessiz", { metin:"Veri yok." })); return kap; }
+
+  const xo = eksen(Math.min(...hepsi.map(p => p.x)), Math.max(...hepsi.map(p => p.x)));
+  const yo = eksen(Math.min(...hepsi.map(p => p.y)), Math.max(...hepsi.map(p => p.y)));
+  ykilavuz(svg, ic, yo, yAd, 0);
+
+  const px = v => ic.x + ((v - xo.alt) / (xo.ust - xo.alt)) * ic.en;
+  const py = v => ic.y + ic.boy - ((v - yo.alt) / (yo.ust - yo.alt)) * ic.boy;
+
+  for (const t of xo.ticks) {
+    svg.append(s("text", { x:px(t), y:ic.y + ic.boy + 15, "text-anchor":"middle",
+      fill:"var(--ink-mut)", "font-size":10 }, document.createTextNode(kisa(t, 1))));
+  }
+  svg.append(s("text", { x:ic.x + ic.en, y:ic.y + ic.boy + 30, "text-anchor":"end",
+    fill:"var(--ink-mut)", "font-size":10 }, document.createTextNode(xAd)));
+
+  if (dogru && Number.isFinite(dogru.a)) {
+    const x1 = xo.alt, x2 = xo.ust;
+    svg.append(s("line", { x1:px(x1), y1:py(dogru.a * x1 + dogru.b),
+      x2:px(x2), y2:py(dogru.a * x2 + dogru.b),
+      stroke:"var(--ink-2)", "stroke-width":2, opacity:.75 }));
+  }
+
+  const kt = kutucuk();
+  seriler.forEach((d, j) => {
+    for (const p of d.noktalar) {
+      const c = s("circle", { cx:px(p.x).toFixed(1), cy:py(p.y).toFixed(1), r:4,
+        fill:d.renk || renk(j), stroke:"var(--yuzey)", "stroke-width":1.5, opacity:.9 });
+      c.addEventListener("mousemove", ev => kt.goster(ev,
+        el("div", {}, el("b", { metin:p.etiket || d.ad }),
+          el("div", { metin:`${xAd}: ${say(p.x, 0)}` }),
+          el("div", { metin:`${yAd}: ${say(p.y, 0)}` }))));
+      c.addEventListener("mouseleave", kt.gizle);
+      svg.append(c);
+    }
+  });
+
+  const alt = el("div", {});
+  if (dogru && Number.isFinite(dogru.a)) {
+    alt.append(el("div.kucuk", { stil:{ marginTop:"8px", fontFamily:"ui-monospace,monospace" },
+      metin:`beklenen = ${say(dogru.a, 4)} × ${xAd} + ${say(dogru.b, 0)}   ·   R² = ${say(dogru.r2, 2)}   ·   n = ${dogru.n}` }));
+  }
+  return sarmala(kap, svg, el("div", {}, aciklama(seriler), alt),
+    () => basitTablo(["Nokta", xAd, yAd],
+      seriler.flatMap(d => d.noktalar.map(p => [p.etiket || d.ad, p.x, p.y]))));
+}
+
+/* ================================================================ CUSUM */
+/**
+ * Kümülatif sapma (8.5). KUTUPLU renk: sıfırın altı mavi (tasarruf),
+ * üstü kırmızı (kayıp). Orta nokta NÖTR — sıfır sapma "hiçbir şey" demektir.
+ * Okunuşu: EĞİM önemlidir, seviye değil.
+ */
+export function cusum(kap, { degerler, etiketler, birim = "kWh", boy = 280,
+                             isaretler = [] } = {}) {
+  kap = kap || el("div");
+  const { svg, ic } = iskelet(kap, { boy });
+  const g = degerler.filter(Number.isFinite);
+  if (!g.length) { kap.append(el("p.sessiz", { metin:"Veri yok." })); return kap; }
+  const ol = eksen(Math.min(0, ...g), Math.max(0, ...g));
+  ykilavuz(svg, ic, ol, birim, 0);
+  xetiket(svg, ic, etiketler);
+
+  const n = etiketler.length;
+  const dx = n > 1 ? ic.en / (n - 1) : 0;
+  const px = i => ic.x + i * dx;
+  const py = v => ic.y + ic.boy - ((v - ol.alt) / (ol.ust - ol.alt)) * ic.boy;
+  const y0 = py(0);
+
+  // sıfır çizgisi — nötr
+  svg.append(s("line", { x1:ic.x, y1:y0, x2:ic.x + ic.en, y2:y0,
+    stroke:"var(--taban)", "stroke-width":1.5 }));
+
+  // dolgu: sıfırın üstü kırmızı (kayıp), altı mavi (tasarruf)
+  const dolgu = (yon, dolguRenk) => {
+    let d = "", acik = false;
+    degerler.forEach((v, i) => {
+      const uygun = Number.isFinite(v) && (yon > 0 ? v > 0 : v < 0);
+      if (uygun) { if (!acik) { d += `M${px(i)},${y0} `; acik = true; }
+                   d += `L${px(i)},${py(v)} `; }
+      else if (acik) { d += `L${px(i - 1)},${y0} Z `; acik = false; }
+    });
+    if (acik) d += `L${px(n - 1)},${y0} Z`;
+    if (d) svg.append(s("path", { d, fill:dolguRenk, opacity:.22 }));
+  };
+  dolgu(1, "var(--s8)");     // kayıp
+  dolgu(-1, "var(--s1)");    // tasarruf
+
+  let yol = "", kalem = false;
+  degerler.forEach((v, i) => {
+    if (!Number.isFinite(v)) { kalem = false; return; }
+    yol += (kalem ? "L" : "M") + px(i).toFixed(1) + "," + py(v).toFixed(1) + " ";
+    kalem = true;
+  });
+  svg.append(s("path", { d:yol, fill:"none", stroke:"var(--ink-2)", "stroke-width":2,
+    "stroke-linejoin":"round" }));
+
+  // eğim değişim noktaları
+  for (const im of isaretler) {
+    if (!(im.indeks >= 0 && im.indeks < n)) continue;
+    svg.append(s("line", { x1:px(im.indeks), y1:ic.y, x2:px(im.indeks), y2:ic.y + ic.boy,
+      stroke:"var(--ciddi)", "stroke-width":1.5, opacity:.7 }));
+    svg.append(s("text", { x:px(im.indeks) + 5, y:ic.y + 11, fill:"var(--ciddi)",
+      "font-size":10, "font-weight":600 }, document.createTextNode(im.ad)));
+  }
+
+  const kt = kutucuk();
+  const nisan = s("line", { y1:ic.y, y2:ic.y + ic.boy, stroke:"var(--taban)",
+    "stroke-width":1, opacity:0 });
+  svg.append(nisan);
+  const kapak = s("rect", { x:ic.x, y:ic.y, width:ic.en, height:ic.boy, fill:"transparent" });
+  kapak.addEventListener("mousemove", ev => {
+    const kutu = svg.getBoundingClientRect();
+    const i = Math.max(0, Math.min(n - 1, Math.round((ev.clientX - kutu.left - ic.x) / (dx || 1))));
+    nisan.setAttribute("x1", px(i)); nisan.setAttribute("x2", px(i));
+    nisan.setAttribute("opacity", .6);
+    const v = degerler[i];
+    kt.goster(ev, el("div", {}, el("b", { metin:etiketler[i] }),
+      el("div", { metin:Number.isFinite(v)
+        ? `Kümülatif sapma: ${say(v, 0)} ${birim}` : "—" }),
+      el("div.mini.sessiz", { metin:Number.isFinite(v)
+        ? (v > 0 ? "baz çizginin üzerinde — kayıp" : v < 0 ? "baz çizginin altında — tasarruf" : "baz çizgide") : "" })));
+  });
+  kapak.addEventListener("mouseleave", () => { nisan.setAttribute("opacity", 0); kt.gizle(); });
+  svg.append(kapak);
+
+  const efsane = el("div.satir", { stil:{ gap:"16px", marginTop:"8px", fontSize:"12px" } },
+    el("span", { stil:{ display:"inline-flex", alignItems:"center", gap:"6px" } },
+      el("span", { stil:{ width:"14px", height:"9px", background:"var(--s1)", opacity:".35",
+        borderRadius:"2px", display:"inline-block" } }),
+      el("span.sessiz", { metin:"aşağı eğim = kalıcı tasarruf" })),
+    el("span", { stil:{ display:"inline-flex", alignItems:"center", gap:"6px" } },
+      el("span", { stil:{ width:"14px", height:"9px", background:"var(--s8)", opacity:".35",
+        borderRadius:"2px", display:"inline-block" } }),
+      el("span.sessiz", { metin:"yukarı eğim = kalıcı kayıp" })));
+
+  return sarmala(kap, svg, efsane,
+    () => basitTablo(["Dönem", `Kümülatif sapma (${birim})`],
+      etiketler.map((e, i) => [e, degerler[i]])));
+}
+
+/* =============================================================== ŞELALE */
+/** Fiyat / hacim ayrıştırması (8.7). Kutuplu: artıran kırmızı, azaltan mavi. */
+export function selale(kap, { kalemler, birim = "TL", boy = 280 } = {}) {
+  kap = kap || el("div");
+  const { svg, ic } = iskelet(kap, { boy });
+  let kum = 0;
+  const bar = kalemler.map(k => {
+    const bas = kum; kum += k.deger;
+    return { ...k, bas, son:kum };
+  });
+  const hepsi = [0, ...bar.map(b => b.bas), ...bar.map(b => b.son)];
+  const ol = eksen(Math.min(...hepsi), Math.max(...hepsi));
+  ykilavuz(svg, ic, ol, birim, 0);
+  xetiket(svg, ic, kalemler.map(k => k.ad));
+
+  const adim = ic.en / bar.length;
+  const py = v => ic.y + ic.boy - ((v - ol.alt) / (ol.ust - ol.alt)) * ic.boy;
+  svg.append(s("line", { x1:ic.x, y1:py(0), x2:ic.x + ic.en, y2:py(0),
+    stroke:"var(--taban)", "stroke-width":1.5 }));
+
+  const kt = kutucuk();
+  bar.forEach((b, i) => {
+    const cw = adim * 0.6;
+    const x = ic.x + i * adim + (adim - cw) / 2;
+    const yUst = py(Math.max(b.bas, b.son)), yAlt = py(Math.min(b.bas, b.son));
+    const dolguRenk = b.toplam ? "var(--ink-mut)" : b.deger > 0 ? "var(--s8)" : "var(--s1)";
+    const g = s("rect", { x:x.toFixed(1), y:yUst.toFixed(1), width:cw.toFixed(1),
+      height:Math.max(2, yAlt - yUst).toFixed(1), rx:3, fill:dolguRenk });
+    g.addEventListener("mousemove", ev => kt.goster(ev,
+      el("div", {}, el("b", { metin:b.ad }),
+        el("div", { metin:`${b.deger > 0 ? "+" : "−"}${say(Math.abs(b.deger), 0)} ${birim}` }))));
+    g.addEventListener("mouseleave", kt.gizle);
+    svg.append(g);
+    svg.append(s("text", { x:x + cw / 2, y:yUst - 6, "text-anchor":"middle",
+      fill:"var(--ink-2)", "font-size":11, "font-weight":600 },
+      document.createTextNode((b.deger > 0 ? "+" : "−") + kisa(Math.abs(b.deger), 1))));
+    if (i < bar.length - 1)
+      svg.append(s("line", { x1:x + cw, y1:py(b.son), x2:ic.x + (i + 1) * adim + (adim - cw) / 2,
+        y2:py(b.son), stroke:"var(--kilavuz)", "stroke-width":1 }));
+  });
+
+  return sarmala(kap, svg, null,
+    () => basitTablo(["Kalem", `Etki (${birim})`], kalemler.map(k => [k.ad, k.deger])));
+}
+
 /* ------------------------------------------------------ mini grafik */
 export function miniGrafik(degerler, { en = 84, boy = 20, cizgiRenk = "var(--s1)" } = {}) {
   const g = degerler.filter(v => v !== null && Number.isFinite(v));

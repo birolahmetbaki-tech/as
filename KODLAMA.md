@@ -5,7 +5,8 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 
 ## Durum
 
-**Faz 1 · Çekirdek** ✅  **Faz 2 · Veri** ✅  **Faz 3 · Görme** ✅ (El Kitabı Bölüm 12)
+**Faz 1 · Çekirdek** ✅  **Faz 2 · Veri** ✅  **Faz 3 · Görme** ✅
+**Faz 4 · Anlama** ✅ (El Kitabı Bölüm 12)
 
 | Adım | İçerik | Durum |
 |---|---|---|
@@ -31,15 +32,42 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 | 3.3 | Ekran 7 — Tüketim Analizi | ✅ |
 | 3.4 | Ekran 6 — Enerji Dengesi (Sankey) | ✅ |
 
-**Excel'e ihtiyaç kalmadı ve veri artık görünür.**
-Sıradaki: **Faz 4 — Anlama** (baz çizgi, normalize EnPI, CUSUM, dönüşüm
-verimliliği, maliyet, GES).
+| Adım | İçerik | Durum |
+|---|---|---|
+| 4.1 | Baz çizgi ve regresyon, R² uyarıları | ✅ |
+| 4.2 | Ekran 8 — Performans (normalize EnPI, CUSUM) | ✅ |
+| 4.3 | Ekran 9 — Dönüşüm Verimliliği | ✅ |
+| 4.4 | Ekran 10 — Maliyet (fiyat/hacim ayrıştırması) | ✅ |
+| 4.5 | Ekran 11 — GES | ✅ |
+
+**Excel'e ihtiyaç kalmadı, veri görünür oldu ve artık "neden" sorusu
+cevaplanabiliyor.** Sıradaki: **Faz 5 — Yönetme** (Ekran 12 Hedefler ve
+Aksiyonlar, Ekran 13 Raporlar, izlenebilirlik).
+
+## Faz 4'te gerçek veride bulunanlar
+
+Ekran 9 yazılırken kaynak veride iki yeni sorun çıktı (El Kitabı 2.5):
+
+- **S12** — Excel 2025 Ocak'tan itibaren buhar entalpi varsayımını
+  600'den 560 kcal/kg'a düşürmüş (`0,697674` → `0,651163` kWh/kg), üstelik
+  bütün ekipmanlarda. Türbinin 6,9 puanlık verim düşüşünün **1,7 puanı**
+  bu varsayımdan geliyor. İkisi de **tarihli katsayı** olarak tanımlandı
+  (6.6, İ-5); ekran farkı puan puan ayrıştırıyor.
+- **S13** — 2025'te kazanların ürettiği buhar, kendilerine atanmış gazdan
+  büyük: Kazan-1 %137, Kazan-2 %145. Satın alınan gazın **%12,9'u** hiçbir
+  ekipmana atanmamış. Program sayıyı gizlemiyor ama performans da saymıyor
+  (**K-25**); bu ekipmanlar yıllar arası karşılaştırmadan çıkarılıyor.
+
+Ayrıca **K-26**: yıllar arası verim karşılaştırması tek bir birleşik yüzdeyle
+yapılamaz. Gerçek veride, gaz motorları durup yük türbine kayınca karma toplam
+**iyileşmiş gibi** göründü — oysa çalışan ekipmanın verimi düşmüştü. Toplanan
+büyüklük artık yüzde değil, **kaçınılabilir yakıt (kWh)**.
 
 ## Grafik motoru — kütüphanesiz
 
-`js/grafik.js` (~470 satır, sıfır bağımlılık): sütun (tekli/yığılmış), çizgi
-(referans hattı destekli), ısı haritası, Pareto, Sankey, mini grafik, oran
-çubuğu. Her grafikte fare üstü kutucuğu, çizgilerde dikey nişangâh ve
+`js/grafik.js` (~670 satır, sıfır bağımlılık): sütun (tekli/yığılmış), çizgi
+(referans hattı destekli), ısı haritası, Pareto, Sankey, dağılım (regresyon
+doğrusuyla), CUSUM (kutuplu dolgu), şelale, mini grafik, oran çubuğu. Her grafikte fare üstü kutucuğu, çizgilerde dikey nişangâh ve
 **"Tablo olarak göster"** seçeneği (E-3) var.
 
 El Kitabı 5.7.2'deki yasaklar koda gömülü: çift eksen yok, kesikli kılavuz
@@ -93,6 +121,7 @@ python3 betikler/sina.py     # duman testi: açılış, ekranlar, sekmeler, tema
 python3 betikler/kabul.py    # El Kitabı Bölüm 13 kabul kriterleri
 python3 betikler/faz2.py     # uçtan uca: Excel aktarımı + 8 yılın altın sayıları
 python3 betikler/faz3.py     # grafik ekranları
+python3 betikler/faz4.py     # Faz 4 ekranları + 8.8 vakasının altın sayıları
 ```
 
 `kabul.py`, gerçek 2024 Haziran verisiyle programın **altın sayıları** üretip
@@ -116,6 +145,15 @@ geçiyor.**
 
 `faz3.py` grafik ekranlarını sınar: boş durum, SVG çizimi, tablo görünümüne
 geçiş, kesikli çizgi olmaması ve koyu tema. **14 kontrol, hepsi geçiyor.**
+
+`faz4.py` Faz 4'ün üç ekranını ve El Kitabı 8.8 / 9.11'deki bütün altın sayıları
+doğrular: türbin toplam verimi %57,2 → %50,3, yıllık kayıp 5,58 GWh, brüt
+elektrik faturası 55.712.474 TL, GES mahsubu 25.723.468 TL, toplam maliyet
+195.182.337 TL, elektrik fiyat etkisi +10.682.663 TL / hacim etkisi
+−5.500.767 TL, doğalgaz hacim etkisi +13.475.761 TL, 2018 → 2025 birim fiyat
+artışı 11 kat. Ayrıca S12 katsayı ayrıştırması, S13 imkânsız verim işaretlemesi
+ve GES üretiminin toplam enerjiye girmediği (K-03) sınanır.
+**80 kontrol, hepsi geçiyor.**
 
 > `derle.py` artık çıktıyı `node --check` ile ayrıştırır; sözdizimi hatası
 > varsa dosya **yazılmaz**. Bozuk bir paket teslim edilemez.

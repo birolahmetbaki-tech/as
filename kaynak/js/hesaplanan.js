@@ -89,6 +89,30 @@ function sutunlariKur() {
     });
   }
 
+  // Baz çizgi türevleri (8.3–8.5) — etkin baz çizgi varsa
+  const bz = H.etkinBazCizgi();
+  if (bz && (bz.model_tipi === "sabit" ? Number.isFinite(bz.ortalama) : Number.isFinite(bz.a))) {
+    const kaynak = () => [bz.enerji, bz.baglam].filter(Boolean);
+    const kural = bz.model_tipi === "sabit"
+      ? `8.3 — sabit baz çizgi: ${bz.ad}`
+      : `8.3 — regresyonlu baz çizgi: ${bz.ad} (R²=${(bz.r2 ?? 0).toFixed(2)})`;
+    s.push({ kod:"BEKLENEN", ad:"Beklenen Enerji", birim:"kWh", ondalik:0,
+      formul: bz.model_tipi === "sabit" ? `referans dönem ortalaması`
+            : `${(bz.a ?? 0).toFixed(4)} × ${bz.baglam} + ${Math.round(bz.b ?? 0)}`,
+      kaynak, kural, hesapla:(y,a) => {
+        const r = H.bazCizgiDegerlendir(bz, y, a);
+        return r ? { deger:r.beklenen } : { deger:null }; } });
+    s.push({ kod:"SAPMA", ad:"Sapma", birim:"kWh", ondalik:0,
+      formul:"gerçek − beklenen", kaynak, kural:"8.4",
+      hesapla:(y,a) => { const r = H.bazCizgiDegerlendir(bz, y, a);
+        return r ? { deger:r.sapma } : { deger:null }; } });
+    s.push({ kod:"NORM_ENPI", ad:"Normalize EnPI", birim:"", ondalik:3,
+      formul:"gerçek ÷ beklenen", kaynak,
+      kural:"8.4 — 1,00 = baz performans. Ham EnPI ile YAN YANA okunur, yerine geçmez",
+      hesapla:(y,a) => { const r = H.bazCizgiDegerlendir(bz, y, a);
+        return r ? { deger:r.normalize } : { deger:null }; } });
+  }
+
   // Dönüşüm verimlilikleri (8.6)
   for (const v of durum.varliklar) {
     if (v.tip !== "ekipman") continue;

@@ -3,7 +3,7 @@
    El Kitabı: 7.1, 8.1-8.7, K-24 (rol filtresi), İ-1, İ-3 */
 
 import { durum, deger } from "./veri.js";
-import { nokta, varlik, altAgac, varlikNoktalari, cevir, formulCoz,
+import { nokta, varlik, altAgac, varlikNoktalari, cevir, katsayi, formulCoz,
          ROLLER, enerjiBirimiMi } from "./model.js";
 
 /** Özel toplam kodları — EnPI tanımlarında @ ile kullanılır */
@@ -272,8 +272,314 @@ export function beklenen(bazCizgi, baglamDegeri) {
   return bazCizgi.a * baglamDegeri + bazCizgi.b;
 }
 
+/* ------------------------------------------------ baz çizgi kurulumu */
+/**
+ * Bir baz çizgi tanımından model parametrelerini üretir (8.3).
+ * Sonuç SAKLANIR — çünkü bir KARARDIR, türev değil (İ-1).
+ * @param tanim {enerji, baglam, bas:{yil,ay}, son:{yil,ay}, model_tipi}
+ */
+export function bazCizgiKur(tanim) {
+  const ciftler = [], enerjiler = [];
+  let y = tanim.bas.yil, a = tanim.bas.ay;
+  let guvenlik = 0;
+  while ((y < tanim.son.yil || (y === tanim.son.yil && a <= tanim.son.ay)) && guvenlik++ < 600) {
+    const e = terimDeger(tanim.enerji, y, a);
+    const x = terimDeger(tanim.baglam, y, a);
+    if (Number.isFinite(e)) {
+      enerjiler.push(e);
+      if (Number.isFinite(x)) ciftler.push({ x, y: e, etiket: `${a}/${y}` });
+    }
+    const t = y * 12 + (a - 1) + 1; y = Math.floor(t / 12); a = (t % 12) + 1;
+  }
+  if (!enerjiler.length) return { hata: "Referans dönemde enerji verisi yok" };
+
+  const ortalama = enerjiler.reduce((t2, v) => t2 + v, 0) / enerjiler.length;
+  if (tanim.model_tipi === "sabit")
+    return { ortalama, n: enerjiler.length, ciftler };
+
+  const r = regresyon(ciftler);
+  if (r.yetersiz)
+    return { hata: r.sebep || `Regresyon için en az 12 veri noktası gerekir (şu an ${r.n}). Sabit baz çizgi kullanın.`,
+             n: r.n, ortalama, ciftler };
+  return { ...r, ortalama, ciftler };
+}
+
+/** Özel toplam veya ölçüm noktası — tek sayı döndürür */
+export function terimDeger(ifade, yil, ay) {
+  const r = ifade === "@TOPLAM_ENERJI_KWH" ? toplamEnerji(yil, ay, "kWh")
+          : ifade === "@TOPLAM_MALIYET_TL" ? toplamMaliyet(yil, ay)
+          : ifade === "@NET_ODENEN_TL"     ? netOdenenElektrik(yil, ay)
+          : noktaDeger(ifade, yil, ay);
+  return Number.isFinite(r?.deger) ? r.deger : null;
+}
+
+/** Bir dönemi baz çizgiye göre değerlendirir (8.4) */
+export function bazCizgiDegerlendir(bz, yil, ay) {
+  if (!bz) return null;
+  const gercek = terimDeger(bz.enerji, yil, ay);
+  if (!Number.isFinite(gercek)) return null;
+  let bek;
+  if (bz.model_tipi === "sabit") bek = bz.ortalama;
+  else {
+    const x = terimDeger(bz.baglam, yil, ay);
+    if (!Number.isFinite(x) || !Number.isFinite(bz.a)) return null;
+    bek = bz.a * x + bz.b;
+  }
+  if (!Number.isFinite(bek) || !bek) return null;
+  return { gercek, beklenen: bek, sapma: gercek - bek, normalize: gercek / bek };
+}
+
+/** Etkin baz çizgi (ayarlardan) */
+export function etkinBazCizgi() {
+  const k = durum.ayarlar?.varsayilan_baz;
+  return durum.baz_cizgiler.find(b => b.kod === k) || durum.baz_cizgiler[0] || null;
+}
+
 /** CUSUM — kümülatif sapma (8.5) */
 export function cusum(sapmalar) {
   let t = 0;
   return sapmalar.map(s => { t += (s ?? 0); return t; });
+}
+
+/* ===================================================================
+   FAZ 4 — dönüşüm, maliyet ve ayrı tesis toplamları
+   Ekran 9/10/11 kendi hesabını yapmaz; hepsi buradan okur (İ-2).
+   =================================================================== */
+
+/** Bir dönem aralığında bir noktanın toplamı. Hiç veri yoksa null (İ-3). */
+export function donemToplami(kod, donemler) {
+  let t = 0, varMi = false;
+  for (const d of donemler) {
+    const r = noktaDeger(kod, d.yil, d.ay);
+    if (Number.isFinite(r.deger)) { t += r.deger; varMi = true; }
+  }
+  return varMi ? t : null;
+}
+
+/* ------------------------------------------------- dönüşüm varlıkları */
+/**
+ * Bir varlığın dönüşüm noktaları. SABİT LİSTE DEĞİL: roller taranır,
+ * yeni bir kazan tanımlandığında ekran kendiliğinden onu da gösterir.
+ */
+export function donusumNoktalari(varlikKod) {
+  const nk = varlikNoktalari(varlikKod).filter(n => n.aktif !== false);
+  return {
+    yakit: nk.find(n => n.rol === "satin_alinan" && n.birim === "kWh") || null,
+    elk:   nk.find(n => n.rol === "tesis_ici_uretim" && n.enerji_turu === "ELK" && n.birim === "kWh") || null,
+    buhar: nk.find(n => n.rol === "ara_enerji" && n.enerji_turu === "BUH" && n.birim === "kWh") || null,
+    ssu:   nk.find(n => n.rol === "ara_enerji" && n.enerji_turu === "SSU" && n.birim === "kWh") || null,
+  };
+}
+
+/** Yakıtı faydalı enerjiye çeviren bütün varlıklar (rol taramasıyla) */
+export function donusumVarliklari() {
+  const liste = [];
+  for (const v of durum.varliklar) {
+    if (v.aktif === false) continue;
+    const n = donusumNoktalari(v.kod);
+    if (!n.yakit) continue;
+    if (!n.elk && !n.buhar && !n.ssu) continue;
+    liste.push({ varlik: v, noktalar: n });
+  }
+  return liste;
+}
+
+/**
+ * Bir dönem aralığında toplanmış dönüşüm verimi (8.6).
+ * Verim, AYLIK ORANLARIN ORTALAMASI DEĞİL, toplamların oranıdır —
+ * aksi halde az yakıt yakılan ay, çok yakılan ayla aynı ağırlığı alır.
+ */
+export function donusumVerimiAralik(varlikKod, donemler) {
+  const n = donusumNoktalari(varlikKod);
+  if (!n.yakit) return null;
+  const yakit = donemToplami(n.yakit.kod, donemler);
+  const elektrik = n.elk   ? (donemToplami(n.elk.kod, donemler)   || 0) : 0;
+  const buhar    = n.buhar ? (donemToplami(n.buhar.kod, donemler) || 0) : 0;
+  const sicakSu  = n.ssu   ? (donemToplami(n.ssu.kod, donemler)   || 0) : 0;
+  const faydali  = elektrik + buhar + sicakSu;
+  if (!Number.isFinite(yakit) || !yakit) {
+    // yakıt yok ama üretim varsa bu bir veri tutarsızlığıdır, sessizce geçilmez
+    return faydali ? { yakit:yakit || 0, elektrik, buhar, sicakSu, faydali,
+                       tutarsiz:true, elektrikVerimi:null, isiVerimi:null,
+                       toplamVerim:null, kayip:null } : null;
+  }
+  return {
+    yakit, elektrik, buhar, sicakSu, faydali,
+    elektrikVerimi: elektrik / yakit,
+    isiVerimi: (buhar + sicakSu) / yakit,
+    toplamVerim: faydali / yakit,
+    kayip: 1 - faydali / yakit,
+    kayipKwh: yakit - faydali,
+    // Faydalı enerji yakıttan büyük olamaz. Olduğunda bu bir PERFORMANS
+    // değil VERİ sorunudur; sonuç gizlenmez ama performans gibi de
+    // sunulmaz (İ-3, 6.8). Yüzde 2 pay yuvarlama içindir.
+    imkansiz: faydali > yakit * 1.02,
+    calisan: donemler.filter(d => Number.isFinite(noktaDeger(n.yakit.kod, d.yil, d.ay).deger)
+                                  && noktaDeger(n.yakit.kod, d.yil, d.ay).deger > 0).length,
+  };
+}
+
+/* ------------------------------------------------------ fatura kalemleri */
+/**
+ * Maliyet noktaları ve faturalandırdıkları tüketim.
+ * `fatura_tuketim` alanı hangi ölçüm noktalarının o faturayı oluşturduğunu
+ * söyler; boşsa birim fiyat hesaplanamaz ama tutar yine toplanır (İ-3).
+ */
+export function faturaKalemleri() {
+  return durum.olcum_noktalari
+    .filter(n => n.aktif !== false && n.rol === "maliyet")
+    .map(n => {
+      const kodlar = (n.fatura_tuketim || []).filter(k => nokta(k));
+      const ilk = kodlar.length ? nokta(kodlar[0]) : null;
+      return { fatura:n, tuketimKodlari:kodlar,
+               tuketimBirim: ilk ? ilk.birim : null,
+               enerjiTuru: ilk ? ilk.enerji_turu : null };
+    });
+}
+
+/** Bir fatura kaleminin bir aralıktaki tutarı, miktarı ve birim fiyatı (K-12) */
+export function faturaOzeti(kalem, donemler) {
+  const tutar = donemToplami(kalem.fatura.kod, donemler);
+  let miktar = null;
+  for (const k of kalem.tuketimKodlari) {
+    const t = donemToplami(k, donemler);
+    if (Number.isFinite(t)) miktar = (miktar || 0) + t;
+  }
+  return { tutar, miktar, birim:kalem.tuketimBirim,
+           birimFiyat: (Number.isFinite(tutar) && Number.isFinite(miktar) && miktar)
+                        ? tutar / miktar : null };
+}
+
+/** Birim fiyatı kWh cinsine çevirir — farklı yakıtlar ancak böyle kıyaslanır */
+export function birimFiyatKwh(kalem, donemler) {
+  const o = faturaOzeti(kalem, donemler);
+  if (o.birimFiyat === null) return null;
+  if (o.birim === "kWh") return o.birimFiyat;
+  const son = donemler[donemler.length - 1];
+  const c = cevir(1, o.birim, "kWh", kalem.enerjiTuru, son.yil, son.ay);
+  if (c.eksik || !c.deger) return null;
+  return o.birimFiyat / c.deger;
+}
+
+/**
+ * Bir fatura kaleminin iki dönem arası fiyat/hacim ayrıştırması (8.7).
+ * Ayrıştırma faturanın KENDİ biriminde yapılır (elektrik kWh, doğalgaz m³);
+ * çevrim yapılırsa katsayı hatası etkilere karışır.
+ */
+export function kalemFiyatHacim(kalem, oncekiDonemler, simdikiDonemler) {
+  const a = faturaOzeti(kalem, oncekiDonemler);
+  const b = faturaOzeti(kalem, simdikiDonemler);
+  if (a.birimFiyat === null || b.birimFiyat === null) return null;
+  const d = fiyatHacim(a.birimFiyat, a.miktar, b.birimFiyat, b.miktar);
+  if (!d) return null;
+  return { ...d, onceki:a, simdiki:b,
+           fiyatDegisim:(b.birimFiyat - a.birimFiyat) / a.birimFiyat,
+           hacimDegisim: a.miktar ? (b.miktar - a.miktar) / a.miktar : null };
+}
+
+/** Bir aralıktaki maliyet dökümü: kalemler, GES mahsubu ve net toplam */
+export function maliyetDokumu(donemler) {
+  const kalemler = faturaKalemleri().map(k => ({ ...k, ...faturaOzeti(k, donemler) }));
+  const brut = kalemler.reduce((t, k) => t + (k.tutar || 0), 0);
+  const mahsup = donemToplami0(gelirNoktalari(), donemler);
+  return { kalemler, brut, mahsup, net: brut - mahsup };
+}
+
+/** Rolü `gelir` olan noktalar — GES mahsubu ve satışı (K-13) */
+export function gelirNoktalari() {
+  return durum.olcum_noktalari.filter(n => n.aktif !== false && n.rol === "gelir");
+}
+
+function donemToplami0(noktalar, donemler) {
+  let t = 0;
+  for (const n of noktalar) t += donemToplami(n.kod, donemler) || 0;
+  return t;
+}
+
+/* ------------------------------------------------- ayrı tesis (GES, K-03) */
+/**
+ * Ayrı tesisler: üretimi fabrikanın kWh dengesine GİRMEZ, yalnızca
+ * mali dengeye mahsup olarak girer (7.1, 7.2).
+ */
+export function ayriTesisler() {
+  const liste = [];
+  for (const v of durum.varliklar) {
+    if (v.aktif === false) continue;
+    const nk = varlikNoktalari(v.kod).filter(n => n.aktif !== false);
+    const uretim = nk.find(n => n.rol === "ayri_tesis_uretim");
+    if (!uretim) continue;
+    liste.push({ varlik:v, uretim, gelirler:nk.filter(n => n.rol === "gelir") });
+  }
+  return liste;
+}
+
+export function ayriTesisOzeti(tesis, donemler) {
+  const uretim = donemToplami(tesis.uretim.kod, donemler);
+  let gelir = null;
+  for (const g of tesis.gelirler) {
+    const t = donemToplami(g.kod, donemler);
+    if (Number.isFinite(t)) gelir = (gelir || 0) + t;
+  }
+  const dolu = donemler.filter(d =>
+    Number.isFinite(noktaDeger(tesis.uretim.kod, d.yil, d.ay).deger));
+  return { uretim, gelir, ay:dolu.length,
+           birimDeger: (Number.isFinite(gelir) && Number.isFinite(uretim) && uretim)
+                        ? gelir / uretim : null,
+           ilk: dolu[0] || null, son: dolu[dolu.length - 1] || null };
+}
+
+/* ---------------------------------------- katsayı değişimi uyarısı (İ-5) */
+/**
+ * İki dönemde aynı çevrim katsayısı mı kullanılıyor?
+ * Katsayı değiştiyse iki dönem arasındaki farkın bir kısmı FİZİK DEĞİL,
+ * VARSAYIM değişimidir. Bu asla sessizce geçilmez (İ-5, 6.6).
+ */
+export function katsayiKarsilastir(turKod, kaynakBirim, hedefBirim, donemA, donemB) {
+  const a = katsayi(turKod, kaynakBirim, hedefBirim, donemA.yil, donemA.ay);
+  const b = katsayi(turKod, kaynakBirim, hedefBirim, donemB.yil, donemB.ay);
+  if (!a || !b) return { a, b, ayni:true, bilinmiyor:true };
+  return { a, b, ayni: a.katsayi === b.katsayi,
+           oran: a.katsayi ? b.katsayi / a.katsayi : null };
+}
+
+/**
+ * Bir dönüşüm veriminin, ısı katsayısı eski dönemdekiyle aynı olsaydı
+ * ne olacağı. Verim düşüşünün ne kadarı varsayım değişimi, ne kadarı
+ * gerçek performanstır sorusunu ayırır.
+ */
+export function verimKatsayiDuzeltmesi(s, oran) {
+  if (!s || !Number.isFinite(oran) || !oran || !s.yakit) return null;
+  const isi = (s.buhar + s.sicakSu) / oran;        // eski katsayıya geri çevir
+  const faydali = s.elektrik + isi;
+  return { toplamVerim: faydali / s.yakit, faydali, isi };
+}
+
+/* ------------------------------- ekipmana atanmamış yakıt (6.7, A-05) */
+/**
+ * Satın alınan yakıt ile dönüşüm ekipmanlarına atanmış yakıt arasındaki fark.
+ * Fark büyükse ekipman verimleri güvenilmezdir — hatta %100'ü aşabilir.
+ * Enerji türü başına ayrı hesaplanır; sabit bir yakıt listesi yoktur (K-24).
+ */
+export function atanmamisYakit(donemler) {
+  const satin = new Map();          // enerji_turu -> kWh
+  for (const n of durum.olcum_noktalari) {
+    if (n.aktif === false || n.rol !== "satin_alinan" || !n.toplama_dahil) continue;
+    if (n.birim !== "kWh" || n.enerji_turu === "ELK") continue;
+    const t = donemToplami(n.kod, donemler);
+    if (Number.isFinite(t)) satin.set(n.enerji_turu, (satin.get(n.enerji_turu) || 0) + t);
+  }
+  const ekip = new Map();
+  for (const x of donusumVarliklari()) {
+    const y = x.noktalar.yakit;
+    if (!y || y.birim !== "kWh") continue;
+    const t = donemToplami(y.kod, donemler);
+    if (Number.isFinite(t)) ekip.set(y.enerji_turu, (ekip.get(y.enerji_turu) || 0) + t);
+  }
+  const sonuc = [];
+  for (const [tur, s] of satin) {
+    const e = ekip.get(tur) || 0;
+    sonuc.push({ enerji_turu:tur, satinAlinan:s, ekipman:e,
+                 atanmamis:s - e, oran: s ? (s - e) / s : null });
+  }
+  return sonuc;
 }

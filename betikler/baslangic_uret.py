@@ -159,6 +159,12 @@ KATSAYILAR = [
  {"enerji_turu":"BUH","kaynak_birim":"kg","hedef_birim":"kWh","katsayi":600/860,
   "gecerli_baslangic":"2018-01","kaynak":"Excel formülü: kg × 600 / 860",
   "not":"600 kcal/kg entalpi ÷ 860 kcal/kWh = 0,697674 kWh/kg. A-08: basınca göre değişken mi, teyit bekliyor."},
+ {"enerji_turu":"BUH","kaynak_birim":"kg","hedef_birim":"kWh","katsayi":560/860,
+  "gecerli_baslangic":"2025-01","kaynak":"Excel'in 2025 satirlarindaki kWh/kg orani (S12)",
+  "not":"560 kcal/kg ÷ 860 = 0,651163 kWh/kg. Excel 2025 Ocak'tan itibaren butun ekipmanlarda "
+        "entalpi varsayimini 600'den 560 kcal/kg'a dusurmus. Tarihli katsayi bu yuzden var (6.6, I-5). "
+        "A-08: hangi entalpinin dogru oldugu ve degisimin gerekcesi teyit bekliyor; 2024->2025 verim "
+        "karsilastirmasinin 1,7 puani bu varsayim degisiminden gelir."},
 ]
 
 ENPI = [
@@ -184,15 +190,25 @@ def main():
         Ilk ice aktarmada otomatik eslestirme icin kullanilir (K-15, 9.4)."""
         m = re.search(r"Excel ([A-Z]{1,2})\b", n or "")
         return m.group(1) if m else None
+    # Hangi faturanin hangi tuketimi faturalandirdigi (K-12, 9.11).
+    # Ayristirma faturanin kendi biriminde yapilir: elektrik kWh, dogalgaz m3.
+    FATURA_TUKETIM = {
+        "ELK_FATURA_TL": ["SEBEKE_ELK"],
+        "DG_FATURA_TL":  ["IST1_DG_M3","IST2_DG_M3","IST3_DG_M3"],
+        "MOT_FATURA_TL": ["MOTORIN_KG"],
+    }
     noktalar=[{"kod":k,"varlik":v,"ad":ad,"enerji_turu":et,"birim":b,"rol":r,
                "toplama_dahil":td,"veri_tipi":vt,"formul":f,"aktif":True,
-               "excel_sutun":sutun(n),"not":n}
+               "excel_sutun":sutun(n),"fatura_tuketim":FATURA_TUKETIM.get(k,[]),
+               "not":n}
               for (k,v,ad,et,b,r,td,vt,f,n) in N]
     kodlar=[x["kod"] for x in noktalar]
     assert len(kodlar)==len(set(kodlar)), "tekrar eden olcum noktasi kodu"
     vk={x["kod"] for x in varliklar}
     for x in noktalar:
         assert x["varlik"] in vk, f"tanimsiz varlik: {x['varlik']}"
+        for ft in x["fatura_tuketim"]:
+            assert ft in kodlar, f"tanimsiz fatura tuketim noktasi: {ft}"
     d={"sema_surumu":1,
        "ayarlar":{"fabrika_adi":"","para_birimi":"TL","varsayilan_birim":"kWh",
                   "ana_enpi":"ENPI_ANA","tema":"otomatik","ondalik":2},

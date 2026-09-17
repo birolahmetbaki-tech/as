@@ -221,6 +221,13 @@ function noktaDuzenle(kod) {
   const gDah = el("input", { type:"checkbox", id:"n_dahil" }); gDah.checked = !!n.toplama_dahil;
   f.append(el("div.alan", {}, el("label", { for:"n_dahil", metin:"Fabrika toplamına dahil" }), gDah,
     el("div.mini.sessiz", { metin:"Yalnız üst seviye giriş noktaları işaretlenir. Alt kırılımlar (GM-1 doğalgazı gibi) işaretlenmez — çift sayım olur (6.7)." })));
+  const gFat = el("input", { id:"n_fatura_tuketim", type:"text",
+    value:(n.fatura_tuketim || []).join(", ") });
+  f.append(el("div.alan", {}, el("label", { for:"n_fatura_tuketim",
+      metin:"Faturalandırdığı tüketim (yalnız maliyet rolünde)" }), gFat,
+    el("div.mini.sessiz", { metin:"Virgülle ayrılmış ölçüm noktası kodları. " +
+      "Ortalama birim fiyat ve fiyat/hacim ayrıştırması buradan hesaplanır (K-12, 8.7). " +
+      "Boş bırakılırsa tutar toplanır ama birim fiyat üretilmez." })));
   const gNot = mk("Not", "not");
 
   onayla(yeni ? "Yeni ölçüm noktası" : "Ölçüm noktasını düzenle", f, "Kaydet").then(ok => {
@@ -235,6 +242,8 @@ function noktaDuzenle(kod) {
         enerji_turu:gTur.value || null, birim:gBir.value, rol:gRol.value,
         veri_tipi:gTip.value, formul:gFor.value.trim() || null,
         toplama_dahil:gDah.checked, aktif:eski ? eski.aktif !== false : true,
+        fatura_tuketim:gFat.value.split(",").map(x => x.trim().toUpperCase()).filter(Boolean),
+        excel_sutun:eski ? eski.excel_sutun ?? null : null,
         not:gNot.value.trim() };
       if (yeni) durum.olcum_noktalari.push(nesne); else Object.assign(eski, nesne);
       degisti("nokta"); yenile(); bildir("Kaydedildi");

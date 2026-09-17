@@ -15,6 +15,10 @@ import { ekranHesaplanan } from "./ekranlar/hesaplanan.js";
 import { ekranPanel }    from "./ekranlar/panel.js";
 import { ekranTuketim }  from "./ekranlar/tuketim.js";
 import { ekranDenge }    from "./ekranlar/denge.js";
+import { ekranPerformans } from "./ekranlar/performans.js";
+import { ekranVerimlilik } from "./ekranlar/verimlilik.js";
+import { ekranMaliyet }    from "./ekranlar/maliyet.js";
+import { ekranGes }        from "./ekranlar/ges.js";
 
 /* ------------------------------------------------ ekran kayıtları (9.1) */
 const YAKINDA = (no, ad, faz, aciklama) => ({
@@ -34,10 +38,10 @@ export const EKRANLAR = [
   { grup:"ANALİZ" },
   { no:6, ad:"Enerji Dengesi", hazir:true, ciz:ekranDenge },
   { no:7, ad:"Tüketim Analizi", hazir:true, ciz:ekranTuketim },
-  YAKINDA(8,"Performans (EnPI)",4,"Platformun kalbi: baz çizgi, normalize EnPI ve CUSUM. İyileştik mi, ne zaman, ne kadar?"),
-  YAKINDA(9,"Dönüşüm Verimliliği",4,"Kojenerasyon ve kazanların yakıtı ne verimle faydalı enerjiye çevirdiği."),
-  YAKINDA(10,"Maliyet",4,"Maliyet artışının ne kadarı fiyattan, ne kadarı tüketimden? Fiyat/hacim ayrıştırması."),
-  YAKINDA(11,"GES",4,"Yozgat ve Adana santrallerinin üretimi ve mali katkısı."),
+  { no:8, ad:"Performans (EnPI)", hazir:true, ciz:ekranPerformans },
+  { no:9,  ad:"Dönüşüm Verimliliği", hazir:true, ciz:ekranVerimlilik },
+  { no:10, ad:"Maliyet",             hazir:true, ciz:ekranMaliyet },
+  { no:11, ad:"GES",                 hazir:true, ciz:ekranGes },
   { grup:"YÖNETİM" },
   YAKINDA(12,"Hedefler ve Aksiyonlar",5,"Dört hedef türü ve tespitlerin sahibi ile termini olan aksiyonlar."),
   YAKINDA(13,"Raporlar",5,"Aylık enerji raporu, yönetim gözden geçirme raporu ve serbest rapor oluşturucu."),
@@ -53,7 +57,7 @@ function menuCiz() {
   const m = bosalt($("#menu"));
   m.append(el("div.marka", {},
     el("b", { metin:"Enerji Yönetim" }),
-    el("span", { metin:"Faz 3 · Görme" })));
+    el("span", { metin:"Faz 4 · Anlama" })));
   for (const e of EKRANLAR) {
     if (e.grup) { m.append(el("div.menu-grup", { metin:e.grup })); continue; }
     m.append(el("button.menu-og", {
