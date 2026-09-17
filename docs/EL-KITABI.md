@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 0.3 — taslak, tasarım aşaması |
+| **Sürüm** | 0.4 — taslak, tasarım aşaması |
 | **Durum** | Kodlama **başlamadı**. Tasarım görüşmesi sürüyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -190,6 +190,10 @@ numaralara atıf yapar.
 | **K-16** | Geçmiş verinin aktarımı | **İkisi birden:** tanımlar (varlık ağacı, ölçüm noktaları, hiyerarşi, katsayılar) programa **gömülü hazır** gelir; 96 aylık değerleri kullanıcı **kendisi yükler**. Hazır `.json` da birlikte verilir. | Kurulum yükü ortadan kalkar, ama aktarma ekranı gerçek veriyle sınanmış olur ve kontrol kullanıcıda kalır. |
 | **K-17** | Grafikler | **Saf SVG, sıfır dış kütüphane.** Grafik kütüphanesi kullanılmaz. | Dosya küçük kalır, internet hiç gerekmez, Türkçe sayı biçimi ve etiketler üzerinde tam kontrol olur. *Bu karar tasarımcı önerisidir; itiraz edilirse gözden geçirilir.* |
 | **K-18** | Kaynak düzeni | Geliştirme sırasında kaynak **ayrı dosyalarda** tutulur; küçük bir birleştirme betiği hepsini **tek HTML çıktısına** gömer. Teslim edilen ürün yine tek dosyadır. | 10.000 satırlık tek dosya bakılamaz hale gelir. Çıktı tek dosya, kaynak düzenli. |
+| **K-19** | Baz çizgi (EnB) | **Kullanıcı tanımlı, birden çok baz çizgi.** Sistem baz çizgi dayatmaz; istenildiği kadar tanımlanır ve aralarında geçiş yapılır. | Farklı amaçlar farklı referans ister (denetim için son tam yıl, hedef için en iyi yıl, istatistik için çok yıllı). |
+| **K-20** | Raporlar | Üç rapor: **aylık enerji raporu**, **yönetim gözden geçirme raporu** (ISO 50001 md. 9.3), **serbest rapor oluşturucu**. | Kullanıcı seçimi. ENVER yıllık bildirim özeti ileriye bırakıldı. |
+| **K-21** | Hedefler | Dört hedef türü birden: **EnPI**, **tüketim (kWh)**, **maliyet (TL)**, **tasarruf (baz çizgiye göre %)**. | Farklı muhataplar farklı hedef diliyle konuşur; dördü de aynı motordan beslenir. |
+| **K-22** | Ekran listesi | **14 ekran onaylandı** (Özet 1 · Veri 3 · Analiz 6 · Yönetim 2 · Sistem 2). | Bkz. 9.1 navigasyon haritası. |
 
 ---
 
@@ -739,18 +743,190 @@ Bu göstergeler enerji dengesinin **dışındadır**; dönüşüm ekipmanının 
 
 ## 8. Hesaplama ve analiz motoru
 
-> Ayrıntılı tasarım görüşme ilerledikçe yazılacak. Şu an belirlenen çerçeve:
+Bütün hesaplar tek modülde toplanır (İ-2) ve hiçbiri saklanmaz (İ-1).
 
-| Katman | İçerik | Durum |
-|---|---|---|
-| Temel hesaplar | Aylık toplam, yıllık toplam, ortak birimde toplam (kWh/GJ/TEP) | Çerçeve net |
-| Maliyet | TL toplam; tarihli fiyat kuralı (S5) | Açık soru A-02 |
-| EnPI | Kullanıcı tanımlı pay/payda (K-06) | Bölüm 10'da tasarlanacak |
-| Baz çizgi | Seviye 1: referans dönem ortalaması · Seviye 2: regresyon | Bölüm 10'da |
-| Normalize EnPI | `gerçek / beklenen` | Bölüm 10'da |
-| CUSUM | Kümülatif sapma; eğim değişim noktası | Bölüm 10'da |
-| Dönüşüm verimliliği | Bölüm 7.3 | Çerçeve net |
-| Ölçüm kapsamı | Bölüm 6.7 | Çerçeve net |
+### 8.1 Temel hesaplar
+
+| Hesap | Kural |
+|---|---|
+| Aylık toplam | Ölçüm noktası değerlerinin dönem toplamı |
+| Hiyerarşi toplamı | Bir varlığın altındaki bütün noktaların toplamı (6.6) |
+| Toplam enerji | Yalnız `satin_alinan` rolündeki noktalar (7.1) |
+| Ortak birim | kWh ↔ MJ ↔ GJ ↔ TEP. Referans GJ; 1 TEP = 41,868 GJ = 11.630 kWh |
+| Maliyet | Girilen fatura tutarları; net ödenen = brüt − GES mahsubu (6.5) |
+| Ortalama birim fiyat | Fatura TL ÷ tüketim — **hesaplanır, girilmez** (K-12) |
+| Ölçüm kapsamı | Ölçülen alt toplam ÷ üst toplam; kalan "ölçülmeyen" (6.7) |
+
+### 8.2 EnPI (K-06)
+
+EnPI **kullanıcı tanımlıdır**: pay ve payda ölçüm noktası (veya hiyerarşi
+düğümü) olarak seçilir.
+
+```
+EnPI = pay / payda
+```
+
+Örnekler: `Toplam enerji / Toplam üretim` (kWh/kg) ·
+`Şebeke elektriği / Çikolata üretimi` · `Buhar kWh / Kakao üretimi`.
+
+Her EnPI tanımı: ad, pay, payda, birim, ondalık hane, ana gösterge mi.
+
+> **Ham EnPI'nin tuzağı:** Üretim düştüğünde sabit yük aynı kaldığı için EnPI
+> kendiliğinden kötüleşir. Bu **verimsizlik değildir**. Bu yüzden ham EnPI asla
+> tek başına gösterilmez; yanında normalize EnPI durur (8.4).
+
+### 8.3 Baz çizgi (EnB) — iki seviye (K-19)
+
+**Seviye 1 — Sabit baz çizgi.** Seçilen referans döneminin aylık ortalaması.
+Anlaşılır, tartışılmaz, hemen kullanılır.
+
+**Seviye 2 — Regresyonlu baz çizgi.** Referans dönemdeki (bağlam değişkeni,
+enerji) çiftlerinden en küçük kareler ile:
+
+```
+beklenen_enerji = a × üretim + b
+```
+
+- `a` = **değişken enerji** — üretime bağlı kısım (kWh/kg)
+- `b` = **sabit / baz yük** — üretim sıfır olsa bile harcanan enerji (kWh/ay)
+
+> `b`'nin büyüklüğü tek başına çok değerli bir yönetim bulgusudur: tasarruf
+> potansiyelinin nerede olduğunu söyler.
+
+**Zorunlu güvenlik kuralları** (istatistiği yanlış kullanmamak için):
+
+| Kural | Davranış |
+|---|---|
+| En az **12 veri noktası** yoksa | Regresyon kurulmaz, sabit baz çizgi önerilir |
+| `R² < 0,5` | Model kurulur ama ekranda **açık uyarı**: *"Bu model tüketimin yalnızca %X'ini açıklıyor. Sonuçlara tek başına dayanarak karar vermeyin."* R² asla gizlenmez |
+| Referans dönem dışına çıkan noktalar | Grafikte farklı gösterilir (ekstrapolasyon uyarısı) |
+| `a < 0` (üretim arttıkça enerji azalıyor) | Fiziksel olarak şüpheli — açık uyarı |
+
+### 8.4 Normalize EnPI
+
+```
+Normalize EnPI = gerçek enerji / beklenen enerji
+```
+
+1,00 = baz performans · 0,92 = %8 iyileşme · 1,11 = %11 kötüleşme.
+Üretim dalgalanmasından arındırılmıştır. **Ham EnPI ile yan yana gösterilir**,
+yerine geçmez.
+
+### 8.5 CUSUM
+
+```
+CUSUM_n = Σ (gerçek_i − beklenen_i),  i = 1..n
+```
+
+**Okunuşu — tek kural: eğim önemlidir, seviye değil.**
+
+| Eğim | Anlamı |
+|---|---|
+| Yatay | Performans baz çizgiyle uyumlu |
+| Aşağı | **Kalıcı tasarruf.** Eğimin başladığı ay, iyileştirmenin gerçekten devreye girdiği aydır |
+| Yukarı | **Kalıcı kayıp.** Başlangıç ayı, arızanın/ayar bozulmasının tarihidir |
+
+CUSUM'un değeri: tek aylık gürültüde kaybolan küçük ama kalıcı bir kaymayı
+aylar sonra apaçık görünür yapar ve **tarihini verir**. Eğim değişim noktasına
+kullanıcı **not** yazabilir ("gaz motorları durduruldu", "yeni hat devreye
+alındı") — bu notlar kurumsal hafızadır.
+
+### 8.6 Dönüşüm verimliliği (7.3)
+
+| Gösterge | Formül |
+|---|---|
+| Kojen elektrik verimi | Elektrik üretimi kWh ÷ Doğalgaz kWh |
+| Kojen toplam verimi | (Elektrik + Buhar + Sıcak su) kWh ÷ Doğalgaz kWh |
+| Kazan verimi | Buhar kWh ÷ Doğalgaz kWh |
+
+Bu göstergeler toplam enerjinin **dışındadır**; dönüşüm ekipmanının sağlığını
+ölçer. Excel'de hiç hesaplanmıyor.
+
+### 8.7 Fiyat ve hacim etkisinin ayrıştırılması
+
+Maliyet artışının ne kadarı fiyattan, ne kadarı tüketimden geliyor?
+
+```
+Fiyat etkisi  = (fiyat₂ − fiyat₁) × tüketim₁
+Hacim etkisi  = (tüketim₂ − tüketim₁) × fiyat₁
+Bileşik etki  = (fiyat₂ − fiyat₁) × (tüketim₂ − tüketim₁)
+```
+
+Toplam fark = üç etkinin toplamı. Enerji yöneticisinin kontrolünde olan
+**hacim etkisidir**; fiyat etkisi piyasadır. Bu ayrım yapılmazsa fiyat artışı
+enerji yönetiminin başarısızlığı gibi görünür.
+
+### 8.8 Gerçek veriyle doğrulama — 2025 vakası
+
+> Bu bölüm, yukarıdaki motorun **sizin gerçek verinizde** ne bulduğudur.
+> Tasarımın işe yarayıp yaramadığının sınavıdır.
+
+**Soru:** 2025'te EnPI 1,173'ten 1,367'ye çıktı (%+16,5). Gerçek verimsizlik mi,
+yoksa üretim düştüğü için mi?
+
+**Adım 1 — Baz çizgi (2022–2024, 36 ay):**
+
+```
+beklenen_enerji = 0,4254 × üretim_kg + 6.774.643        R² = 0,40
+```
+
+- Değişken enerji: **0,4254 kWh/kg**
+- **Sabit / baz yük: 6.774.643 kWh/ay → yılda 81,3 milyon kWh**
+- Baz yükün ortalama aylık tüketimdeki payı: **%63,4**
+
+> ⚠ **R² = 0,40 < 0,50.** Kural gereği (8.3) açık uyarı: bu model tüketimin
+> yalnızca %40'ını üretimle açıklıyor. Yani tüketimin çoğunu belirleyen şey
+> üretim miktarı **değil**. Bu bulgunun kendisi değerlidir: başka bir sürükleyici
+> (mevsim, ürün karması, ekipman durumu) baskındır. Aşağıdaki sayı bu nedenle
+> **işaret**tir, kanıt değildir.
+
+**Adım 2 — Sonuç:**
+
+| | Değer |
+|---|---|
+| Ham EnPI kötüleşmesi | **%+16,5** |
+| Normalize EnPI (2025) | **1,107** → gerçek kötüleşme **%+10,7** |
+| Üretim hacminden gelen kısım | ≈ %6 |
+
+Yani bozulmanın **yaklaşık üçte ikisi gerçek**, üçte biri üretim düşüşünün
+yarattığı görüntü. Ham EnPI tek başına bakılsaydı sorun %16,5 sanılırdı.
+
+**Adım 3 — CUSUM tarihi verdi:** sapma **Şubat 2025**'te başlıyor ve yıl boyu
+düzenli yukarı eğimle sürüyor (yıl sonu birikimi +13,3 milyon kWh). Tek bir
+kötü ay değil, **kalıcı bir değişiklik**.
+
+**Adım 4 — Dönüşüm verimliliği nedeni buldu:**
+
+| | 2024 | 2025 | Fark |
+|---|---:|---:|---:|
+| Gaz motorları (GM-1,2,3) elektrik üretimi | 8.833.900 kWh | **0** | durdu |
+| İstasyon-3 (Türbin) doğalgaz tüketimi | 44.804.077 | 81.709.864 | **+%82,4** |
+| **Türbin elektrik verimi** | **%30,8** | **%26,3** | **−4,5 puan** |
+| **Türbin toplam verimi** | **%57,2** | **%50,3** | **−6,9 puan** |
+| Toplam doğalgaz | 111.987.169 | 120.168.406 | +%7,3 |
+| Toplam üretim | 111.897.453 kg | 100.503.911 kg | −%10,2 |
+
+**Bulgu:** Gaz motorları durdu, yük türbine kaydı ve **türbin daha düşük verimle
+çalışıyor**. 80,6 milyon kWh gaz üzerinden 6,9 puanlık verim kaybı ≈
+**yılda 5,6 milyon kWh**. Bu, baz çizgiye göre 13,3 milyon kWh'lik toplam
+sapmanın **yaklaşık %42'sidir**.
+
+> Verim düşüşü bir **model tahmini değil, doğrudan ölçümdür** — R² uyarısı bu
+> bulguyu etkilemez. Regresyon "ne kadar" sorusuna işaret verdi; dönüşüm
+> verimliliği "neden" sorusunu cevapladı.
+
+**Bu vaka neyi kanıtlıyor:**
+
+| Ekran / hesap | Katkısı |
+|---|---|
+| Ham EnPI (8.2) | Bir sorun olduğunu gösterdi — ama abarttı |
+| Normalize EnPI (8.4) | Sorunun gerçek büyüklüğünü verdi |
+| CUSUM (8.5) | Sorunun **tarihini** verdi (Şubat 2025) |
+| Dönüşüm verimliliği (8.6) | Sorunun **nedenini** verdi |
+| R² uyarısı (8.3) | Modele fazla güvenmeyi engelledi |
+| Fiyat/hacim ayrıştırması (8.7) | Bulguyu **parayla** doğruladı: doğalgazda +13,5 M TL'lik **hacim** artışı (elektrikte ise −5,5 M TL tasarruf) |
+
+Excel bu zincirin **hiçbir halkasını** üretmiyor.
 
 ---
 
@@ -1079,30 +1255,619 @@ zaman içindeki trendi · otomatik veri geldiğinde haberleşme kesintisi tespit
 
 ---
 
-### 9.6 — Ekran 5–14
+### 9.6 · Ekran 5 — Enerji Dengesi
 
-> **Henüz tasarlanmadı.** Ekran 5'ten 14'e kadar aynı şablonla, görüşmenin
-> bir sonraki adımında yazılacak:
-> Enerji Dengesi · Tüketim Analizi · Performans (EnPI & Baz Çizgi) ·
-> Dönüşüm Verimliliği · Maliyet · GES · Hedefler ve Aksiyonlar · Raporlar ·
-> Tanımlar · Ayarlar ve Yedekleme.
+#### Amaç
+**"Enerji nereye gidiyor?"** — Satın alınan enerjinin tesise girişinden
+tüketildiği yere kadar izini sürmek ve **ölçülmeyen payı dürüstçe göstermek**.
+
+#### Kullanıcının göreceği bilgiler
+- **Sankey akış diyagramı:** Şebeke elektriği ve doğalgaz → istasyonlar →
+  dönüşüm (kojen elektriği, buhar, sıcak su) → ölçülen tüketiciler +
+  **ölçülmeyen**.
+- **Denge tablosu:** giriş, dönüşüm, ölçülen çıkış, ölçülmeyen fark.
+- **Kapsam ağacı:** varlık hiyerarşisi; her düğümde toplam, ölçülen alt toplam,
+  ölçülmeyen pay ve yüzdesi.
+- **Tutarsızlık uyarıları:** alt toplamın üst toplamı aştığı düğümler (S3).
+
+#### Kullanıcının gireceği veriler
+Yok. Dönem aralığı, birim (kWh/GJ/TEP) ve hiyerarşi düğümü seçilir.
+
+#### Sistemin hesaplayacağı değerler
+Akış büyüklükleri · her düğümde ölçülen/ölçülmeyen · dönüşüm kayıpları ·
+kapsam yüzdeleri · tutarsızlık farkları.
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk |
+|---|---|---|---|
+| G1 | Enerji akışı | Sankey | Kategorik, enerji türüne göre |
+| G2 | Ölçüm kapsamı zaman içinde | Sütun | Tek slot (1) |
+| T1 | Kapsam ağacı | Katlanabilir tablo | Durum ikonları |
+
+> **Sizin verinizde bu ekran ne gösterecek:** 2024 Ocak'ta ölçülen alt sayaçlar
+> 965.134 kWh, fabrika elektriği 3.761.332 kWh → Sankey'in en kalın kolu
+> **"ölçülmeyen %74"** olacak. Bu rahatsız edici ama doğrudur ve alt sayaç
+> yatırımının nereye yapılacağını söyler.
+
+#### Yapılabilecek analizler
+Ölçüm kapsamının yeterliliği · dönüşüm kayıplarının büyüklüğü ·
+hangi istasyonun ne kadar yakıt çektiği · alt sayaç yatırım önceliği.
+
+#### ISO 50001 ile ilişkisi
+Madde 6.3 *Enerji gözden geçirmesi*'nin ana aracı. Önemli enerji kullanımlarının
+(SEU) belirlenmesi doğrudan bu ekrandan çıkar.
+
+#### İleride eklenebilecekler
+Dönem karşılaştırmalı Sankey (iki dönemin akış farkı) · ölçüm kapsamı hedefi ·
+alt sayaç yatırımının geri dönüş hesabı.
+
+---
+
+### 9.7 · Ekran 6 — Tüketim Analizi
+
+#### Amaç
+**"Nereye bakmalıyım?"** — Tüketimi farklı kırılımlarda inceleyip en büyük
+ve en anormal kalemleri bulmak.
+
+#### Kullanıcının göreceği bilgiler
+Üstte tek satır filtre çubuğu: tarih aralığı · varlık (ağaçtan seçim) ·
+enerji türü · birim (kWh/GJ/TEP) · karşılaştırma dönemi.
+
+#### Kullanıcının gireceği veriler
+Yok; yalnızca filtre seçimleri. Seçim kombinasyonu **kaydedilebilir**
+("Kojenerasyon 2025", "Chiller'lar son 24 ay") ve sonra tek tıkla çağrılır.
+
+#### Sistemin hesaplayacağı değerler
+Dönem toplamları · dönem–dönem farklar · kümülatif yüzdeler ·
+ortak birime dönüşüm · mevsimsellik.
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk | Not |
+|---|---|---|---|---|
+| G1 | Tüketim trendi | Sütun | Tek slot (1) | Seçilen kırılım tek seriyse |
+| G2 | Enerji türü / varlık karması | Yığılmış sütun | Kategorik | ≤8 seri; fazlası "Diğer"e katlanır |
+| G3 | Isı haritası (yıl × ay) | Hücre matrisi | **Sıralı mavi** | Ölçek açıklaması zorunlu; mevsimselliği açığa çıkarır |
+| G4 | Pareto | Yatay çubuk + tablo | Tek slot (1) | Kümülatif % **tablo sütununda**; %80 eşiği satır ayracıyla (5.7.4) |
+| G5 | Dönem karşılaştırma | Yatay çubuk (fark) | **Kutuplu** | Artan kırmızı, azalan mavi |
+| T1 | Ayrıntı tablosu | Tablo | — | Dışa aktarılabilir |
+
+> **Dönem uzunluğu uyarısı:** Karşılaştırılan dönemler farklı uzunluktaysa
+> (28 vs 31 gün) sistem **otomatik normalleştirme yapmaz**; ekranda
+> *"Dönemler farklı uzunlukta"* uyarısı çıkar (İ-4). Sessiz normalleştirme,
+> kullanıcının farkında olmadığı bir varsayımdır.
+
+#### Yapılabilecek analizler
+En çok tüketen ilk N nokta (Pareto) · mevsimsellik (ısı haritası) ·
+yıldan yıla karşılaştırma · enerji türü kayması · boşta/duruş tüketimi
+(üretim düşükken tüketim yüksekse).
+
+#### ISO 50001 ile ilişkisi
+Madde 6.3 — enerji kullanım ve tüketiminin analizi; SEU belirleme.
+
+#### İleride eklenebilecekler
+Günlük/saatlik veri geldiğinde gün × saat ısı haritası · derece-gün
+normalizasyonu · anomali işaretleme.
+
+---
+
+### 9.8 · Ekran 7 — Performans (EnPI ve Baz Çizgi)
+
+> **Platformun kalbi bu ekrandır.** "Ne kadar enerji harcadık?" sorusundan
+> "**enerji performansımız iyileşti mi, ne zaman, ne kadar?**" sorusuna geçiş
+> burada olur.
+
+#### Amaç
+Enerji performansındaki gerçek değişimi, üretim dalgalanmasından arındırarak
+ölçmek ve değişimin tarihini bulmak.
+
+#### Kullanıcının göreceği bilgiler
+Üstte iki seçici: **EnPI** (kullanıcı tanımlı set, K-06) ve
+**baz çizgi** (birden çok tanımlı olabilir, K-19).
+
+Dört bölüm hâlinde:
+
+**Bölüm 1 — Baz çizgi modeli**
+```
+Beklenen enerji = 0,4254 × üretim (kg) + 6.774.643        R² = 0,40
+Değişken enerji: 0,4254 kWh/kg    Sabit/baz yük: 6.774.643 kWh/ay (%63,4)
+⚠ Bu model tüketimin yalnızca %40'ını açıklıyor. Tek başına karar vermeyin.
+```
+R² uyarısı **gizlenmez, sonucun yanında durur** (İ-4, 8.3).
+
+**Bölüm 2 — Beklenen vs gerçek** (zaman serisi)
+
+**Bölüm 3 — Normalize EnPI** — ham EnPI ile **yan yana**, biri diğerinin
+yerine geçmez.
+
+**Bölüm 4 — CUSUM** — eğim değişim noktaları işaretli; her noktaya
+kullanıcı **not** yazabilir.
+
+#### Kullanıcının gireceği veriler
+- Baz çizgi tanımı: ad, referans dönem, model tipi (sabit / regresyon),
+  bağlam değişkeni (üretim, derece-gün, çalışma saati…).
+- CUSUM eğim değişim noktalarına **açıklama notu** — *"Gaz motorları
+  durduruldu"*. Bu notlar kurumsal hafızadır.
+
+#### Sistemin hesaplayacağı değerler
+Regresyon katsayıları (`a`, `b`), R² · beklenen enerji · sapma ·
+normalize EnPI · CUSUM · kümülatif tasarruf/kayıp (kWh ve TL).
+
+> Regresyon **katsayıları saklanır** (bir *karardır*), sapma ve CUSUM
+> saklanmaz — her seferinde yeniden hesaplanır (İ-1).
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk | Not |
+|---|---|---|---|---|
+| G1 | Üretim–enerji dağılımı + regresyon doğrusu | Dağılım (scatter) | **En fazla 3 seri**: baz dönem / değerlendirme dönemi / dışarıda kalan | Dağılım grafiği tüm-çiftler kuralına tabi |
+| G2 | Beklenen vs gerçek | İki çizgi | Kategorik (1, 2) | Açıklama + uç nokta etiketi |
+| G3 | Ham EnPI ve normalize EnPI | İki ayrı küçük grafik | Tek slot | **Aynı grafikte değil** — farklı ölçekler, çift eksen yasak |
+| G4 | CUSUM | Çizgi + kutuplu dolgu | Sıfır altı mavi (tasarruf), üstü kırmızı (kayıp) | Eğim değişim noktası + not balonu |
+| T1 | Dönem bazında sapma | Tablo | — | Gerçek, beklenen, sapma, kümülatif |
+
+#### Yapılabilecek analizler
+- **Gerçek iyileşme/kötüleşme** (üretimden arındırılmış).
+- **Sabit yük analizi:** baz yük toplam tüketimin %63'üyse tasarruf potansiyeli
+  üretim hattında değil, **sürekli çalışan sistemlerdedir**.
+- **Değişimin tarihi** (CUSUM eğim kırılımı).
+- Tasarrufun parasal karşılığı (sapma × birim fiyat).
+- Farklı baz çizgilerin karşılaştırılması (K-19).
+
+#### ISO 50001 ile ilişkisi
+Madde **6.4 EnPI** ve **6.5 Enerji baz çizgisi** — standardın ölçüm motoru.
+Madde 9.1 izleme ve değerlendirme. Bu ekran olmadan ISO 50001'in "enerji
+performansında sürekli iyileştirme" şartı **kanıtlanamaz**.
+
+#### İleride eklenebilecekler
+Çok değişkenli regresyon (üretim + dış sıcaklık + ürün karması) ·
+IPMVP uyumlu tasarruf doğrulama raporu · otomatik anomali işaretleme ·
+baz çizginin dönemsel olarak yeniden kurulması (rebaselining) ve gerekçesi.
+
+---
+
+### 9.9 · Ekran 8 — Dönüşüm Verimliliği
+
+#### Amaç
+**"Dönüşüm ekipmanım sağlıklı mı?"** — Kojenerasyon ve kazanların yakıtı ne
+verimle faydalı enerjiye çevirdiğini izlemek.
+
+> Excel'de bu hiç hesaplanmıyor. 2025 vakasında (8.8) bozulmanın **nedenini**
+> bulan ekran budur.
+
+#### Kullanıcının göreceği bilgiler
+Her dönüşüm varlığı (Türbin, GM-1..3, Kazan-1..2) için kart:
+
+```
+TÜRBİN                                       2025
+Doğalgaz girdisi          80.571.461 kWh
+Elektrik üretimi          21.161.000 kWh    Elektrik verimi   %26,3  ▼ −4,5 puan
+Buhar üretimi             19.382.753 kWh
+                                            Toplam verim      %50,3  ▼ −6,9 puan
+                                            Kayıp             %49,7
+⚠ Verim 2024'e göre 6,9 puan düştü. 80,6 GWh gaz üzerinden ≈ 5,6 GWh/yıl kayıp.
+```
+
+Ayrıca: çalışma durumu (aktif / durduruldu), devreye giriş-çıkış tarihleri (S6).
+
+#### Kullanıcının gireceği veriler
+Yok. Veriler Ekran 2'den gelir. Varlık bazında **not** yazılabilir
+(bakım, arıza, devreden çıkarma gerekçesi).
+
+#### Sistemin hesaplayacağı değerler
+Elektrik verimi · ısı verimi · toplam verim · kayıp yüzdesi ·
+önceki dönemle fark · **verim kaybının kWh ve TL karşılığı**.
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk |
+|---|---|---|---|
+| G1 | Verim trendi (aylık) | Çizgi | Varlık başına kategorik, ≤8 |
+| G2 | Yakıt → faydalı enerji dağılımı | Yığılmış sütun | Kategorik (elektrik / buhar / sıcak su / kayıp) |
+| G3 | Varlık karşılaştırması | Yatay çubuk | Tek slot (1) |
+| T1 | Verim tablosu | Tablo | Durum ikonları (eşik altı) |
+
+#### Yapılabilecek analizler
+- Ekipman verim düşüşünün erken tespiti (bakım tetikleyicisi).
+- **Yük dağıtım kararı:** aynı işi hangi ekipman daha verimli yapıyor?
+  2025'te yük gaz motorlarından türbine kaydı ve verim düştü — bu karar
+  sorgulanabilir hale gelir.
+- Verim kaybının yıllık parasal maliyeti.
+- Devreden çıkarma/devreye alma kararlarının enerji etkisi.
+
+#### ISO 50001 ile ilişkisi
+Madde 6.3 — enerji performansını etkileyen değişkenlerin belirlenmesi.
+Madde 10 — iyileştirme fırsatlarının tespiti. Ekipman verimi, en somut
+iyileştirme fırsatı kaynağıdır.
+
+#### İleride eklenebilecekler
+Verim eşiği alarmı · üretici katalog verisiyle karşılaştırma ·
+bakım kaydıyla ilişkilendirme · kısmi yük verimi eğrisi.
+
+---
+
+### 9.10 · Ekran 9 — Maliyet
+
+#### Amaç
+**"Para nereye gidiyor ve maliyet neden arttı?"** — Maliyet artışının ne
+kadarının **fiyattan**, ne kadarının **tüketimden** geldiğini ayrıştırmak.
+
+#### Kullanıcının göreceği bilgiler
+
+**Maliyet özeti — gerçek 2025 verisi:**
+```
+Brüt elektrik faturası         55.712.474 TL
+− GES mahsubu + satış         −25.723.468 TL
+= Net ödenen elektrik          29.989.006 TL
++ Doğalgaz faturası           165.193.331 TL
+= Toplam enerji maliyeti      195.182.337 TL
+```
+
+**Fiyat/hacim ayrıştırması (8.7)** — bu ekranın en değerli parçası.
+Gerçek verinizle 2024 → 2025:
+
+```
+ELEKTRİK          maliyet farkı            +4.044.578 TL
+  ├─ Fiyat etkisi (piyasa)                +10.682.663 TL
+  ├─ Hacim etkisi (bizim kontrolümüzde)    −5.500.767 TL   ✓
+  └─ Bileşik etki                          −1.137.318 TL
+     Birim fiyat: 2,6842 → 3,2392 TL/kWh   (+%20,7)
+
+DOĞALGAZ          maliyet farkı           +36.066.765 TL
+  ├─ Fiyat etkisi (piyasa)                +20.456.179 TL
+  ├─ Hacim etkisi (bizim kontrolümüzde)   +13.475.761 TL   ⚠
+  └─ Bileşik etki                          +2.134.825 TL
+     Birim fiyat: 12,6264 → 14,6266 TL/m³  (+%15,8)
+```
+
+> **Bu ayrıştırmanın değeri:** Elektrik faturası 4 milyon TL arttı — bakan
+> kişi "enerji yönetimi başarısız" der. Oysa **tüketim düştü ve 5,5 milyon TL
+> tasarruf sağladı**; fatura yalnızca fiyat %20,7 arttığı için yükseldi.
+> Doğalgazda ise durum tersidir: 13,5 milyon TL'lik artış **gerçek hacim
+> artışıdır** ve 8.8'deki türbin verim kaybıyla birebir örtüşür. Aynı toplam
+> tabloya bakıp iki farklı yönetim kararı verilir — ayrıştırma olmadan ikisi
+> de görünmez.
+
+**Ortalama birim fiyat trendi** (K-12 ile hesaplanır): 0,2942 → 3,2392 TL/kWh
+(2018 → 2025, **11 kat**).
+
+#### Kullanıcının gireceği veriler
+Yok — fatura tutarları Ekran 2'de girilir.
+
+#### Sistemin hesaplayacağı değerler
+Net ödenen · toplam maliyet · ortalama birim fiyat · fiyat/hacim/bileşik
+etkiler · GES'in mali katkısı · bütçe sapması (hedef varsa) ·
+enerji türlerinin maliyet payı.
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk | Not |
+|---|---|---|---|---|
+| G1 | Aylık maliyet | Yığılmış sütun | Kategorik (elektrik / doğalgaz) | |
+| G2 | Ortalama birim fiyat trendi | Çizgi | Enerji türü başına kategorik | **Maliyetle aynı grafikte değil** |
+| G3 | Fiyat/hacim ayrıştırması | Şelale (waterfall) | **Kutuplu** | Artıran kırmızı, azaltan mavi |
+| G4 | GES mali katkısı | Sütun | Tek slot (3) | Mahsup + satış |
+| T1 | Maliyet dökümü | Tablo | — | |
+
+#### Yapılabilecek analizler
+- **Fiyat mi, tüketim mi?** — Enerji yönetiminin başarısı yalnızca hacim
+  etkisiyle ölçülebilir; fiyat piyasadır. Bu ayrım yapılmazsa zam, enerji
+  yönetiminin başarısızlığı gibi görünür.
+- GES'in gerçek mali katkısı.
+- Enerji türleri arasında maliyet kayması (yakıt değiştirme kararı).
+- Tasarrufun parasal karşılığı (Ekran 7'deki sapma × birim fiyat).
+
+#### ISO 50001 ile ilişkisi
+Standart maliyeti zorunlu tutmaz, ancak madde 9.3 yönetimin gözden geçirmesi
+ve iyileştirme fırsatlarının önceliklendirilmesi için maliyet temel girdidir.
+
+#### İleride eklenebilecekler
+Tarihli birim fiyat tanımıyla **gölge faturalama** (fatura doğrulama) ·
+tarife dilimi (puant/gündüz/gece) kırılımı · reaktif ceza takibi ·
+bütçe planlama ve tahmin · maliyetin bölümlere dağıtılması.
+
+---
+
+### 9.11 · Ekran 10 — GES
+
+#### Amaç
+**"Santraller ne üretti, ne kazandırdı?"** — Yozgat ve Adana GES'lerini
+ayrı tesis olarak izlemek (K-03).
+
+> **Kritik kural:** GES üretimi fabrikanın enerji dengesine (kWh) **girmez**;
+> yalnızca mali dengeye mahsup olarak girer (7.1, 7.2). Bu ekran fabrika
+> EnPI'sini etkilemez.
+
+#### Kullanıcının göreceği bilgiler
+Santral başına kart: aylık üretim (kWh) · mahsup (TL) · satış geliri (TL) ·
+ortalama birim değer (TL/kWh) · devreye giriş tarihi.
+
+#### Kullanıcının gireceği veriler
+Aylık üretim (kWh), mahsup tutarı (TL), satış tutarı (TL) — Ekran 2 üzerinden.
+
+#### Sistemin hesaplayacağı değerler
+Toplam üretim · toplam mali katkı · ortalama TL/kWh · mevsimsel profil ·
+fabrika elektrik maliyetini karşılama oranı (%).
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk |
+|---|---|---|---|
+| G1 | Aylık üretim | Sütun | Kategorik (Yozgat / Adana) |
+| G2 | Mevsimsel profil (yıl × ay) | Isı haritası | **Sıralı mavi** |
+| G3 | Mali katkı | Yığılmış sütun | Kategorik (mahsup / satış) |
+| T1 | Santral özeti | Tablo | — |
+
+#### Yapılabilecek analizler
+Mevsimsel üretim profili (yaz–kış farkı) · santraller arası karşılaştırma ·
+fabrika elektrik maliyetinin ne kadarını karşıladığı · yıldan yıla üretim değişimi
+(bozunma belirtisi).
+
+#### ISO 50001 ile ilişkisi
+Madde 6.3 — yenilenebilir enerji kaynaklarının kuruluşun enerji profilindeki
+yeri. Kapsam 2 emisyon azaltımının kanıtı (ileride).
+
+#### İleride eklenebilecekler
+**Performans Oranı (PR)** — IEC 61724-1 · **emre amadelik** · ışınım verisi
+ile beklenen üretim karşılaştırması · bozunma (degradation) takibi ·
+inverter/string kırılımı.
+
+---
+
+### 9.12 · Ekran 11 — Hedefler ve Aksiyonlar
+
+#### Amaç
+Hedefleri tanımlamak, durumlarını izlemek ve tespit edilen sapmaların
+**bir sahibi ve termini olmasını** sağlamak.
+
+#### Bölüm 1 — Hedefler (K-21)
+
+Dört hedef türü:
+
+| Tür | Örnek | Ölçüm |
+|---|---|---|
+| **EnPI hedefi** | "2027'de 1,20 kWh/kg" | Ham veya normalize EnPI |
+| **Tüketim hedefi** | "Ocak 2027: elektrik ≤ 1,4 GWh" | Mutlak kWh |
+| **Maliyet hedefi** | "2027 enerji bütçesi 230 M TL" | TL |
+| **Tasarruf hedefi** | "Baz çizgiye göre yılda %3 iyileşme" | Normalize EnPI üzerinden |
+
+> **Uyarı, sonucun yanında (E-2):** Tüketim hedefi seçildiğinde sistem şunu
+> yazar: *"Üretim düşerse bu hedef kendiliğinden tutar. Gerçek performans için
+> EnPI veya tasarruf hedefi kullanın."*
+
+Her hedef: ad, tür, kapsam (varlık/enerji türü), dönem, değer, sorumlu, not.
+
+#### Bölüm 2 — Aksiyonlar
+
+| Alan | Açıklama |
+|---|---|
+| Başlık, açıklama | Ne yapılacak |
+| Bağlam | Enerji türü / varlık / dönem — hangi tespitten doğdu |
+| Sorumlu, termin | Kim, ne zaman |
+| Durum | Açık / Devam / Kapandı / İptal |
+| Beklenen tasarruf | kWh veya TL |
+| Sonuç notu | Kapanışta gerçekleşen |
+
+**Kritik bağlantı:** CUSUM'daki eğim kırılımından, Pareto'nun ilk sırasından
+ve dönüşüm verimliliği uyarısından **doğrudan aksiyon açılabilir**. Analizden
+eyleme geçişin köprüsü budur.
+
+#### Sistemin hesaplayacağı değerler
+Hedefe kalan mesafe ve % · gerçekleşme trendi · gecikmiş aksiyon sayısı ·
+beklenen ve gerçekleşen tasarruf toplamı.
+
+#### Grafikler ve tablolar
+
+| # | Grafik | Form | Renk |
+|---|---|---|---|
+| G1 | Hedef vs gerçekleşen | Çizgi + hedef referans hattı | Tek slot (1) + gri hedef |
+| G2 | Hedefe uzaklık | Ölçer (meter) | Durum renkleri + ikon |
+| T1 | Aksiyon listesi | Tablo | Durum ikonları; gecikenler ikon + etiketle |
+
+#### ISO 50001 ile ilişkisi
+Madde **6.2 Amaçlar ve enerji hedefleri** · madde **6.2.2 Eylem planları** ·
+madde 9.1 izleme. Aksiyon kayıtları, Verimlilik Artırıcı Proje (VAP)
+takibinin de temelidir.
+
+#### İleride eklenebilecekler
+Hedeflerin varlık bazında alt hedeflere bölünmesi · aksiyonlara dosya eki ·
+gerçekleşen tasarrufun IPMVP yöntemiyle doğrulanması · hatırlatmalar.
+
+---
+
+### 9.13 · Ekran 12 — Raporlar (K-20)
+
+#### Amaç
+Ekranda görüleni **kâğıda ve toplantıya** taşımak. Enerji yöneticisinin
+çıktısı hâlâ basılı gider.
+
+#### Üç rapor
+
+**1 · Aylık Enerji Raporu** — tek sayfa, yazdırılabilir:
+seçilen ayın tüketimi (tür bazında, ortak birimde) · maliyeti · EnPI ve
+normalize EnPI · hedef durumu · geçen yılın aynı ayıyla karşılaştırma ·
+açık aksiyonlar · veri kalitesi notu.
+
+**2 · Yönetim Gözden Geçirme Raporu** (ISO 50001 md. 9.3):
+dönem performans özeti · bütün EnPI'ler ve baz çizgiye göre durum ·
+önemli enerji kullanımları (SEU) · hedeflerin gerçekleşme durumu ·
+aksiyonların durumu · dönüşüm verimliliği özeti · iyileştirme fırsatları.
+
+**3 · Serbest Rapor Oluşturucu:**
+tarih aralığı + kırılım (enerji türü / varlık / bölüm) + birim + grafik
+seçimi. Oluşan rapor yazdırılabilir ve dışa aktarılabilir.
+
+#### Zorunlu davranışlar
+- Her rapor **yazdırma dostu** (tek sütun, sayfa sonları doğru, koyu tema
+  baskıda açığa döner).
+- Her rapor **veri kalitesi notu** taşır: *"Bu dönemde 3 değer tahmin
+  edilmiştir"* (İ-4).
+- Her sayının kaynağına inilebilir (E-4).
+
+#### ISO 50001 ile ilişkisi
+Madde 7.5 dokümante edilmiş bilgi · madde 9.3 yönetimin gözden geçirmesi ·
+denetimde sunulacak kanıtların üretildiği yer.
+
+#### İleride eklenebilecekler
+**ENVER yıllık bildirim özeti** (5627 sayılı kanun; enerji türü bazında yıllık
+tüketim + TEP karşılığı + toplam TEP; portala kullanıcı kendisi girer) ·
+karbon ayak izi raporu (Kapsam 1–2) · rapor şablonu özelleştirme ·
+zamanlanmış rapor üretimi.
+
+---
+
+### 9.14 · Ekran 13 — Tanımlar
+
+#### Amaç
+Sistemin **iskeletini** kurmak ve değiştirmek. Altı sekmeli tek ekran.
+
+#### Sekme 1 — Varlık Ağacı (K-05)
+Serbest derinlikte ağaç; sürükle-bırak ile yeniden düzenlenir.
+**Hiyerarşiyi değiştirmek hiçbir veriyi bozmaz** (İ-7) — bu ekranın en önemli
+özelliği ve Excel'in çözemediği sorunun çözümü.
+Her düğüm: ad, kod, tip, sıra, devreye giriş/çıkış tarihi (S6), aktiflik, not.
+
+#### Sekme 2 — Ölçüm Noktaları
+Düz liste; filtrelenebilir. Her nokta: kod, ad, bağlı varlık (**değiştirilebilir**),
+enerji türü, birim, **rol** (6.4), toplama dahil mi, veri tipi
+(ölçülen/hesaplanan/dağıtılmış/tahmini), formül, aktiflik.
+
+> Yeni bir makine eklemek burada **tek satır** eklemektir. Excel'de bu, yeni
+> sütun açmak ve bütün formülleri güncellemek demekti (S1).
+
+#### Sekme 3 — Enerji Türleri
+Elektrik, Doğalgaz, Buhar, Sıcak Su, Motorin. Ad, kod, ana birim, aktiflik.
+
+#### Sekme 4 — Dönüşüm Katsayıları
+Tarihli (İ-5): doğalgaz m³→kWh (≈10,92), buhar kg→kWh (600/860 = 0,6977).
+Her kayıt: enerji türü, kaynak/hedef birim, katsayı, geçerlilik başlangıcı,
+**kaynak** ve **not** (örn. *"600 kcal/kg ÷ 860 kcal/kWh"*).
+
+> **Sistem katsayı varsaymaz** (İ-3). Katsayı yoksa dönüştürülmüş değer
+> üretilmez ve nedeni yazılır.
+
+#### Sekme 5 — EnPI Tanımları (K-06)
+Ad, pay, payda, birim, ondalık hane, ana gösterge mi. Serbest sayıda.
+
+#### Sekme 6 — Baz Çizgiler (K-19)
+Ad, referans dönem, model tipi (sabit/regresyon), bağlam değişkeni,
+hesaplanan katsayılar (`a`, `b`, R²), not. Birden çok tanımlanabilir.
+
+#### Ortak kural
+**Tanımlar silinmez, pasife alınır** (İ-5). Veri girilmiş bir noktanın enerji
+türü veya birimi, geçmiş verinin anlamı değişeceği için ancak **açık onayla**
+değiştirilebilir.
+
+#### ISO 50001 ile ilişkisi
+Madde 6.3 enerji gözden geçirmesinin kapsamı · madde 6.4 EnPI tanımları ·
+madde 6.5 baz çizgi · madde 7.5 dokümante edilmiş bilgi.
+
+#### İleride eklenebilecekler
+Ağacın dışa/içe aktarımı · varlık şablonları (yeni kojen eklerken hazır
+ölçüm noktası seti) · birden çok hiyerarşi görünümü (fiziksel / maliyet
+merkezi) · ölçüm noktası için hedef ve eşik tanımı.
+
+---
+
+### 9.15 · Ekran 14 — Ayarlar ve Yedekleme
+
+#### Amaç
+Sistem ayarları ve **verinin güvenliği**. Tek HTML mimarisinde (K-09) bu ekran
+veri güvenliğinin merkezidir.
+
+#### Kullanıcının göreceği ve gireceği bilgiler
+
+**Genel:** fabrika adı · para birimi · varsayılan enerji birimi (kWh/GJ/TEP) ·
+ana EnPI · varsayılan baz çizgi · tema (açık/koyu) · ondalık hane.
+
+**Veri ve yedekleme (5.2):**
+
+| Alan | İçerik |
+|---|---|
+| Veri özeti | 8.640 değer · 96 dönem · 87 ölçüm noktası · 2018-01 → 2025-12 |
+| Son yedek | "12 gün önce" — 7 günden eskiyse uyarı rengi + ikon |
+| Yedek al | `.json` indirir |
+| Geri yükle | Önizleme + onay; öncesinde otomatik güvenlik yedeği |
+| Dosyaya doğrudan yazma | Chrome/Edge (K-11); isteğe bağlı, varsayılan kapalı |
+| Bütün veriyi sil | **Çift onay** + zorunlu yedek |
+
+**Tanılama:** program sürümü · veri şema sürümü · tarayıcı depo kullanımı.
+
+#### Sistemin hesaplayacağı değerler
+Veri istatistikleri · son yedekten bu yana geçen süre · depo doluluk oranı.
+
+#### Zorunlu davranış
+Uygulama **her açılışta** yedek yaşını denetler ve gerekiyorsa üst şeritte
+uyarır. Veri kaybı riski, bu mimarinin tek ciddi riskidir (5.2) ve bu ekran
+onu görünür tutar.
+
+#### ISO 50001 ile ilişkisi
+Madde 7.5.3 — dokümante edilmiş bilginin korunması, depolanması ve
+kaybolmaya karşı güvence altına alınması.
+
+#### İleride eklenebilecekler
+Otomatik periyodik yedek · yedek sürüm geçmişi · çok kullanıcı geldiğinde
+kullanıcı ve yetki ayarları · dil seçimi.
 
 ---
 
 ## 10. ISO 50001 ile ilişki
 
-> Ayrıntısı ekran tasarımlarıyla birlikte yazılacak. Çerçeve:
+> **Dürüst çerçeve:** Bu platform ISO 50001 çalışmasını **destekler**; eksiksiz
+> bir ISO 50001 yönetim sistemi değildir. Standardın politika, yetkinlik,
+> iç denetim, uygunsuzluk gibi maddeleri kuruluşun süreçleriyle karşılanır.
+> Platformun kapsadığı, standardın **ölçüm ve analiz omurgasıdır** — ve o
+> omurga olmadan "enerji performansında sürekli iyileştirme" şartı
+> kanıtlanamaz.
 
-| ISO 50001 gereği | Platformdaki karşılığı |
-|---|---|
-| Enerji gözden geçirmesi | Ölçüm kapsamı + Pareto + enerji dengesi |
-| SEU (önemli enerji kullanımı) | Varlık ağacında işaretleme + Pareto |
-| EnPI | Kullanıcı tanımlı gösterge seti (K-06) |
-| EnB (enerji baz çizgisi) | Baz çizgi modülü — sabit ve regresyonlu |
-| Hedefler | Aylık/yıllık hedef tanımı |
-| İzleme, ölçme, analiz | Panel, trend, CUSUM, normalize EnPI |
-| Eylem planları | Aksiyon takibi |
-| Dokümantasyon | İzlenebilirlik (her sayı ham veriye kadar açılabilir) |
+### 10.1 Madde eşlemesi
+
+| ISO 50001:2018 maddesi | Platformdaki karşılığı | Ekran |
+|---|---|---|
+| **6.3** Enerji gözden geçirmesi | Enerji dengesi, ölçüm kapsamı, Pareto, tüketim analizi | 5, 6 |
+| **6.3** Önemli enerji kullanımları (SEU) | Varlık ağacında işaretleme + Pareto sıralaması | 5, 6, 13 |
+| **6.3** Performansı etkileyen değişkenler | Bağlam değişkenleri (üretim, ileride derece-gün), dönüşüm verimliliği | 7, 8, 13 |
+| **6.4** EnPI | Kullanıcı tanımlı EnPI seti (K-06) | 7, 13 |
+| **6.5** Enerji baz çizgisi (EnB) | Sabit ve regresyonlu baz çizgi, birden çok (K-19) | 7, 13 |
+| **6.2** Amaçlar ve enerji hedefleri | Dört hedef türü (K-21) | 11 |
+| **6.2.2** Eylem planları | Aksiyon takibi, beklenen/gerçekleşen tasarruf | 11 |
+| **7.5** Dokümante edilmiş bilgi | Veri dosyası, yedekleme, izlenebilirlik (E-4) | 3, 12, 14 |
+| **9.1.1** İzleme ve ölçme | Veri girişi, veri denetimi, panel | 1, 2, 4 |
+| **9.1.1** Sonuçların geçerliliği | Doğrulama kuralları, veri kalitesi göstergeleri | 2, 4 |
+| **9.1** Analiz ve değerlendirme | Normalize EnPI, CUSUM, sapma analizi | 7 |
+| **9.3** Yönetimin gözden geçirmesi | Yönetim gözden geçirme raporu (K-20) | 12 |
+| **10** İyileştirme | Dönüşüm verimliliği bulguları → aksiyon | 8, 11 |
+
+### 10.2 Platformun ISO 50001'e asıl katkısı
+
+Standardın en zor kanıtlanan şartı şudur: *enerji performansı iyileşti mi?*
+
+Çoğu kuruluş bunu **ham EnPI** ile cevaplamaya çalışır ve tökezler; çünkü ham
+EnPI üretim düştüğünde kendiliğinden kötüleşir. 8.8'deki gerçek vaka bunu
+gösteriyor: ham EnPI %16,5 kötüleşme diyor, gerçek kötüleşme %10,7.
+
+Platformun sunduğu kanıt zinciri:
+
+```
+EnPI          →  bir şey değişti
+Baz çizgi     →  neye göre değişti
+Normalize EnPI→  gerçekte ne kadar değişti
+CUSUM         →  ne zaman değişti
+Verimlilik    →  neden değişti
+Fiyat/hacim   →  parasal karşılığı ne
+Aksiyon       →  ne yapılıyor
+```
+
+Denetçinin sorduğu her soru bu zincirde bir halkadır ve her halka ham veriye
+kadar açılabilir (E-4).
+
+### 10.3 Platformun kapsamadıkları
+
+Enerji politikası · organizasyon ve yetkinlik · iç denetim · uygunsuzluk ve
+düzeltici faaliyet · tedarik ve tasarım şartları (md. 8.2, 8.3) · yasal
+yükümlülük takibi. Bunlar kuruluşun kendi süreçleridir; platform yalnızca
+bunlara **veri ve kanıt** üretir.
 
 ---
 
@@ -1112,20 +1877,24 @@ zaman içindeki trendi · otomatik veri geldiğinde haberleşme kesintisi tespit
 
 | # | Soru | Sonuç |
 |---|---|---|
-| A-01 | Proje nerede yaşayacak? | **Kapandı** — K-09: tek HTML dosyası, kurulum yok |
+| A-01 | Proje nerede yaşayacak? | **Kapandı** — K-09: tek HTML dosyası |
 | A-02 | Maliyet nasıl oluşacak? | **Kapandı** — K-12: fatura tutarı elle girilir |
 | A-03 | Elektrik TL mahsup öncesi mi sonrası mı? | **Kapandı** — K-13: mahsup öncesi brüt |
 | A-04 | Veri girişi ekranı biçimi | **Kapandı** — K-14: dört yöntem birden |
+| A-09 | Ekran listesi | **Kapandı** — K-22: 14 ekran onaylandı |
 
 ### 11.2 Açık kalanlar
 
-| # | Soru | Neden önemli |
-|---|---|---|
-| **A-05** | İstasyon–makine tutarsızlığı (S3) neden kaynaklanıyor? İstasyon, makineler dışında başka tüketicileri de besliyor mu? | "Ölçülmeyen pay" hesabının doğru yorumlanması buna bağlı |
-| **A-06** | Hat-1..4 çekirdek dağıtım oranları (0,34 / 0,12 / 0,32 / 0,22) sabit mi kalacak, dönemsel mi tanımlanacak? | Hat bazlı EnPI hesaplanacaksa oranın doğruluğu kritik |
-| **A-07** | Motorin ileride kullanılacak mı? | Tanımlanacak ama veri girilmeyecek (S8) |
-| **A-08** | Buhar 600 kcal/kg varsayımı sabit mi, basınca göre değişken mi? | Kazan ve kojen verimi hesabını doğrudan etkiler |
-| **A-09** | Ekran listesi ve sırası onaylanacak | Tasarımın bir sonraki aşaması |
+Bunlar **kodlamayı engellemez**; ilk sürüm makul varsayımlarla çalışır,
+cevap gelince tanım ekranından değiştirilir.
+
+| # | Soru | Şimdilik varsayım | Neden önemli |
+|---|---|---|---|
+| **A-05** | İstasyon–makine tutarsızlığı (S3) neden kaynaklanıyor? İstasyon, makineler dışında başka tüketicileri de besliyor mu? | Fark "ölçülmeyen" olarak gösterilir | Ölçüm kapsamı yorumu buna bağlı |
+| **A-06** | Hat çekirdek dağıtım oranları (0,34/0,12/0,32/0,22) sabit mi, dönemsel mi? | Sabit; `veri_tipi = dagitilmis` olarak işaretli | Hat bazlı EnPI hesaplanacaksa kritik |
+| **A-07** | Motorin ileride kullanılacak mı? | Tanımlanır, veri girilmez (S8) | — |
+| **A-08** | Buhar 600 kcal/kg varsayımı sabit mi, basınca göre değişken mi? | Sabit, tarihli katsayı olarak tanımlı (0,6977 kWh/kg) | Kazan ve kojen verimini doğrudan etkiler — 8.8'deki bulgunun hassasiyeti buna bağlı |
+| **A-10** | Ekran 13'teki başlangıç varlık ağacı nasıl kurulsun? | Excel'in istasyon–makine yapısı temel alınır | K-16 gömülü tanımların içeriği |
 
 ---
 
@@ -1134,5 +1903,6 @@ zaman içindeki trendi · otomatik veri geldiğinde haberleşme kesintisi tespit
 | Sürüm | Tarih | Değişiklik |
 |---|---|---|
 | 0.1 | 2026-09-17 | İlk taslak. Excel analizi, temel ilkeler, K-01…K-08 kararları, veri modeli çerçevesi, enerji/mali denge ayrımı. |
+| 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |
 | 0.3 | 2026-09-17 | **Görsel dil ve grafik standartları (5.7)**: renk paleti, yasaklar (çift eksen dahil), zorunlu davranışlar, grafik tipleri. **Ekranlar bölümü başladı (9)**: tasarım ilkeleri, navigasyon haritası (14 ekran), Ekran 1–4 tam tasarımı (Gösterge Paneli, Veri Girişi, Veri Aktarma, Veri Denetimi). |
 | 0.2 | 2026-09-17 | **Teknik mimari belirlendi (Bölüm 5).** K-09…K-18 kararları: tek HTML dosyası, iki katmanlı veri saklama, Chrome/Edge, fatura tutarı girişi, GES mahsubunun ayrı kalem olması, dört yöntemli veri girişi, gömülü `.xlsx` okuyucu, saf SVG grafikler. Maliyet ve GES mahsup modeli (6.4b). A-01…A-04 kapatıldı. |
