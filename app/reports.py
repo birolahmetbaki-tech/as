@@ -240,4 +240,5 @@ def report(
         production_rows=production_rows(db, start, end),
         target_rows=target_rows(db, start, end),
         conflicts=calc.consumption_conflicts(db, start=start, end=end),
+        main_meter_gaps=calc.main_meter_gaps(db, start=start, end=end),
     )

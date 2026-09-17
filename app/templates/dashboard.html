@@ -17,7 +17,7 @@
   <select id="enerji" name="enerji">
     {% for energy_type in energy_types %}
     <option value="{{ energy_type.id }}" {{ "selected" if energy_type.id == selected_energy.id }}>
-      {{ energy_type.name }}
+      {{ energy_type.name }}{% if not energy_type.is_active %} (pasif){% endif %}
     </option>
     {% endfor %}
   </select>
@@ -40,6 +40,14 @@
 
 <h1>{{ month_label }} · {{ selected_energy.name }}</h1>
 
+{% if not selected_energy.is_active %}
+<p class="notice">
+  <strong>{{ selected_energy.name }}</strong> pasif bir enerji türüdür: yeni
+  sayaç, okuma, doğrudan tüketim ve hedef girilemez. Geçmiş kayıtları ve
+  hesapları korunduğu için raporlanmaya devam eder.
+</p>
+{% endif %}
+
 {% if summary.conflict %}
 {% set conflict = summary.conflict %}
 <p class="warning">
@@ -50,6 +58,22 @@
   {% if conflict.fark_yuzde is not none %}
   <span class="warning-note">Fark: %{{ conflict.fark_yuzde|abs|sayi(1) }}</span>
   {% endif %}
+</p>
+{% endif %}
+
+{% if summary.main_meter_gap %}
+{% set gap = summary.main_meter_gap %}
+<p class="warning">
+  {{ gap.enerji_turu }}: Bu dönemde ana sayaç
+  ({{ gap.ana_sayaclar|join(", ") }}) okuması bulunmadığı için fabrika toplamı
+  eksik görünüyor. Alt sayaçlarda {{ gap.alt_toplam|sayi }} {{ gap.birim }}
+  tüketim var.
+  <span class="warning-note">
+    Bir enerji türünde ana sayaç tanımlıysa fabrika toplamı yalnızca ana
+    sayaçlardan hesaplanır; alt sayaçlar ana sayaç yerine geçmez (geçseydi
+    ölçülmeyen pay gizlenirdi). Eksik ana sayaç okumasını
+    <a href="/okumalar">Okumalar</a> ekranından girin.
+  </span>
 </p>
 {% endif %}
 
@@ -129,7 +153,8 @@
       <tbody>
         {% for row in total_energy.rows %}
         <tr class="{{ '' if row.convertible else 'passive' }}">
-          <td>{{ row.energy_type.name }}</td>
+          <td>{{ row.energy_type.name }}{% if not row.energy_type.is_active %}
+            <span class="muted small">(pasif)</span>{% endif %}</td>
           <td class="right">{{ row.raw_total|sayi }}</td>
           <td>{{ row.raw_unit }}</td>
           <td class="right">
@@ -346,8 +371,9 @@
     </thead>
     <tbody>
       {% for item in all_summaries %}
-      <tr>
-        <td>{{ item.energy_type.name }}</td>
+      <tr class="{{ '' if item.energy_type.is_active else 'passive' }}">
+        <td>{{ item.energy_type.name }}{% if not item.energy_type.is_active %}
+          <span class="muted small">(pasif)</span>{% endif %}</td>
         <td class="right">{{ item.total|sayi }} {{ item.energy_type.unit }}</td>
         <td>{{ item.source }}</td>
         <td class="right {{ 'up' if item.change.difference > 0 else ('down' if item.change.difference < 0 else '') }}">

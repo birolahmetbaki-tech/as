@@ -11,7 +11,13 @@ from sqlalchemy.orm import Session
 
 from app import calc, units
 from app.db import get_session
-from app.models import Department, EnergyConversion, EnergyType, Meter
+from app.models import (
+    Department,
+    EnergyConversion,
+    EnergyType,
+    Meter,
+    MeterReading,
+)
 from app.web import (
     flash,
     optional_text,
@@ -22,6 +28,10 @@ from app.web import (
 )
 
 router = APIRouter(prefix="/tanimlar")
+
+
+class ConfirmationRequired(ValueError):
+    """Geri alinmasi zor bir degisiklik icin kullanicidan acik onay bekleniyor."""
 
 
 def _name_in_use(db: Session, model, name: str, exclude_id: int | None = None) -> bool:
@@ -272,6 +282,7 @@ def _read_meter_form(
     multiplier: str,
     is_main: str | None,
     exclude_id: int | None = None,
+    current_energy_type_id: int | None = None,
 ) -> dict:
     clean_name = required_text(name, "Sayaç adı", 120)
     if _name_in_use(db, Meter, clean_name, exclude_id=exclude_id):
@@ -282,6 +293,13 @@ def _read_meter_form(
     energy_type = db.get(EnergyType, int(energy_type_id))
     if energy_type is None:
         raise ValueError("Seçilen enerji türü bulunamadı.")
+    # Pasif tur yalnizca zaten ona bagli olan sayacta kalabilir; yeni bir
+    # sayac pasif ture baglanamaz, mevcut sayac pasif ture tasinamaz.
+    if not energy_type.is_active and energy_type.id != current_energy_type_id:
+        raise ValueError(
+            f"'{energy_type.name}' pasif bir enerji türü. Pasif türlere yeni "
+            "sayaç bağlanamaz."
+        )
 
     department = None
     if (department_id or "").strip():
@@ -301,6 +319,38 @@ def _read_meter_form(
         "multiplier": value,
         "is_main": is_main is not None,
     }
+
+
+def _require_energy_type_change_confirmation(
+    db: Session, meter: Meter, values: dict, onay: str | None
+) -> None:
+    """Okumasi olan bir sayacin enerji turu degistiriliyorsa acik onay ister.
+
+    MVP'de tanimlarin tarihsel versiyonu tutulmaz: tur degisince o sayacin
+    GECMIS okumalari da yeni turden sayilmaya baslar, birimi ve enerji anlami
+    degisir. Sessizce yapilmasi yanlis raporlar uretir; bu yuzden kullanicidan
+    ayrica onay alinir. Okumasi olmayan sayacta boyle bir risk yoktur.
+    """
+    if values["energy_type_id"] == meter.energy_type_id or onay is not None:
+        return
+
+    reading_count = db.scalar(
+        select(func.count())
+        .select_from(MeterReading)
+        .where(MeterReading.meter_id == meter.id)
+    )
+    if not reading_count:
+        return
+
+    new_type = db.get(EnergyType, values["energy_type_id"])
+    raise ConfirmationRequired(
+        f"'{meter.name}' sayacının {reading_count} okuması var. Enerji türü "
+        f"'{meter.energy_type.name}' ({meter.energy_type.unit}) → "
+        f"'{new_type.name}' ({new_type.unit}) olarak değiştirilirse bu "
+        "okumalardan hesaplanan GEÇMİŞ tüketimler de yeni enerji türüne ve "
+        "birimine göre sayılır; geçmiş dönem raporları, maliyetler ve EnPI "
+        "değerleri değişir. Devam etmek için aşağıdaki onay kutusunu işaretleyin."
+    )
 
 
 @router.get("/sayaclar")
@@ -372,6 +422,7 @@ def edit_meter(
     multiplier: str = Form("1"),
     is_main: str | None = Form(None),
     is_active: str | None = Form(None),
+    onay: str | None = Form(None),
     db: Session = Depends(get_session),
 ):
     meter = db.get(Meter, meter_id)
@@ -387,7 +438,9 @@ def edit_meter(
             multiplier,
             is_main,
             exclude_id=meter_id,
+            current_energy_type_id=meter.energy_type_id,
         )
+        _require_energy_type_change_confirmation(db, meter, values, onay)
     except ValueError as error:
         return render(
             request,
@@ -396,6 +449,7 @@ def edit_meter(
             status_code=400,
             meter=meter,
             error=str(error),
+            confirm_needed=isinstance(error, ConfirmationRequired),
             form={
                 "name": name,
                 "energy_type_id": energy_type_id,

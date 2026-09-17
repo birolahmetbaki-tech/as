@@ -45,6 +45,7 @@ def _read_form(
     energy_type_id: str,
     value: str,
     exclude_id: int | None = None,
+    current_energy_type_id: int | None = None,
 ) -> dict:
     month = parse_year_month(year_month, "Ay")
 
@@ -53,6 +54,13 @@ def _read_form(
     energy_type = db.get(EnergyType, int(energy_type_id))
     if energy_type is None:
         raise ValueError("Seçilen enerji türü bulunamadı.")
+    # Pasif ture yeni hedef girilemez; mevcut hedefin turu degismiyorsa
+    # duzenlemeye izin verilir (gecmis kayit duzeltilebilsin).
+    if not energy_type.is_active and energy_type.id != current_energy_type_id:
+        raise ValueError(
+            f"'{energy_type.name}' pasif bir enerji türü. Pasif türlere yeni "
+            "hedef girilemez."
+        )
 
     target_value = parse_number(value, "Hedef tüketim")
     if target_value <= 0:
@@ -139,7 +147,12 @@ def edit_target(
         return render(request, "not_found.html", db, status_code=404, what="Hedef")
     try:
         values = _read_form(
-            db, year_month, energy_type_id, target_value, exclude_id=target_id
+            db,
+            year_month,
+            energy_type_id,
+            target_value,
+            exclude_id=target_id,
+            current_energy_type_id=target.energy_type_id,
         )
     except ValueError as error:
         return render(

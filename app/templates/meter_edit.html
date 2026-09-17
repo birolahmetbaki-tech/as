@@ -55,12 +55,32 @@
            {{ "checked" if (form.is_main if form else meter.is_main) }}>
     Ana sayaç
   </label>
+  <p class="muted small">
+    Hatırlatma: Ana sayaçlar fabrika toplamında kullanılır; bölüm dağılımına
+    dahil edilmez.
+  </p>
   <label class="check">
     <input type="checkbox" name="is_active"
            {{ "checked" if (form.is_active if form else meter.is_active) }}>
     Aktif
   </label>
   <p class="muted small">Pasif sayaçlar veri giriş ekranında listelenmez, geçmiş okumaları korunur.</p>
+
+  {% if confirm_needed %}
+  <label class="check">
+    <input type="checkbox" name="onay" required>
+    Geçmiş tüketimlerin yeni enerji türüne göre sayılacağını anlıyorum.
+  </label>
+  {% endif %}
+
+  <p class="warning">
+    Bu ekrandaki değişiklikler <strong>geçmiş raporları da etkiler</strong>.
+    Tanımların tarihsel bir sürümü tutulmaz: bölüm değiştirilirse bu sayacın
+    geçmiş tüketimi eski bölümden düşer yeni bölüme eklenir; ana/alt durumu
+    değiştirilirse geçmiş dönemlerin fabrika toplamı değişir; çarpan
+    değiştirilirse geçmiş tüketimler yeni çarpanla yeniden hesaplanır.
+  </p>
+
   <div class="actions">
     <button type="submit">Kaydet</button>
     <a href="/tanimlar/sayaclar">Vazgeç</a>

@@ -354,6 +354,75 @@ def consumption_conflicts(
     return conflicts
 
 
+def main_meter_gaps(
+    db: Session,
+    start: date | None = None,
+    end: date | None = None,
+    energy_type_id: int | None = None,
+) -> list[dict]:
+    """Ana sayac tanimli ama donemde ana sayac tuketimi yok; alt sayaclarda var.
+
+    Bu durumda fabrika toplami dogru davranisla 0 (ya da eksik) cikar: ana
+    sayac tanimliyken alt sayaclar onun yerine GECMEZ, yoksa mukerrer ve
+    eksik olcumler birbirine karisir. Bu islev yalnizca kullaniciya durumu
+    bildirmek icindir; oncelik kuralini degistirmez.
+
+    Dogrudan tuketim girilen donemler bildirilmez: orada fabrika toplami
+    zaten dogrudan degerden gelir, eksik bir sey yoktur.
+    """
+    query = select(EnergyType).order_by(EnergyType.id)
+    if energy_type_id is not None:
+        query = query.where(EnergyType.id == energy_type_id)
+
+    gaps = []
+    for energy_type in db.scalars(query):
+        meters = list(
+            db.scalars(select(Meter).where(Meter.energy_type_id == energy_type.id))
+        )
+        main_meters = [meter for meter in meters if meter.is_main]
+        sub_meters = [meter for meter in meters if not meter.is_main]
+        if not main_meters or not sub_meters:
+            continue
+
+        if direct_consumptions(
+            db, start=start, end=end, energy_type_id=energy_type.id
+        ):
+            continue
+
+        main_total = total(
+            consumptions(
+                db,
+                start=start,
+                end=end,
+                meter_ids=[meter.id for meter in main_meters],
+            )
+        )
+        if main_total:
+            continue
+
+        sub_total = total(
+            consumptions(
+                db,
+                start=start,
+                end=end,
+                meter_ids=[meter.id for meter in sub_meters],
+            )
+        )
+        if not sub_total:
+            continue
+
+        gaps.append(
+            {
+                "enerji_turu_id": energy_type.id,
+                "enerji_turu": energy_type.name,
+                "birim": energy_type.unit,
+                "ana_sayaclar": [meter.name for meter in main_meters],
+                "alt_toplam": sub_total,
+            }
+        )
+    return gaps
+
+
 # --------------------------------------------------------------------------- #
 # Toplama ve gruplama (veritabanina dokunmaz)
 # --------------------------------------------------------------------------- #

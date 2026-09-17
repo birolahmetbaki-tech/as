@@ -43,6 +43,22 @@
 </p>
 {% endif %}
 
+{% if main_meter_gaps %}
+<p class="warning">
+  Aşağıdaki enerji türlerinde ana sayaç tanımlı olmasına rağmen bu aralıkta
+  ana sayaç okuması yok; fabrika toplamı bu yüzden eksik görünüyor.
+  {% for gap in main_meter_gaps %}
+  <span class="warning-note">
+    {{ gap.enerji_turu }}: ana sayaç ({{ gap.ana_sayaclar|join(", ") }}) okuması
+    yok · alt sayaçlarda {{ gap.alt_toplam|sayi }} {{ gap.birim }} tüketim var.
+  </span>
+  {% endfor %}
+  <span class="warning-note">
+    Alt sayaçlar ana sayaç yerine geçmez; eksik ana sayaç okuması girilmelidir.
+  </span>
+</p>
+{% endif %}
+
 {% if breakdown == "enerji" %}
 <section class="panel">
   <h2>Enerji türüne göre tüketim</h2>
@@ -55,8 +71,9 @@
                <th class="right">Maliyet ({{ currency }})</th></tr></thead>
     <tbody>
       {% for row in energy_rows %}
-      <tr>
-        <td>{{ row.energy_type.name }}</td>
+      <tr class="{{ '' if row.energy_type.is_active else 'passive' }}">
+        <td>{{ row.energy_type.name }}{% if not row.energy_type.is_active %}
+          <span class="muted small">(pasif)</span>{% endif %}</td>
         <td class="right">{{ row.total|sayi }}</td>
         <td>{{ row.energy_type.unit }}</td>
         <td>{{ row.source }}</td>
@@ -121,7 +138,9 @@
       {% for row in meter_rows %}
       <tr>
         <td>{{ row.meter.name }}</td>
-        <td>{{ row.meter.energy_type.name }}</td>
+        <td>{{ row.meter.energy_type.name }}{%
+          if not row.meter.energy_type.is_active %}
+          <span class="muted small">(pasif)</span>{% endif %}</td>
         <td>{{ row.meter.department.name if row.meter.department else "—" }}</td>
         <td>{{ "Ana" if row.meter.is_main else "Alt" }}</td>
         <td class="right">{{ row.total|sayi }}</td>
@@ -146,7 +165,8 @@
 {% if department_sections %}
 {% for section in department_sections %}
 <section class="panel">
-  <h2>Bölüme göre tüketim · {{ section.energy_type.name }}</h2>
+  <h2>Bölüme göre tüketim · {{ section.energy_type.name }}{%
+    if not section.energy_type.is_active %} (pasif){% endif %}</h2>
   {% if section.breakdown.scope_warning %}
   <p class="error">
     Bölüm sayaçlarının toplamı ({{ section.breakdown.measured|sayi }}

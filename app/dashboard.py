@@ -110,6 +110,12 @@ def energy_summary(db: Session, energy_type: EnergyType, year_month: str) -> dic
         db, start=start, end=end, energy_type_id=energy_type.id
     )
 
+    # Ana sayac tanimli ama donemde okumasi yoksa fabrika toplami dogru
+    # davranisla 0 cikar; alt sayaclar sessizce onun yerine gecmez.
+    gaps = calc.main_meter_gaps(
+        db, start=start, end=end, energy_type_id=energy_type.id
+    )
+
     return {
         "energy_type": energy_type,
         "total": total,
@@ -118,6 +124,7 @@ def energy_summary(db: Session, energy_type: EnergyType, year_month: str) -> dic
         "previous_label": month_label(previous_month),
         "target": calc.target_status(total, target.target_value) if target else None,
         "conflict": conflicts[0] if conflicts else None,
+        "main_meter_gap": gaps[0] if gaps else None,
         "source": source_label(entries),
     }
 

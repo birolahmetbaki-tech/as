@@ -24,6 +24,20 @@
            {{ "checked" if (form.is_active if form else energy_type.is_active) }}>
     Aktif
   </label>
+  <p class="muted small">
+    Pasif enerji türlerine yeni sayaç, okuma, doğrudan tüketim ve hedef
+    girilemez; geçmiş kayıtları ve raporları korunur.
+  </p>
+
+  <p class="warning">
+    Bu ekrandaki değişiklikler <strong>geçmiş raporları da etkiler</strong>.
+    Tanımların tarihsel bir sürümü tutulmaz: <strong>birim</strong>
+    değiştirilirse geçmiş tüketimler yeni birimde yazılmış gibi görünür ve
+    dönüşüm katsayıları bu yeni birime göre yorumlanır;
+    <strong>birim fiyat</strong> değiştirilirse geçmiş dönemlerin maliyeti de
+    yeni fiyattan hesaplanır (geçmiş fiyat takibi yoktur).
+  </p>
+
   <div class="actions">
     <button type="submit">Kaydet</button>
     <a href="/tanimlar/enerji-turleri">Vazgeç</a>
