@@ -60,40 +60,99 @@ Python 3.11 · FastAPI · SQLAlchemy · Alembic · SQLite · Jinja2 · pytest
 
 ## Kurulum
 
+Gereken tek şey **Python 3.11 veya üstü**. İnternet yalnızca ilk kurulumda
+(paketleri indirmek için) gerekir; sonrasında uygulama tamamen çevrimdışı çalışır.
+
+### Windows
+
+```bat
+python -m venv .venv
+.venv\Scripts\python -m pip install -e ".[dev]"
+
+copy .env.example .env
+.venv\Scripts\python scripts\generate_secret.py   :: çıktıyı .env içine yapıştırın
+.venv\Scripts\python scripts\set_password.py      :: çıktıyı .env içine yapıştırın
+
+.venv\Scripts\alembic upgrade head                 :: veritabanını oluşturur
+.venv\Scripts\uvicorn app.main:app
+```
+
+Kurulumdan sonra uygulamayı her seferinde `baslat.bat` dosyasına çift
+tıklayarak açabilirsiniz.
+
+### Linux / macOS
+
 ```bash
-uv venv
-uv pip install -e ".[dev]"
+python3 -m venv .venv            # veya: uv venv
+.venv/bin/python -m pip install -e ".[dev]"
 
 cp .env.example .env
 .venv/bin/python scripts/generate_secret.py   # çıktıyı .env içine yapıştırın
 .venv/bin/python scripts/set_password.py      # çıktıyı .env içine yapıştırın
 
 .venv/bin/alembic upgrade head                # veritabanını oluşturur
-.venv/bin/uvicorn app.main:app --reload
+.venv/bin/uvicorn app.main:app
 ```
 
-Uygulama <http://127.0.0.1:8000> adresinde çalışır.
+Uygulama <http://127.0.0.1:8000> adresinde çalışır; tarayıcıdan bu adresi açın.
+Pencereyi kapatmak uygulamayı durdurur (terminalde `Ctrl+C`).
+
+`alembic upgrade head` adımı atlanırsa tablolar oluşmaz ve giriş sonrası
+**Internal Server Error** görürsünüz. Bu durumda uygulamayı durdurup komutu
+çalıştırın, sonra yeniden başlatın.
+
+Geliştirme yaparken kod değişince otomatik yeniden başlatma için
+`uvicorn app.main:app --reload` kullanılır; günlük kullanımda gerekmez.
 
 İnternete açık bir sunucuda çalıştırıyorsanız uygulamayı mutlaka HTTPS
-arkasına alın ve `.env` içinde `SECURE_COOKIE=1` yapın.
+arkasına alın ve `.env` içinde `SECURE_COOKIE=1` yapın. Tasarım hedefi tek
+bilgisayarda, yerel ağda çalışmaktır.
 
 ## Testler
 
 ```bash
-.venv/bin/python -m pytest
+.venv/bin/python -m pytest        # Windows: .venv\Scripts\python -m pytest
 ```
 
 ## Veritabanı ve yedekleme
 
-Bütün veriler `data/enerji.db` dosyasındadır (`DATA_DIR` ile değiştirilebilir).
-Yedek almak için uygulama çalışırken de güvenli olan şu komut kullanılır:
+Bütün veriler tek bir dosyadadır: `data/enerji.db` (`DATA_DIR` ile
+değiştirilebilir). Bu dosya kaybolursa bütün geçmiş kaybolur.
+
+**Yedek almak** (uygulama açıkken de güvenlidir):
 
 ```bash
-sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
+.venv/bin/python scripts/backup.py            # Windows: .venv\Scripts\python scripts\backup.py
 ```
+
+Yedek `backups/enerji-YYYY-AA-GG_SSDD.db` adıyla oluşur. Windows'ta
+`yedekle.bat` dosyasına çift tıklamak da aynı işi yapar.
+
+> **`data\enerji.db` dosyasını elle kopyalamayın.** Uygulama SQLite'ı WAL
+> kipinde çalıştırır; henüz ana dosyaya işlenmemiş kayıtlar `enerji.db-wal`
+> dosyasında bekler. Uygulama açıkken yalnızca `enerji.db` kopyalanırsa bu
+> kayıtlar yedeğe girmez ve yedek sessizce eksik olur. Yukarıdaki betik
+> SQLite'ın kendi yedekleme arayüzünü kullandığı için her zaman tam ve
+> tutarlı bir kopya üretir. Harici bir program (`sqlite3.exe` gibi) gerekmez.
+
+Yedek dosyasını ayrıca bir USB belleğe veya başka bir diske kopyalayın; aynı
+bilgisayarda kalırsa disk arızasında veriyle birlikte kaybolur.
+
+**Geri yüklemek** (önce uygulamayı kapatın):
+
+```bash
+.venv/bin/python scripts/restore.py                            # yedekleri listeler
+.venv/bin/python scripts/restore.py backups/enerji-2026-01-15_0900.db
+```
+
+Geri yükleme, üzerine yazmadan önce mevcut veritabanını
+`backups/geri-yukleme-oncesi-...db` adıyla kendiliğinden yedekler; yanlış dosya
+seçilse bile eski duruma dönülebilir.
 
 Şema değişiklikleri Alembic ile yönetilir; güncelleme sonrası
 `alembic upgrade head` çalıştırılır.
+
+Günlük kullanım için adım adım anlatım: **[KULLANIM.md](KULLANIM.md)**.
 
 ## Ekranlar
 

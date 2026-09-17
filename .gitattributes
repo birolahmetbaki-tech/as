@@ -1,0 +1,2 @@
+# Windows toplu is dosyalari her zaman CRLF ile teslim edilir.
+*.bat text eol=crlf
