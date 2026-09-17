@@ -168,3 +168,107 @@ def test_aylik_panel_toplamlari_aralik_raporuna_esit(db, sayac):
     )
     rapor = reports.rows_by_energy_type(db, OCAK[0], MART[1])[0]["total"]
     assert panel_toplami == pytest.approx(rapor)
+
+
+# --------------------------------------------------------------------------- #
+# 8. Yil sinirinin sartnamedeki ornegi: 01.12.2026 -> 01.01.2027 = Aralik 2026
+# --------------------------------------------------------------------------- #
+
+
+def test_01_12_ile_01_01_arasi_onceki_yilin_aralik_ayina_yazilir(db):
+    electricity = energy_type(db, price=1.0)
+    main = meter(db, "Ana Trafo", electricity, is_main=True)
+    readings(db, main, {"2026-12-01": 10_000, "2027-01-01": 11_500})
+
+    aralik_2026 = _fabrika(db, date(2026, 12, 1), date(2026, 12, 31))
+    ocak_2027 = _fabrika(db, date(2027, 1, 1), date(2027, 1, 31))
+
+    assert aralik_2026 == pytest.approx(1_500)
+    assert ocak_2027 == pytest.approx(0)
+
+    # Panel de ayni sonucu verir: tuketim ikinci okumanin ayina kaymaz.
+    panel = dashboard.energy_summary(db, electricity, "2026-12")
+    assert panel["total"] == pytest.approx(1_500)
+    assert dashboard.energy_summary(db, electricity, "2027-01")["total"] == 0
+
+
+def test_yil_sinirinda_panel_ve_rapor_ayni_degeri_verir(db):
+    electricity = energy_type(db, price=1.0)
+    main = meter(db, "Ana Trafo", electricity, is_main=True)
+    readings(db, main, {"2026-12-01": 10_000, "2027-01-01": 11_500})
+
+    for year_month, bounds in (
+        ("2026-12", (date(2026, 12, 1), date(2026, 12, 31))),
+        ("2027-01", (date(2027, 1, 1), date(2027, 1, 31))),
+    ):
+        panel = dashboard.energy_summary(db, electricity, year_month)
+        rapor = reports.rows_by_energy_type(db, *bounds)[0]
+        assert panel["total"] == pytest.approx(rapor["total"])
+        assert panel["cost"] == pytest.approx(rapor["cost"])
+
+
+# --------------------------------------------------------------------------- #
+# 9. Suzme sirasi eslesmeyi bozmuyor
+# --------------------------------------------------------------------------- #
+
+
+def test_dar_aralik_sorgusu_eslesmeyi_bozmaz(db, sayac):
+    """Eslestirme her zaman TUM okumalar uzerinden yapilir, suzme sonradan.
+
+    Subat sorgulandiginda 01.02 okumasi aralik icinde, 01.03 okumasi disinda
+    kalir; buna ragmen Subat tuketimi (1.200) dogru uretilir.
+    """
+    assert _fabrika(db, *SUBAT) == pytest.approx(1_200)
+
+    # Yalnizca tek gunluk aralik: 01.02 donem tarihini tasiyan kayit gelir.
+    entries = calc.factory_consumptions(
+        db, start=date(2026, 2, 1), end=date(2026, 2, 1), energy_type_id=1
+    )
+    assert [entry.consumption for entry in entries] == [pytest.approx(1_200)]
+
+
+def test_suzme_donem_tarihine_gore_yapilir(db, sayac):
+    """Ay ortasindan ay ortasina aralik: donem tarihi (ilk okuma) belirleyicidir."""
+    entries = calc.factory_consumptions(
+        db, start=date(2026, 1, 15), end=date(2026, 2, 15), energy_type_id=1
+    )
+    # 01.01 donem tarihi araligin disinda, 01.02 icinde kalir.
+    assert [entry.period_date for entry in entries] == [date(2026, 2, 1)]
+    assert calc.total(entries) == pytest.approx(1_200)
+
+
+def test_aylik_toplamlar_tek_seferde_de_ay_ay_da_ayni(db, sayac):
+    """Aralik sorgusu ile ay ay sorgu ayni sonucu verir: kayma veya tekrar yok."""
+    topluca = calc.group_by_period(
+        calc.factory_consumptions(db, start=OCAK[0], end=MART[1], energy_type_id=1)
+    )
+    ay_ay = {
+        "2026-01": _fabrika(db, *OCAK),
+        "2026-02": _fabrika(db, *SUBAT),
+    }
+    assert topluca == {key: pytest.approx(value) for key, value in ay_ay.items()}
+
+
+# --------------------------------------------------------------------------- #
+# 10. Dogrudan tuketim ayni kurala uyar
+# --------------------------------------------------------------------------- #
+
+
+def test_dogrudan_tuketim_ayni_donem_kuralina_uyar(db):
+    """Ocak dogrudan kaydi ile 01.01 -> 01.02 sayac tuketimi ayni aya duser."""
+    from tests.factories import direct_consumption
+
+    electricity = energy_type(db, price=1.0)
+    main = meter(db, "Ana Trafo", electricity, is_main=True)
+    readings(db, main, {"2026-01-01": 0, "2026-02-01": 1_000})
+
+    # Once yalnizca sayac: Ocak.
+    assert _fabrika(db, *OCAK) == pytest.approx(1_000)
+
+    # Ocak dogrudan kaydi ayni aya denk gelir, cakisma olarak bildirilir.
+    direct_consumption(db, electricity, "2026-01", 1_100)
+    assert _fabrika(db, *OCAK) == pytest.approx(1_100)
+    assert _fabrika(db, *SUBAT) == pytest.approx(0)
+
+    conflicts = calc.consumption_conflicts(db, start=OCAK[0], end=OCAK[1])
+    assert [conflict["donem"] for conflict in conflicts] == ["2026-01"]

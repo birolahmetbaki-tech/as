@@ -9,9 +9,14 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
 - **Ham veri ile hesap ayrıdır.** Veritabanında sayaç endeksi saklanır;
   tüketim, maliyet ve EnPI gibi türetilmiş değerler saklanmaz, merkezi
   hesaplama modülünde üretilir.
-- **Tüketim = (endeks₂ − endeks₁) × sayaç çarpanı** ve ikinci okumanın
-  tarihine yazılır. Bu hesap yalnızca `app/calc.py` içinde yapılır; hiçbir
-  ekran kendi tüketim hesabını yapmaz.
+- **Tüketim = (endeks₂ − endeks₁) × sayaç çarpanı** ve **birinci okumanın
+  bulunduğu takvim ayına** yazılır. Sahada endeksler bir sonraki ayın 1. günü
+  okunduğu için dönem, ikinci okumanın değil ilk okumanın tarihine göre
+  belirlenir:
+  `01.01 → 01.02 = Ocak`, `01.02 → 01.03 = Şubat`,
+  `01.12.2026 → 01.01.2027 = Aralık 2026`.
+  Tüketim gün bazında orantılı olarak bölünmez. Bu hesap yalnızca
+  `app/calc.py` içinde yapılır; hiçbir ekran kendi tüketim hesabını yapmaz.
 - Fabrika toplamında, bir enerji türünde **ana sayaç tanımlıysa yalnızca ana
   sayaçlar** kullanılır; tanımlı değilse o türdeki tüm sayaçlar kullanılır.
 - **Maliyet = tüketim × enerji türünün güncel birim fiyatı.** Geçmiş fiyat
