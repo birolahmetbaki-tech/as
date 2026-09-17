@@ -19,6 +19,7 @@ from app.models import DirectConsumption, EnergyType
 from app.web import (
     flash,
     month_label,
+    parse_id,
     optional_text,
     parse_number,
     parse_year_month,
@@ -71,9 +72,7 @@ def _read_form(db: Session, year_month: str, energy_type_id: str, quantity: str)
             f"(içinde bulunulan ay: {month_label(_current_period())})."
         )
 
-    if not (energy_type_id or "").strip():
-        raise ValueError("Enerji türü seçilmelidir.")
-    energy_type = db.get(EnergyType, int(energy_type_id))
+    energy_type = db.get(EnergyType, parse_id(energy_type_id, "Enerji türü"))
     if energy_type is None:
         raise ValueError("Seçilen enerji türü bulunamadı.")
     if not energy_type.is_active:

@@ -20,6 +20,16 @@
            value="{{ form.unit_price if form else '0' }}" required>
   </div>
   <button type="submit">Ekle</button>
+  <p class="muted small full">
+    <strong>Birim:</strong> bu enerji türünün temel tüketim birimidir; sayaç
+    okumaları ve doğrudan tüketim kayıtları bu birimde tutulur (örn.
+    <code>kWh</code>, <code>Sm³</code>, <code>kg</code>). Birim fiyat da bu
+    birim başınadır. <code>kWh</code>, <code>MJ</code>, <code>GJ</code> gibi
+    standart enerji birimleri GJ/TEP toplamına kendiliğinden çevrilir; Sm³ veya
+    kg gibi enerji içeriğine bağlı birimlerde
+    <a href="/tanimlar/donusum-katsayilari">dönüşüm katsayısı</a> tanımlamanız
+    gerekir.
+  </p>
 </form>
 
 {% if energy_types %}

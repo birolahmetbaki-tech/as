@@ -17,8 +17,13 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
   `01.12.2026 → 01.01.2027 = Aralık 2026`.
   Tüketim gün bazında orantılı olarak bölünmez. Bu hesap yalnızca
   `app/calc.py` içinde yapılır; hiçbir ekran kendi tüketim hesabını yapmaz.
-- Fabrika toplamında, bir enerji türünde **ana sayaç tanımlıysa yalnızca ana
-  sayaçlar** kullanılır; tanımlı değilse o türdeki tüm sayaçlar kullanılır.
+- **Fabrika toplamında kaynak önceliği**, enerji türü ve AY bazında:
+  **doğrudan tüketim → ana sayaç → tüm sayaçlar.** Bir ay için doğrudan tüketim
+  (fatura/beyan) girilmişse o ayın fabrika toplamı odur; girilmemişse o türde
+  ana sayaç tanımlıysa yalnızca ana sayaçlar, ana sayaç yoksa o türdeki tüm
+  sayaçlar kullanılır. Aynı ayda iki kaynak birden bulunursa **değerler
+  toplanmaz**: doğrudan tüketim esas alınır ve çakışma ekranda farkıyla
+  birlikte bildirilir.
 - **Maliyet = tüketim × enerji türünün güncel birim fiyatı.** Geçmiş fiyat
   takibi yoktur: birim fiyat değiştirilirse geçmiş dönemlerin maliyeti de yeni
   fiyata göre hesaplanır. Vergi, ek bedel ve tarife dilimi kapsam dışıdır.
@@ -38,10 +43,13 @@ toplama (sayaç, PLC, SCADA, ERP) bulunmaz.
 - **Maliyet dönüşümden etkilenmez:** her zaman enerji türünün kendi biriminden
   ve kendi birim fiyatından hesaplanır. Aylık hedefler de enerji türünün kendi
   birimindedir.
-- Gösterge panelinde **bölüm dağılımı** bölüme bağlı alt sayaçlardan gelir;
-  fabrika toplamı ile arasındaki fark "ölçülmeyen / dağıtılmamış" olarak
-  gösterilir. Bu fark negatifse tüketim gibi değil, ölçüm kapsamı uyarısı
-  olarak gösterilir.
+- **Bölüm dağılımı** yalnızca bölüme bağlı **alt** sayaçlardan hesaplanır; ana
+  sayaçlar bölüm dağılımına dahil edilmez (edilseydi aynı tüketim iki kez
+  sayılırdı). Bir ana sayaca bölüm seçilebilir, bu onun dağılımdaki payını
+  değiştirmez. Fabrika toplamı ile bölüm satırlarının toplamı arasındaki fark
+  **"ölçülmeyen / dağıtılmamış"** olarak ayrı bir satırda gösterilir; satırların
+  toplamı fabrika toplamına eşittir, üzerine eklenmez. Bu fark negatifse tüketim
+  gibi değil, ölçüm kapsamı uyarısı olarak gösterilir.
 - Sayı girişi Türkçe yazımı doğru yorumlar: `1.000` → 1000, `1.250,50` → 1250,5.
   Tanımsız biçimler sessizce dönüştürülmez, hata verilir.
 - Bugün ihtiyaç duyulmayan özellik sisteme eklenmez.
@@ -89,24 +97,43 @@ sqlite3 data/enerji.db ".backup 'backups/enerji-$(date +%F).db'"
 
 ## Ekranlar
 
-- **Gösterge paneli** — seçilen ayın tüketimi, önceki dönemle karşılaştırma,
-  maliyet, varsa aylık hedef durumu, bölüm dağılımı, son 12 ayın trendi
+- **Gösterge paneli** — seçilen ayın tüketimi ve kaynağı (sayaç / doğrudan),
+  önceki dönemle karşılaştırma, maliyet, varsa aylık hedef durumu, üretim
+  birimine göre **EnPI**, bölüm dağılımı ve "ölçülmeyen / dağıtılmamış" payı,
+  son 12 ayın tüketim ve EnPI trendi. Ayrıca **bütün enerji türlerinin ortak
+  birimde toplamı**: görüntüleme birimi kWh / MJ / GJ / TEP arasından seçilir,
+  her tür kendi katsayısıyla çevrilip toplanır ve son 12 ay bu birimde
+  gösterilir. Çakışma, eksik ana sayaç okuması ve eksik dönüşüm katsayısı
+  durumlarında ekranda açık uyarı çıkar
 - **Bölümler** — ekleme, düzenleme, pasife alma
 - **Enerji türleri** — ad, birim, birim fiyat, aktiflik
-- **Sayaçlar** — ad, enerji türü, bölüm, seri no, çarpan, ana/alt sayaç, aktiflik
+- **Sayaçlar** — ad, enerji türü, bölüm, seri no, çarpan, ana/alt sayaç, aktiflik.
+  Okuması olan bir sayacın enerji türü, geçmiş tüketimlerin anlamı değişeceği
+  için ancak açık onayla değiştirilebilir
+- **Dönüşüm katsayıları** — enerji içeriği katsayısı: `1 <enerji türü birimi> =
+  katsayı GJ`. Geçerlilik başlangıcı, kaynak ve not alanlarıyla saklanır
 - **Okumalar** — sayaç endeksi girişi; son okumalar ve sayaç bazında geçmiş.
   Yanlış girilen okuma onay alınarak silinip yeniden girilebilir
+- **Doğrudan tüketim** — sayaç endeksi olmadan, ayın tüketiminin doğrudan
+  girilmesi (fatura/beyan). Ay ve enerji türü başına tek kayıt; enerji türünün
+  kendi biriminde tutulur. Kayıt silinince o ay için yeniden sayaç tüketimi
+  kullanılır
 - **Üretim** — tarih, miktar ve birim; aynı gün ve birim için tek kayıt.
   Yanlış kayıt onay alınarak silinebilir
 - **Hedefler** — ay + enerji türü bazında aylık tüketim hedefi; düzeltilebilir
   ve silinebilir
 - **Rapor** — tarih aralığı ve kırılım (enerji türü / sayaç / bölüm) seçimiyle
-  tek ekranlık, yazdırılabilir rapor
+  tek ekranlık, yazdırılabilir rapor. Enerji türü kırılımında tüketimin kaynağı,
+  seçilen enerji birimindeki eşdeğeri ve kullanılan katsayı da gösterilir;
+  üretim/EnPI ve hedef tabloları rapora dahildir
 
 Tanım kayıtları silinmez; kullanılmayan tanımlar pasife alınır. Böylece geçmiş
 veriler her zaman anlamlı kalır.
 
 ## Veri modeli
+
+Dokuz tablo vardır. Türetilmiş değerler (tüketim, maliyet, EnPI, GJ
+eşdeğeri) saklanmaz; her zaman ham veriden yeniden hesaplanır.
 
 | Tablo | İçerik |
 |---|---|
@@ -115,6 +142,8 @@ veriler her zaman anlamlı kalır.
 | `department` | Fabrika bölümleri |
 | `meter` | Sayaç: enerji türü, bölüm, çarpan, ana/alt sayaç ayrımı |
 | `meter_reading` | Tarih bazlı sayaç endeksi (ham veri) |
+| `direct_consumption` | Doğrudan girilen aylık tüketim (ay + enerji türü benzersiz) |
+| `energy_conversion` | Enerji içeriği katsayısı: 1 birim = ? GJ (enerji türü + geçerlilik başlangıcı benzersiz) |
 | `production` | Üretim miktarı ve birimi (tarih + birim benzersiz) |
 | `target` | Aylık tüketim hedefi (ay + enerji türü benzersiz) |
 
@@ -137,6 +166,9 @@ app/
   units.py      birim envanteri ve matematiksel birim dönüşümleri
   dashboard.py  gösterge paneli (calc sonuçlarını gösterir)
   web.py        şablon, bildirim, sayı/tarih biçimi ve doğrulama yardımcıları
+  ai_tools.py   (şu an aktif değil) ileride eklenecek AI asistanı için
+  ai_snapshot.py  ayrılmış, salt-okunur veri katmanı; uygulamanın hiçbir
+                yerinden çağrılmaz ve çalışmasını etkilemez
   templates/  static/
 migrations/     Alembic şema geçişleri
 scripts/        parola ve anahtar üretme yardımcıları

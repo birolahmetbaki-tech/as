@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -54,6 +55,19 @@ def create_app() -> FastAPI:
         if not path.startswith(PUBLIC_PATHS) and not request.session.get("auth"):
             return RedirectResponse(LOGIN_PATH, status_code=303)
         return await call_next(request)
+
+    @app.exception_handler(RequestValidationError)
+    async def gecersiz_adres(request: Request, hata: RequestValidationError):
+        """Adresteki bozuk degerler icin ham JSON yerine Turkce sayfa.
+
+        Ekranlardaki baglantilar ve formlar bu duruma dusmez; bu yalnizca
+        adres cubugu elle duzenlendiginde devreye girer.
+        """
+        return render(
+            request,
+            "invalid_request.html",
+            status_code=400,
+        )
 
     @app.get("/saglik")
     async def health():

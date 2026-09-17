@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.db import get_session
 from app.models import EnergyType, Target
-from app.web import flash, month_label, parse_number, parse_year_month, render
+from app.web import flash, month_label, parse_id, parse_number, parse_year_month, render
 
 router = APIRouter(prefix="/hedefler")
 
@@ -49,9 +49,7 @@ def _read_form(
 ) -> dict:
     month = parse_year_month(year_month, "Ay")
 
-    if not (energy_type_id or "").strip():
-        raise ValueError("Enerji türü seçilmelidir.")
-    energy_type = db.get(EnergyType, int(energy_type_id))
+    energy_type = db.get(EnergyType, parse_id(energy_type_id, "Enerji türü"))
     if energy_type is None:
         raise ValueError("Seçilen enerji türü bulunamadı.")
     # Pasif ture yeni hedef girilemez; mevcut hedefin turu degismiyorsa

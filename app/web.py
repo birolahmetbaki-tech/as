@@ -155,6 +155,22 @@ def month_label(year_month: str) -> str:
 templates.env.globals["ay_adi"] = month_label
 
 
+def parse_id(raw: str | None, field_label: str) -> int:
+    """Formdan gelen kayit numarasini cozer.
+
+    Ekranlarda bu alanlar <select> ile doldurulur; buraya sayi disinda bir sey
+    gelmesi ancak istek elle bozulursa olur. Yine de kullaniciya Python'un
+    ham hata metni degil, Turkce ve sade bir mesaj gosterilir.
+    """
+    text = (raw or "").strip()
+    if not text:
+        raise ValueError(f"{field_label} seçilmelidir.")
+    try:
+        return int(text)
+    except ValueError:
+        raise ValueError(f"Geçersiz {field_label.lower()} seçimi.") from None
+
+
 def parse_year_month(raw: str | None, field_label: str) -> str:
     """Ay metnini dogrular ve 'YYYY-MM' bicimine getirir."""
     text = (raw or "").strip()

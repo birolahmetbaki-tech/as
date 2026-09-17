@@ -18,6 +18,7 @@ from app.web import (
     format_number,
     optional_text,
     parse_date,
+    parse_id,
     parse_number,
     render,
 )
@@ -103,9 +104,7 @@ def _page_context(db: Session, selected_meter_id: int | None) -> dict:
 def _read_form(
     db: Session, meter_id: str, reading_date: str, index_value: str, note: str
 ) -> dict:
-    if not (meter_id or "").strip():
-        raise ValueError("Sayaç seçilmelidir.")
-    meter = db.get(Meter, int(meter_id))
+    meter = db.get(Meter, parse_id(meter_id, "Sayaç"))
     if meter is None:
         raise ValueError("Seçilen sayaç bulunamadı.")
     if not meter.is_active:

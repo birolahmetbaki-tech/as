@@ -323,7 +323,7 @@ def monthly_trend(db: Session, energy_type: EnergyType, year_month: str) -> list
 def dashboard(
     request: Request,
     donem: str | None = None,
-    enerji: int | None = None,
+    enerji: str | None = None,
     birim: str | None = None,
     enerji_birimi: str | None = None,
     db: Session = Depends(get_session),
@@ -340,8 +340,11 @@ def dashboard(
     if not energy_types:
         return render(request, "dashboard.html", db, year_month=year_month)
 
+    # Adres cubugundan bozuk bir deger gelirse hata sayfasi yerine varsayilan
+    # enerji turune donulur; ekran calismaya devam eder.
+    secili_id = int(enerji) if (enerji or "").strip().lstrip("-").isdigit() else None
     selected = next(
-        (item for item in energy_types if item.id == enerji), energy_types[0]
+        (item for item in energy_types if item.id == secili_id), energy_types[0]
     )
     summary = energy_summary(db, selected, year_month)
     settings = db.get(Settings, 1)

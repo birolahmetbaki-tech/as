@@ -142,12 +142,6 @@ def convert(value: float, from_code: str, to_code: str) -> float:
     return value * factor_between(from_code, to_code)
 
 
-def to_reference(value: float, from_code: str) -> float:
-    """Degeri kendi boyutunun referans birimine cevirir."""
-    unit = get(from_code)
-    return value * unit.factor
-
-
 # --------------------------------------------------------------------------- #
 # Enerji birimleri. Referans: GJ
 #

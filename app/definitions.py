@@ -22,6 +22,7 @@ from app.web import (
     flash,
     optional_text,
     parse_date,
+    parse_id,
     parse_number,
     render,
     required_text,
@@ -288,9 +289,7 @@ def _read_meter_form(
     if _name_in_use(db, Meter, clean_name, exclude_id=exclude_id):
         raise ValueError(f"'{clean_name}' adında bir sayaç zaten var.")
 
-    if not (energy_type_id or "").strip():
-        raise ValueError("Enerji türü seçilmelidir.")
-    energy_type = db.get(EnergyType, int(energy_type_id))
+    energy_type = db.get(EnergyType, parse_id(energy_type_id, "Enerji türü"))
     if energy_type is None:
         raise ValueError("Seçilen enerji türü bulunamadı.")
     # Pasif tur yalnizca zaten ona bagli olan sayacta kalabilir; yeni bir
@@ -303,7 +302,7 @@ def _read_meter_form(
 
     department = None
     if (department_id or "").strip():
-        department = db.get(Department, int(department_id))
+        department = db.get(Department, parse_id(department_id, "Bölüm"))
         if department is None:
             raise ValueError("Seçilen bölüm bulunamadı.")
 
@@ -503,9 +502,7 @@ def _conversion_page_context(db: Session) -> dict:
 def _read_conversion_form(
     db: Session, energy_type_id: str, factor: str, valid_from: str, source: str
 ) -> dict:
-    if not (energy_type_id or "").strip():
-        raise ValueError("Enerji türü seçilmelidir.")
-    energy_type = db.get(EnergyType, int(energy_type_id))
+    energy_type = db.get(EnergyType, parse_id(energy_type_id, "Enerji türü"))
     if energy_type is None:
         raise ValueError("Seçilen enerji türü bulunamadı.")
 
