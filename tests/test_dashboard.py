@@ -28,9 +28,9 @@ def fabrika(db):
     production_meter = meter(db, "Üretim Sayacı", electricity, production)
     packaging_meter = meter(db, "Paketleme Sayacı", electricity, packaging)
 
-    readings(db, main, {"2025-11-30": 900, "2025-12-31": 1000, "2026-01-31": 1460})
-    readings(db, production_meter, {"2025-12-31": 0, "2026-01-31": 12000})
-    readings(db, packaging_meter, {"2025-12-31": 0, "2026-01-31": 3500})
+    readings(db, main, {"2025-12-01": 900, "2026-01-01": 1000, "2026-02-01": 1460})
+    readings(db, production_meter, {"2026-01-01": 0, "2026-02-01": 12000})
+    readings(db, packaging_meter, {"2026-01-01": 0, "2026-02-01": 3500})
     return electricity
 
 
@@ -116,8 +116,8 @@ def test_bolum_toplami_fabrika_toplamini_asarsa_uyari_verilir(db):
     production = department(db, "Üretim")
     main = meter(db, "Ana Trafo", electricity, is_main=True)
     sub = meter(db, "Üretim Sayacı", electricity, production)
-    readings(db, main, {"2026-01-01": 0, "2026-01-31": 1000})
-    readings(db, sub, {"2026-01-01": 0, "2026-01-31": 1500})
+    readings(db, main, {"2026-01-01": 0, "2026-02-01": 1000})
+    readings(db, sub, {"2026-01-01": 0, "2026-02-01": 1500})
 
     breakdown = dashboard.department_breakdown(db, electricity, *dashboard.month_bounds("2026-01"), 1000)
     assert breakdown["unmeasured"] == pytest.approx(-500)
@@ -132,9 +132,9 @@ def test_bolumu_olmayan_alt_sayac_dagilima_girmez(db):
     main = meter(db, "Ana Trafo", electricity, is_main=True)
     sub = meter(db, "Üretim Sayacı", electricity, production)
     loose = meter(db, "Bölümsüz Sayaç", electricity)
-    readings(db, main, {"2026-01-01": 0, "2026-01-31": 1000})
-    readings(db, sub, {"2026-01-01": 0, "2026-01-31": 600})
-    readings(db, loose, {"2026-01-01": 0, "2026-01-31": 200})
+    readings(db, main, {"2026-01-01": 0, "2026-02-01": 1000})
+    readings(db, sub, {"2026-01-01": 0, "2026-02-01": 600})
+    readings(db, loose, {"2026-01-01": 0, "2026-02-01": 200})
 
     breakdown = dashboard.department_breakdown(db, electricity, *dashboard.month_bounds("2026-01"), 1000)
     assert [row["label"] for row in breakdown["rows"]] == [
@@ -152,7 +152,7 @@ def test_bolumu_olmayan_alt_sayac_dagilima_girmez(db):
 def test_enerji_turu_toplamlari_karismaz(db, fabrika):
     gas = energy_type(db, name="Doğal Gaz", unit="Sm³", price=12.0)
     gas_meter = meter(db, "Kazan Gaz Sayacı", gas)
-    readings(db, gas_meter, {"2025-12-31": 8000, "2026-01-31": 9200})
+    readings(db, gas_meter, {"2026-01-01": 8000, "2026-02-01": 9200})
 
     electricity_summary = dashboard.energy_summary(db, fabrika, "2026-01")
     gas_summary = dashboard.energy_summary(db, gas, "2026-01")
@@ -258,7 +258,7 @@ def test_gecersiz_donem_bugune_doner(logged_in_client, db, fabrika):
 def test_enerji_turu_secilebilir(logged_in_client, db, fabrika):
     gas = energy_type(db, name="Doğal Gaz", unit="Sm³", price=12.0)
     gas_meter = meter(db, "Kazan Gaz Sayacı", gas)
-    readings(db, gas_meter, {"2025-12-31": 8000, "2026-01-31": 9200})
+    readings(db, gas_meter, {"2026-01-01": 8000, "2026-02-01": 9200})
 
     response = logged_in_client.get(f"/?donem=2026-01&enerji={gas.id}")
     assert "Ocak 2026 · Doğal Gaz" in response.text

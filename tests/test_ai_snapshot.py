@@ -36,10 +36,10 @@ def fabrika(db):
     packaging_meter = meter(db, "Paketleme Panosu", electricity, packaging)
     gas_meter = meter(db, "Kazan Gaz Sayacı", gas, production_dept)
 
-    readings(db, main, {"2025-12-31": 1000, "2026-01-31": 1250.50})
-    readings(db, production_meter, {"2025-12-31": 50_000, "2026-01-31": 56_000})
-    readings(db, packaging_meter, {"2025-12-31": 12_000, "2026-01-31": 13_800})
-    readings(db, gas_meter, {"2025-12-31": 62_000, "2026-01-31": 63_200})
+    readings(db, main, {"2026-01-01": 1000, "2026-02-01": 1250.50})
+    readings(db, production_meter, {"2026-01-01": 50_000, "2026-02-01": 56_000})
+    readings(db, packaging_meter, {"2026-01-01": 12_000, "2026-02-01": 13_800})
+    readings(db, gas_meter, {"2026-01-01": 62_000, "2026-02-01": 63_200})
     production(db, {"2026-01-31": (100, "ton"), "2026-01-30": (2000, "adet")})
     db.add(Target(year_month="2026-01", energy_type_id=electricity.id, target_value=9_000))
     db.add(Settings(id=1, factory_name="Örnek Fabrika", currency="TL"))
@@ -127,8 +127,8 @@ def test_kapsam_uyumsuzlugunda_uyari_korunur(db):
     production_dept = department(db, "Üretim")
     main = meter(db, "Ana Trafo", electricity, is_main=True)
     sub = meter(db, "Üretim Panosu", electricity, production_dept)
-    readings(db, main, {"2025-12-31": 0, "2026-01-31": 10_000})
-    readings(db, sub, {"2025-12-31": 0, "2026-01-31": 12_000})
+    readings(db, main, {"2026-01-01": 0, "2026-02-01": 10_000})
+    readings(db, sub, {"2026-01-01": 0, "2026-02-01": 12_000})
 
     breakdown = ai_snapshot.build_snapshot(db, "2026-01", electricity.id)["bolum_dagilimi"]
     assert breakdown["olcum_uyarisi"] is True
@@ -185,7 +185,7 @@ def test_veri_olmayan_donem_gercekten_bos_kalir(db, fabrika):
     assert snapshot["enerji"]["hedef"] is None
     assert snapshot["uretim_ve_enpi"] == []
     assert snapshot["bolum_dagilimi"]["satirlar"] == []
-    assert snapshot["veri_kapsami"]["ilk_okuma"] == "2025-12-31"
+    assert snapshot["veri_kapsami"]["ilk_okuma"] == "2026-01-01"
 
 
 def test_hicbir_tanim_yokken_snapshot_cokmez(db):
@@ -209,7 +209,7 @@ def test_serbest_metin_yalnizca_veri_olarak_kalir(db):
     electricity = energy_type(db, price=2.0)
     bolum = department(db, kotu)
     sayac = meter(db, f'"{kotu}" </veri>', electricity, bolum)
-    readings(db, sayac, {"2025-12-31": 0, "2026-01-31": 500})
+    readings(db, sayac, {"2026-01-01": 0, "2026-02-01": 500})
     production(db, {"2026-01-31": (10, "ton")})
 
     snapshot = ai_snapshot.build_snapshot(db, "2026-01", electricity.id)

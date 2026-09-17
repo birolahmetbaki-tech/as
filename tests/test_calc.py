@@ -31,7 +31,7 @@ def db():
 def test_iki_okuma_arasindaki_tuketim(db):
     """Sartnamedeki ornek: (1.250 - 1.000) x 40 = 10.000"""
     meter = _meter(db, "Ana Trafo", _energy_type(db), multiplier=40)
-    _readings(db, meter, {"2026-01-01": 1000, "2026-01-31": 1250})
+    _readings(db, meter, {"2026-01-01": 1000, "2026-02-01": 1250})
 
     entries = calc.meter_consumptions(db, meter.id)
     assert len(entries) == 1
@@ -41,7 +41,7 @@ def test_iki_okuma_arasindaki_tuketim(db):
 
 def test_carpani_olmayan_sayacta_endeks_farki_kullanilir(db):
     meter = _meter(db, "Sayaç", _energy_type(db))
-    _readings(db, meter, {"2026-01-01": 1000, "2026-01-31": 1250})
+    _readings(db, meter, {"2026-01-01": 1000, "2026-02-01": 1250})
 
     assert calc.meter_consumptions(db, meter.id)[0].consumption == pytest.approx(250)
 
@@ -67,7 +67,7 @@ def test_birden_fazla_okuma_zincirlenir(db):
     _readings(
         db,
         meter,
-        {"2026-01-01": 100, "2026-01-11": 150, "2026-01-21": 220, "2026-01-31": 300},
+        {"2026-01-01": 100, "2026-01-11": 150, "2026-01-21": 220, "2026-02-01": 300},
     )
 
     entries = calc.meter_consumptions(db, meter.id)
@@ -138,29 +138,36 @@ def test_ondalikli_endeksler_yuvarlanmadan_hesaplanir(db):
 
 
 def test_tarih_araligi_filtrelenir(db):
+    """Suzme, tuketimin ait oldugu tarihe (ilk okuma) gore yapilir."""
     meter = _meter(db, "Sayaç", _energy_type(db))
     _readings(
         db, meter, {"2026-01-01": 100, "2026-02-01": 200, "2026-03-01": 350}
     )
 
+    # 01.02 -> 01.03 arasindaki tuketim Şubat ayina aittir.
     entries = calc.meter_consumptions(
-        db, meter.id, start=date(2026, 3, 1), end=date(2026, 3, 31)
+        db, meter.id, start=date(2026, 2, 1), end=date(2026, 2, 28)
     )
     assert len(entries) == 1
     assert entries[0].consumption == pytest.approx(150)
+    assert entries[0].period_date == date(2026, 2, 1)
 
 
-def test_aralik_basindaki_tuketim_aralik_disindaki_okumayla_eslesir(db):
-    """Ocak sonundaki okuma aralik disinda kalsa da Subat tuketimi dogru cikar."""
+def test_donem_sonrasi_okuma_donem_tuketimini_verir(db):
+    """Subat tuketimi, 1 Mart'ta alinan okumayla hesaplanir.
+
+    Okuma araligin disinda kalsa bile donem tuketimi dogru cikar.
+    """
     meter = _meter(db, "Sayaç", _energy_type(db))
-    _readings(db, meter, {"2026-01-31": 1000, "2026-02-28": 1400})
+    _readings(db, meter, {"2026-02-01": 1000, "2026-03-01": 1400})
 
     entries = calc.meter_consumptions(
         db, meter.id, start=date(2026, 2, 1), end=date(2026, 2, 28)
     )
     assert len(entries) == 1
     assert entries[0].consumption == pytest.approx(400)
-    assert entries[0].previous_date == date(2026, 1, 31)
+    assert entries[0].period_date == date(2026, 2, 1)  # donem: Şubat
+    assert entries[0].reading_date == date(2026, 3, 1)  # kaynak okuma: 1 Mart
 
 
 def test_aralik_disinda_kayit_yoksa_bos_doner(db):
@@ -202,8 +209,8 @@ def test_ana_sayac_yoksa_tum_sayaclar_kullanilir(db):
     electricity = _energy_type(db)
     first = _meter(db, "Sayaç 1", electricity)
     second = _meter(db, "Sayaç 2", electricity)
-    _readings(db, first, {"2026-01-01": 0, "2026-01-31": 1000})
-    _readings(db, second, {"2026-01-01": 0, "2026-01-31": 300})
+    _readings(db, first, {"2026-01-01": 0, "2026-02-01": 1000})
+    _readings(db, second, {"2026-01-01": 0, "2026-02-01": 300})
 
     assert calc.factory_meter_ids(db, electricity.id) == sorted([first.id, second.id])
     assert calc.total(calc.factory_consumptions(db)) == pytest.approx(1300)
@@ -218,10 +225,10 @@ def test_ana_sayac_kurali_her_enerji_turu_icin_ayri_uygulanir(db):
     gas_one = _meter(db, "Gaz 1", gas)
     gas_two = _meter(db, "Gaz 2", gas)
 
-    _readings(db, main_electric, {"2026-01-01": 0, "2026-01-31": 1000})
-    _readings(db, sub_electric, {"2026-01-01": 0, "2026-01-31": 400})
-    _readings(db, gas_one, {"2026-01-01": 0, "2026-01-31": 200})
-    _readings(db, gas_two, {"2026-01-01": 0, "2026-01-31": 100})
+    _readings(db, main_electric, {"2026-01-01": 0, "2026-02-01": 1000})
+    _readings(db, sub_electric, {"2026-01-01": 0, "2026-02-01": 400})
+    _readings(db, gas_one, {"2026-01-01": 0, "2026-02-01": 200})
+    _readings(db, gas_two, {"2026-01-01": 0, "2026-02-01": 100})
 
     # Elektrikte ana sayac var -> yalnizca ana sayac; gazda yok -> ikisi de.
     assert calc.total(
@@ -245,8 +252,8 @@ def test_bolum_kirilimi(db):
 
     production_meter = _meter(db, "Üretim Sayacı", electricity, production)
     packaging_meter = _meter(db, "Paketleme Sayacı", electricity, packaging)
-    _readings(db, production_meter, {"2026-01-01": 0, "2026-01-31": 800})
-    _readings(db, packaging_meter, {"2026-01-01": 0, "2026-01-31": 200})
+    _readings(db, production_meter, {"2026-01-01": 0, "2026-02-01": 800})
+    _readings(db, packaging_meter, {"2026-01-01": 0, "2026-02-01": 200})
 
     totals = calc.group_by_department(calc.consumptions(db))
     assert totals == {"Üretim": pytest.approx(800), "Paketleme": pytest.approx(200)}
@@ -257,8 +264,8 @@ def test_bolumsuz_sayac_ayri_gosterilir(db):
     production = _department(db, "Üretim")
     with_department = _meter(db, "Üretim Sayacı", electricity, production)
     without_department = _meter(db, "Şebeke Sayacı", electricity)
-    _readings(db, with_department, {"2026-01-01": 0, "2026-01-31": 600})
-    _readings(db, without_department, {"2026-01-01": 0, "2026-01-31": 400})
+    _readings(db, with_department, {"2026-01-01": 0, "2026-02-01": 600})
+    _readings(db, without_department, {"2026-01-01": 0, "2026-02-01": 400})
 
     entries = calc.consumptions(db)
     assert calc.group_by_department(entries) == {
@@ -281,8 +288,8 @@ def test_farkli_enerji_turleri_birbirine_karismaz(db):
     water = _energy_type(db, name="Su", unit="m³")
     electric_meter = _meter(db, "Elektrik Sayacı", electricity)
     water_meter = _meter(db, "Su Sayacı", water)
-    _readings(db, electric_meter, {"2026-01-01": 0, "2026-01-31": 1000})
-    _readings(db, water_meter, {"2026-01-01": 0, "2026-01-31": 50})
+    _readings(db, electric_meter, {"2026-01-01": 0, "2026-02-01": 1000})
+    _readings(db, water_meter, {"2026-01-01": 0, "2026-02-01": 50})
 
     electric_entries = calc.consumptions(db, energy_type_id=electricity.id)
     assert calc.total(electric_entries) == pytest.approx(1000)
@@ -304,8 +311,8 @@ def test_pasif_sayacin_gecmis_tuketimi_hesaba_dahildir(db):
     electricity = _energy_type(db)
     active = _meter(db, "Aktif Sayaç", electricity)
     retired = _meter(db, "Emekli Sayaç", electricity, is_active=False)
-    _readings(db, active, {"2026-01-01": 0, "2026-01-31": 700})
-    _readings(db, retired, {"2026-01-01": 0, "2026-01-31": 300})
+    _readings(db, active, {"2026-01-01": 0, "2026-02-01": 700})
+    _readings(db, retired, {"2026-01-01": 0, "2026-02-01": 300})
 
     assert calc.total(calc.consumptions(db)) == pytest.approx(1000)
     assert calc.total(calc.factory_consumptions(db)) == pytest.approx(1000)
@@ -315,8 +322,8 @@ def test_pasif_ana_sayac_kurali_bozmaz(db):
     electricity = _energy_type(db)
     main = _meter(db, "Ana Sayaç", electricity, is_main=True, is_active=False)
     sub = _meter(db, "Alt Sayaç", electricity)
-    _readings(db, main, {"2026-01-01": 0, "2026-01-31": 900})
-    _readings(db, sub, {"2026-01-01": 0, "2026-01-31": 400})
+    _readings(db, main, {"2026-01-01": 0, "2026-02-01": 900})
+    _readings(db, sub, {"2026-01-01": 0, "2026-02-01": 400})
 
     assert calc.factory_meter_ids(db, electricity.id) == [main.id]
     assert calc.total(calc.factory_consumptions(db)) == pytest.approx(900)
@@ -332,8 +339,8 @@ def test_gunluk_gruplama(db):
     _readings(db, meter, {"2026-01-01": 0, "2026-01-02": 100, "2026-01-03": 250})
 
     assert calc.group_by_period(calc.consumptions(db), calc.PERIOD_DAY) == {
-        "2026-01-02": pytest.approx(100),
-        "2026-01-03": pytest.approx(150),
+        "2026-01-01": pytest.approx(100),
+        "2026-01-02": pytest.approx(150),
     }
 
 
@@ -345,8 +352,8 @@ def test_aylik_gruplama(db):
         {
             "2026-01-01": 0,
             "2026-01-15": 100,
-            "2026-01-31": 250,
-            "2026-02-28": 400,
+            "2026-02-01": 250,
+            "2026-03-01": 400,
         },
     )
 
@@ -358,7 +365,7 @@ def test_aylik_gruplama(db):
 
 def test_yillik_gruplama(db):
     meter = _meter(db, "Sayaç", _energy_type(db))
-    _readings(db, meter, {"2025-12-31": 0, "2026-06-30": 500, "2026-12-31": 900})
+    _readings(db, meter, {"2026-01-01": 0, "2026-07-01": 500, "2027-01-01": 900})
 
     assert calc.group_by_period(calc.consumptions(db), calc.PERIOD_YEAR) == {
         "2026": pytest.approx(900)
@@ -369,7 +376,7 @@ def test_gruplama_anahtarlari_kronolojik_siralanir(db):
     meter = _meter(db, "Sayaç", _energy_type(db))
     _readings(db, meter, {"2026-03-01": 300, "2026-01-01": 0, "2026-02-01": 100})
 
-    assert list(calc.group_by_period(calc.consumptions(db))) == ["2026-02", "2026-03"]
+    assert list(calc.group_by_period(calc.consumptions(db))) == ["2026-01", "2026-02"]
 
 
 def test_bilinmeyen_donem_hata_verir(db):
@@ -442,7 +449,7 @@ def test_enpi_serisi_aylik_uretilir(db):
     _readings(
         db,
         meter,
-        {"2025-12-31": 0, "2026-01-31": 10_000, "2026-02-28": 18_000},
+        {"2026-01-01": 0, "2026-02-01": 10_000, "2026-03-01": 18_000},
     )
     _production(db, {"2026-01-31": (100, "ton"), "2026-02-28": (80, "ton")})
 
@@ -454,7 +461,7 @@ def test_enpi_serisi_aylik_uretilir(db):
 def test_uretimi_olmayan_ay_enpi_uretmez(db):
     electricity = _energy_type(db)
     meter = _meter(db, "Ana Trafo", electricity, is_main=True)
-    _readings(db, meter, {"2025-12-31": 0, "2026-01-31": 10_000, "2026-02-28": 16_000})
+    _readings(db, meter, {"2026-01-01": 0, "2026-02-01": 10_000, "2026-03-01": 16_000})
     _production(db, {"2026-01-31": (100, "ton")})
 
     series = calc.enpi_series(db, "ton", electricity.id)
@@ -467,8 +474,8 @@ def test_enpi_farkli_enerji_turlerini_karistirmaz(db):
     gas = _energy_type(db, name="Doğal Gaz", unit="Sm³")
     electric_meter = _meter(db, "Elektrik Ana", electricity, is_main=True)
     gas_meter = _meter(db, "Gaz Sayacı", gas)
-    _readings(db, electric_meter, {"2025-12-31": 0, "2026-01-31": 10_000})
-    _readings(db, gas_meter, {"2025-12-31": 0, "2026-01-31": 500})
+    _readings(db, electric_meter, {"2026-01-01": 0, "2026-02-01": 10_000})
+    _readings(db, gas_meter, {"2026-01-01": 0, "2026-02-01": 500})
     _production(db, {"2026-01-31": (100, "ton")})
 
     assert calc.enpi_series(db, "ton", electricity.id)["2026-01"] == pytest.approx(100)
@@ -478,7 +485,7 @@ def test_enpi_farkli_enerji_turlerini_karistirmaz(db):
 def test_enpi_farkli_uretim_birimlerini_karistirmaz(db):
     electricity = _energy_type(db)
     meter = _meter(db, "Ana Trafo", electricity, is_main=True)
-    _readings(db, meter, {"2025-12-31": 0, "2026-01-31": 10_000})
+    _readings(db, meter, {"2026-01-01": 0, "2026-02-01": 10_000})
     _production(db, {"2026-01-31": (100, "ton"), "2026-01-30": (2000, "adet")})
 
     assert calc.enpi_series(db, "ton", electricity.id)["2026-01"] == pytest.approx(100)

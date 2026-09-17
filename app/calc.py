@@ -6,7 +6,10 @@ hedefler ve ileride AI kendi hesabini yapmaz; hepsi buradaki sonuclari kullanir.
 Temel kurallar:
 
 * Tuketim = (yeni endeks - onceki endeks) x sayac carpani
-* Tuketim, ikinci okumanin tarihine yazilir.
+* Tuketim, BIRINCI okumanin ait oldugu takvim ayina yazilir. Sahada endeksler
+  bir sonraki ayin 1. gunu okundugu icin (orn. 01.01 -> 01.02 arasindaki
+  tuketim Ocak ayina aittir) donem, ikinci okumanin degil ilk okumanin
+  tarihine gore belirlenir.
 * Bir sayacin ilk okumasi icin tuketim uretilmez (karsilastirilacak onceki
   okuma yoktur).
 * Fabrika toplaminda, bir enerji turunde ana sayac tanimliysa yalnizca ana
@@ -40,8 +43,8 @@ class Consumption:
     carpan da tasinir.
     """
 
-    reading_date: date  # tuketimin yazildigi tarih (ikinci okumanin tarihi)
-    previous_date: date
+    reading_date: date  # ikinci (yeni) okumanin tarihi - izlenebilirlik icin
+    previous_date: date  # birinci (onceki) okumanin tarihi
     meter_id: int
     meter_name: str
     energy_type_id: int
@@ -53,6 +56,15 @@ class Consumption:
     index_value: float
     multiplier: float
     consumption: float
+
+    @property
+    def period_date(self) -> date:
+        """Tuketimin ait oldugu tarih: birinci okumanin tarihi.
+
+        Donem suzmesi ve gruplama bu tarihe gore yapilir. 01.01 -> 01.02
+        arasindaki tuketim Ocak ayina yazilir.
+        """
+        return self.previous_date
 
     @property
     def department_label(self) -> str:
@@ -97,9 +109,10 @@ def meter_consumptions(
 ) -> list[Consumption]:
     """Tek bir sayacin tuketim kayitlari.
 
-    Tarih araligi, tuketimin yazildigi tarihe (ikinci okuma) gore suzulur.
-    Esleme her zaman sayacin tum okumalari uzerinden yapilir; boylece aralik
-    basindaki tuketim, araligin disinda kalan onceki okumayla dogru eslesir.
+    Tarih araligi, tuketimin ait oldugu tarihe (BIRINCI okuma) gore suzulur.
+    Esleme her zaman sayacin tum okumalari uzerinden yapilir; boylece bir
+    donemin tuketimi, donem disinda kalan (bir sonraki ayin 1'inde alinan)
+    ikinci okumayla dogru eslesir.
     """
     meter = db.get(Meter, meter_id)
     if meter is None:
@@ -148,7 +161,7 @@ def consumptions(
         )
         entries.extend(_pair_readings(meter, readings))
 
-    entries.sort(key=lambda entry: (entry.reading_date, entry.meter_name))
+    entries.sort(key=lambda entry: (entry.period_date, entry.meter_name))
     return _in_range(entries, start, end)
 
 
@@ -158,8 +171,8 @@ def _in_range(
     return [
         entry
         for entry in entries
-        if (start is None or entry.reading_date >= start)
-        and (end is None or entry.reading_date <= end)
+        if (start is None or entry.period_date >= start)
+        and (end is None or entry.period_date <= end)
     ]
 
 
@@ -231,7 +244,7 @@ def group_by_period(
     """Donem bazinda toplam tuketim. Anahtarlar kronolojik siradadir."""
     totals: dict[str, float] = defaultdict(float)
     for entry in entries:
-        totals[period_key(entry.reading_date, period)] += entry.consumption
+        totals[period_key(entry.period_date, period)] += entry.consumption
     return {key: totals[key] for key in sorted(totals)}
 
 

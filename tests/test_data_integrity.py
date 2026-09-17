@@ -83,8 +83,8 @@ def test_binlik_ayracli_endeks_bin_kat_kucuk_kaydedilmez(sayac):
 
 def test_ekranda_gosterilen_bicim_tekrar_girilebilir(sayac):
     """Ekran '1.250,50' gosteriyor; ayni yazim giriste de kabul edilmeli."""
-    _add_reading(sayac, "2025-12-31", "1.000")
-    assert _add_reading(sayac, "2026-01-31", "1.250,50").status_code == 200
+    _add_reading(sayac, "2026-01-01", "1.000")
+    assert _add_reading(sayac, "2026-02-01", "1.250,50").status_code == 200
 
     with SessionLocal() as db:
         assert db.get(MeterReading, 2).index_value == pytest.approx(1250.50)
@@ -115,11 +115,11 @@ def test_binlik_ayrac_diger_ekranlarda_da_calisir(sayac):
 
 def test_yanlis_yuksek_endeks_silinip_dogrusu_girilebilir(sayac):
     """9. asamadaki kilitlenme senaryosu."""
-    _add_reading(sayac, "2026-01-31", "25000")
-    assert _add_reading(sayac, "2026-03-31", "180000").status_code == 200
+    _add_reading(sayac, "2026-03-01", "25000")
+    assert _add_reading(sayac, "2026-04-01", "180000").status_code == 200
 
     # Duzeltme denemesi engelleniyor (kural korunuyor).
-    engel = _add_reading(sayac, "2026-04-30", "26000")
+    engel = _add_reading(sayac, "2026-05-01", "26000")
     assert engel.status_code == 400
     assert "küçük olamaz" in engel.text
 
@@ -130,7 +130,7 @@ def test_yanlis_yuksek_endeks_silinip_dogrusu_girilebilir(sayac):
         assert db.get(MeterReading, 2) is None
 
     # Dogru deger artik girilebiliyor.
-    assert _add_reading(sayac, "2026-03-31", "26000").status_code == 200
+    assert _add_reading(sayac, "2026-04-01", "26000").status_code == 200
     with SessionLocal() as db:
         mart = calc.total(
             calc.factory_consumptions(
@@ -197,8 +197,8 @@ def test_silme_ekranda_onay_ister(sayac):
 
 @pytest.fixture
 def uretimli(sayac):
-    _add_reading(sayac, "2025-12-31", "1000")
-    _add_reading(sayac, "2026-01-31", "1250")  # 10.000 kWh
+    _add_reading(sayac, "2026-01-01", "1000")
+    _add_reading(sayac, "2026-02-01", "1250")  # 10.000 kWh
     return sayac
 
 
@@ -360,8 +360,8 @@ def uyumsuz(logged_in_client, db):
     production_dept = department(db, "Üretim")
     main = meter(db, "Ana Trafo", electricity, is_main=True)
     sub = meter(db, "Üretim Panosu", electricity, production_dept)
-    readings(db, main, {"2025-12-31": 0, "2026-01-31": 10_000})
-    readings(db, sub, {"2025-12-31": 0, "2026-01-31": 12_000})
+    readings(db, main, {"2026-01-01": 0, "2026-02-01": 10_000})
+    readings(db, sub, {"2026-01-01": 0, "2026-02-01": 12_000})
     return logged_in_client
 
 
@@ -392,8 +392,8 @@ def test_uyumsuzluk_yokken_toplam_yuzdesi_gosterilir(logged_in_client, db):
     production_dept = department(db, "Üretim")
     main = meter(db, "Ana Trafo", electricity, is_main=True)
     sub = meter(db, "Üretim Panosu", electricity, production_dept)
-    readings(db, main, {"2025-12-31": 0, "2026-01-31": 10_000})
-    readings(db, sub, {"2025-12-31": 0, "2026-01-31": 6_000})
+    readings(db, main, {"2026-01-01": 0, "2026-02-01": 10_000})
+    readings(db, sub, {"2026-01-01": 0, "2026-02-01": 6_000})
 
     page = logged_in_client.get(
         "/rapor?baslangic=2026-01-01&bitis=2026-01-31&kirilim=bolum"

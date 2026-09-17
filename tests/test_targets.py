@@ -44,8 +44,8 @@ def test_farkli_enerji_turlerinde_maliyetler_karismaz(db):
     gas = energy_type(db, name="Doğal Gaz", unit="Sm³", price=12.0)
     electric_meter = meter(db, "Elektrik Ana", electricity, is_main=True)
     gas_meter = meter(db, "Gaz Sayacı", gas)
-    readings(db, electric_meter, {"2025-12-31": 0, "2026-01-31": 10_000})
-    readings(db, gas_meter, {"2025-12-31": 0, "2026-01-31": 1_000})
+    readings(db, electric_meter, {"2026-01-01": 0, "2026-02-01": 10_000})
+    readings(db, gas_meter, {"2026-01-01": 0, "2026-02-01": 1_000})
 
     electric = dashboard.energy_summary(db, electricity, "2026-01")
     gas_summary = dashboard.energy_summary(db, gas, "2026-01")
@@ -62,7 +62,7 @@ def test_birim_fiyat_degisince_gecmis_maliyet_de_degisir(db):
     """
     electricity = energy_type(db, price=2.85)
     electric_meter = meter(db, "Ana Trafo", electricity, is_main=True)
-    readings(db, electric_meter, {"2025-12-31": 0, "2026-01-31": 10_000})
+    readings(db, electric_meter, {"2026-01-01": 0, "2026-02-01": 10_000})
 
     assert dashboard.energy_summary(db, electricity, "2026-01")["cost"] == pytest.approx(
         28_500
@@ -223,7 +223,7 @@ def test_hata_durumunda_girilen_degerler_korunur(logged_in_client, db):
 def fabrika(db):
     electricity = energy_type(db, price=2.85)
     main = meter(db, "Ana Trafo", electricity, multiplier=40, is_main=True)
-    readings(db, main, {"2025-12-31": 1000, "2026-01-31": 1460})
+    readings(db, main, {"2026-01-01": 1000, "2026-02-01": 1460})
     return electricity
 
 

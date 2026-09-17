@@ -30,9 +30,9 @@ def fabrika(db):
     production_meter = meter(db, "Üretim Panosu", electricity, production_dept)
     packaging_meter = meter(db, "Paketleme Panosu", electricity, packaging)
 
-    readings(db, main, {"2025-12-31": 1000, "2026-01-31": 1460})
-    readings(db, production_meter, {"2025-12-31": 0, "2026-01-31": 12000})
-    readings(db, packaging_meter, {"2025-12-31": 0, "2026-01-31": 3500})
+    readings(db, main, {"2026-01-01": 1000, "2026-02-01": 1460})
+    readings(db, production_meter, {"2026-01-01": 0, "2026-02-01": 12000})
+    readings(db, packaging_meter, {"2026-01-01": 0, "2026-02-01": 3500})
     return electricity
 
 
@@ -83,7 +83,7 @@ def test_enerji_turu_kirilimi(db, fabrika):
 def test_coklu_enerji_turu_kirilimi(db, fabrika):
     gas = energy_type(db, name="Doğal Gaz", unit="Sm³", price=12.0)
     gas_meter = meter(db, "Kazan Gaz Sayacı", gas)
-    readings(db, gas_meter, {"2025-12-31": 8000, "2026-01-31": 9200})
+    readings(db, gas_meter, {"2026-01-01": 8000, "2026-02-01": 9200})
 
     rows = reports.rows_by_energy_type(db, date(2026, 1, 1), date(2026, 1, 31))
     totals = {row["energy_type"].name: row["total"] for row in rows}
@@ -95,9 +95,9 @@ def test_tarih_araligi_disindaki_tuketim_rapora_girmez(db, fabrika):
     assert rows[0]["total"] == pytest.approx(0)
 
 
-def test_aralik_basindaki_tuketim_onceki_okumayla_eslesir(db, fabrika):
-    """calc'in eslestirme mantigi degismez: 31 Aralik -> 31 Ocak cifti."""
-    rows = reports.rows_by_energy_type(db, date(2026, 1, 15), date(2026, 1, 31))
+def test_ocak_tuketimi_1_subat_okumasiyla_hesaplanir(db, fabrika):
+    """Donem kurali: 01.01 -> 01.02 arasindaki tuketim Ocak ayina aittir."""
+    rows = reports.rows_by_energy_type(db, date(2026, 1, 1), date(2026, 1, 31))
     assert rows[0]["total"] == pytest.approx(18_400)
 
 

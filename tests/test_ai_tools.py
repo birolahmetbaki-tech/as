@@ -53,10 +53,10 @@ def fabrika(db):
     packaging_meter = meter(db, "Paketleme Panosu", electricity, packaging)
     gas_meter = meter(db, "Kazan Gaz Sayacı", gas, production_dept)
 
-    readings(db, main, {"2025-12-31": 1000, "2026-01-31": 1250.50})
-    readings(db, production_meter, {"2025-12-31": 50_000, "2026-01-31": 56_000})
-    readings(db, packaging_meter, {"2025-12-31": 12_000, "2026-01-31": 13_800})
-    readings(db, gas_meter, {"2025-12-31": 62_000, "2026-01-31": 63_200})
+    readings(db, main, {"2026-01-01": 1000, "2026-02-01": 1250.50})
+    readings(db, production_meter, {"2026-01-01": 50_000, "2026-02-01": 56_000})
+    readings(db, packaging_meter, {"2026-01-01": 12_000, "2026-02-01": 13_800})
+    readings(db, gas_meter, {"2026-01-01": 62_000, "2026-02-01": 63_200})
     production(db, {"2026-01-31": (100, "ton"), "2026-01-30": (2000, "adet")})
     db.add(Target(year_month="2026-01", energy_type_id=electricity.id, target_value=9_000))
     db.commit()
@@ -151,8 +151,8 @@ def test_ciktida_orm_nesnesi_yok(db, fabrika):
 
 def test_tarihler_metin_olarak_doner(db, fabrika):
     coverage = ai_tools.get_data_coverage(db)
-    assert coverage["ilk_okuma"] == "2025-12-31"
-    assert coverage["son_okuma"] == "2026-01-31"
+    assert coverage["ilk_okuma"] == "2026-01-01"
+    assert coverage["son_okuma"] == "2026-02-01"
 
     consumption = ai_tools.get_energy_consumption(db, *OCAK)
     assert consumption["baslangic"] == "2026-01-01"

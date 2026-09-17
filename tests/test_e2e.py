@@ -46,11 +46,12 @@ def fabrika(logged_in_client):
         assert client.post("/tanimlar/sayaclar", data=meter).status_code == 200
 
     readings = {
-        "1": [("31.12.2025", "1000"), ("2026-01-31", "1250"), ("2026-02-28", "1460")],
-        "2": [("2025-12-31", "50000"), ("2026-01-31", "56000"), ("2026-02-28", "61000")],
-        "3": [("2025-12-31", "12000"), ("2026-01-31", "13800"), ("2026-02-28", "15200")],
-        "4": [("2025-12-31", "8000"), ("2026-01-31", "8900"), ("2026-02-28", "9900")],
-        "5": [("2025-12-31", "62000"), ("2026-01-31", "63200"), ("2026-02-28", "64150")],
+        # Endeksler sahada oldugu gibi, her ayin ertesi ayin 1'inde okunur.
+        "1": [("01.01.2026", "1000"), ("2026-02-01", "1250"), ("2026-03-01", "1460")],
+        "2": [("2026-01-01", "50000"), ("2026-02-01", "56000"), ("2026-03-01", "61000")],
+        "3": [("2026-01-01", "12000"), ("2026-02-01", "13800"), ("2026-03-01", "15200")],
+        "4": [("2026-01-01", "8000"), ("2026-02-01", "8900"), ("2026-03-01", "9900")],
+        "5": [("2026-01-01", "62000"), ("2026-02-01", "63200"), ("2026-03-01", "64150")],
     }
     for meter_id, rows in readings.items():
         for reading_date, value in rows:
@@ -114,7 +115,7 @@ def test_ocak_tuketimi_elle_hesapla_ayni(fabrika, db):
 
 
 def test_donemin_ilk_tuketimi_kaybolmaz(fabrika, db):
-    """Şubat aralığı, 31 Ocak okumasıyla eşleşmeye devam eder."""
+    """Şubat tüketimi, 1 Mart'ta alınan okumayla hesaplanır."""
     subat = calc.total(
         calc.factory_consumptions(db, start=SUBAT[0], end=SUBAT[1], energy_type_id=1)
     )
