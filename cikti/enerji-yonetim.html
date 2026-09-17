@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enerji Yönetim Platformu</title>
+<meta name="description" content="Aylık enerji ve üretim verilerini izleyen, ISO 50001 yaklaşımını destekleyen tek dosyalık enerji yönetim platformu.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<style>
+/* Enerji Yönetim Platformu — görsel dil (El Kitabı 5.7)
+   Renk paleti bağlayıcıdır. Koyu tema AYRI SEÇİLMİŞTİR, otomatik ters çevirme değildir. */
+
+:root{
+  color-scheme: light;
+  /* zemin ve mürekkep (5.7.1) */
+  --sayfa:        #f9f9f7;
+  --yuzey:        #fcfcfb;
+  --yuzey-2:      #f2f1ed;
+  --ink:          #0b0b0b;
+  --ink-2:        #52514e;
+  --ink-mut:      #898781;
+  --kilavuz:      #e1e0d9;
+  --taban:        #c3c2b7;
+  --cerceve:      rgba(11,11,11,.10);
+  /* kategorik slotlar — SIRA DEĞİŞMEZ */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  /* durum — asla seri rengi olarak kullanılmaz */
+  --iyi:#0ca30c; --uyari:#fab219; --ciddi:#ec835a; --kritik:#d03b3b;
+  --iyi-ink:#006300;
+  /* sıralı ramp (ısı haritası) */
+  --r100:#cde2fb; --r250:#86b6ef; --r400:#3987e5; --r550:#1c5cab; --r700:#0d366b;
+  --notr:#f0efec;
+  --r:6px; --gecis:.15s ease;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-tema="acik"])){
+    color-scheme: dark;
+    --sayfa:#0d0d0d; --yuzey:#1a1a19; --yuzey-2:#232322;
+    --ink:#ffffff; --ink-2:#c3c2b7; --ink-mut:#898781;
+    --kilavuz:#2c2c2a; --taban:#383835; --cerceve:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --iyi-ink:#0ca30c; --notr:#383835;
+  }
+}
+:root[data-tema="koyu"]{
+  color-scheme: dark;
+  --sayfa:#0d0d0d; --yuzey:#1a1a19; --yuzey-2:#232322;
+  --ink:#ffffff; --ink-2:#c3c2b7; --ink-mut:#898781;
+  --kilavuz:#2c2c2a; --taban:#383835; --cerceve:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --iyi-ink:#0ca30c; --notr:#383835;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--sayfa); color:var(--ink);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0 0 .5em; font-weight:600; line-height:1.25}
+h1{font-size:20px} h2{font-size:16px} h3{font-size:14px}
+p{margin:0 0 .75em}
+a{color:var(--s1)}
+code,.tek{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+.sayi{font-variant-numeric:tabular-nums}
+
+/* ---------- yerleşim ---------- */
+#uyg{display:grid;grid-template-columns:232px 1fr;height:100vh;overflow:hidden}
+@media(max-width:860px){#uyg{grid-template-columns:1fr}#menu{display:none}}
+
+#menu{
+  background:var(--yuzey); border-right:1px solid var(--cerceve);
+  overflow-y:auto; padding:14px 0 24px;
+}
+.marka{padding:4px 16px 14px;border-bottom:1px solid var(--cerceve);margin-bottom:10px}
+.marka b{display:block;font-size:13px;letter-spacing:.01em}
+.marka span{display:block;font-size:11px;color:var(--ink-mut);margin-top:2px}
+.menu-grup{
+  padding:14px 16px 5px;font-size:10px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-mut);
+}
+.menu-og{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:7px 16px;border:0;background:none;color:var(--ink-2);
+  font:inherit;text-align:left;cursor:pointer;transition:background var(--gecis);
+  border-left:3px solid transparent;
+}
+.menu-og:hover{background:var(--yuzey-2);color:var(--ink)}
+.menu-og[aria-current="page"]{
+  background:var(--yuzey-2);color:var(--ink);font-weight:600;border-left-color:var(--s1);
+}
+.menu-og .no{
+  flex:0 0 19px;text-align:center;font-size:10px;color:var(--ink-mut);
+  font-variant-numeric:tabular-nums;
+}
+.menu-og[data-hazir="0"]{opacity:.42}
+.menu-og[data-hazir="0"]::after{content:"•";margin-left:auto;color:var(--ink-mut);font-size:16px}
+
+/* ---------- üst şerit ---------- */
+#govde{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+#serit{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:9px 20px;background:var(--yuzey);border-bottom:1px solid var(--cerceve);
+}
+#serit .bosluk{flex:1}
+#icerik{flex:1;overflow-y:auto;padding:22px 24px 64px}
+.sayfa-basi{margin-bottom:18px}
+.sayfa-basi p{color:var(--ink-2);max-width:70ch;margin:0}
+
+/* ---------- bileşenler ---------- */
+button,select,input,textarea{font:inherit;color:inherit}
+.dugme{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;border:1px solid var(--taban);border-radius:var(--r);
+  background:var(--yuzey);cursor:pointer;transition:all var(--gecis);white-space:nowrap;
+}
+.dugme:hover{background:var(--yuzey-2);border-color:var(--ink-mut)}
+.dugme.ana{background:var(--s1);border-color:var(--s1);color:#fff}
+.dugme.ana:hover{filter:brightness(1.08)}
+.dugme.tehlike{border-color:var(--kritik);color:var(--kritik)}
+.dugme.tehlike:hover{background:var(--kritik);color:#fff}
+.dugme:disabled{opacity:.45;cursor:not-allowed}
+.dugme.kucuk{padding:3px 8px;font-size:12px}
+
+input[type=text],input[type=number],input[type=date],select,textarea{
+  padding:6px 9px;border:1px solid var(--taban);border-radius:var(--r);
+  background:var(--yuzey);max-width:100%;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--s1);outline-offset:-1px;border-color:var(--s1)}
+label{display:block;font-size:12px;color:var(--ink-2);margin-bottom:3px}
+.alan{margin-bottom:12px}
+.satir{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+
+.kart{
+  background:var(--yuzey);border:1px solid var(--cerceve);border-radius:10px;
+  padding:16px 18px;margin-bottom:16px;
+}
+.kart>h2:first-child,.kart>h3:first-child{margin-top:0}
+
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--kilavuz)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-mut);font-weight:600;
+   position:sticky;top:0;background:var(--yuzey);z-index:1}
+td.s,th.s{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--yuzey-2)}
+.tablo-sar{overflow:auto;max-height:65vh;border:1px solid var(--cerceve);border-radius:8px;background:var(--yuzey)}
+
+/* uyarı — sonucun yanında durur (E-2) */
+.uyari{
+  display:flex;gap:9px;align-items:flex-start;
+  padding:9px 13px;border-radius:var(--r);margin-bottom:12px;font-size:13px;
+  border:1px solid var(--cerceve);background:var(--yuzey);
+}
+.uyari .ikon{flex:0 0 auto;font-size:14px;line-height:1.35}
+.uyari.bilgi{border-left:3px solid var(--s1)}
+.uyari.iyi{border-left:3px solid var(--iyi)}
+.uyari.dikkat{border-left:3px solid var(--uyari)}
+.uyari.ciddi{border-left:3px solid var(--ciddi)}
+.uyari.kritik{border-left:3px solid var(--kritik)}
+
+.rozet{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:1px 7px;border-radius:99px;font-size:11px;font-weight:600;
+  border:1px solid var(--cerceve);background:var(--yuzey-2);color:var(--ink-2);
+}
+.rozet.iyi{color:var(--iyi-ink);border-color:var(--iyi)}
+.rozet.dikkat{color:var(--ciddi);border-color:var(--uyari)}
+.rozet.kritik{color:var(--kritik);border-color:var(--kritik)}
+
+.sessiz{color:var(--ink-mut)}
+.kucuk{font-size:12px}
+.mini{font-size:11px}
+
+/* boş durum öğreticidir (E-5) */
+.bos{
+  text-align:center;padding:56px 24px;color:var(--ink-2);
+  border:1px dashed var(--taban);border-radius:10px;background:var(--yuzey);
+}
+.bos h3{color:var(--ink)}
+.bos p{max-width:52ch;margin:0 auto .75em}
+
+/* sekmeler */
+.sekmeler{display:flex;gap:2px;border-bottom:1px solid var(--cerceve);margin-bottom:18px;overflow-x:auto}
+.sekme{
+  padding:8px 14px;border:0;background:none;color:var(--ink-2);cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;
+}
+.sekme:hover{color:var(--ink)}
+.sekme[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--s1)}
+
+/* ağaç */
+.agac{list-style:none;margin:0;padding:0}
+.agac ul{list-style:none;margin:0;padding-left:20px;border-left:1px solid var(--kilavuz)}
+.agac li{margin:1px 0}
+.dugum{
+  display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:var(--r);
+  cursor:pointer;transition:background var(--gecis);
+}
+.dugum:hover{background:var(--yuzey-2)}
+.dugum.secili{background:var(--yuzey-2);outline:1px solid var(--s1)}
+.dugum .tip{font-size:10px;color:var(--ink-mut);text-transform:uppercase;letter-spacing:.05em}
+.dugum.pasif{opacity:.5}
+
+/* modal */
+.ortu{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;
+      align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal{background:var(--yuzey);border-radius:12px;padding:22px;max-width:620px;width:100%;
+       max-height:86vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.28)}
+
+/* yazdırma */
+@media print{
+  #menu,#serit,.dugme,.sekmeler{display:none!important}
+  #uyg{display:block;height:auto}#icerik{overflow:visible;padding:0}
+  body{background:#fff;color:#000}
+  .kart{border:1px solid #ccc;break-inside:avoid}
+}
+
+</style>
+<!-- Derleme: 2026-09-17 · Faz 1 · Çekirdek -->
+</head>
+<body>
+<div id="uyg">
+  <nav id="menu" aria-label="Ana menü"></nav>
+  <div id="govde">
+    <header id="serit"></header>
+    <main id="icerik"></main>
+  </div>
+</div>
+<noscript><p style="padding:24px">Bu program JavaScript gerektirir.</p></noscript>
+<script>
+
+/* Modül kaydı — ES modülleri file:// üzerinden çalışmadığı için (K-09, K-18) */
+var __f = {}, __c = {};
+function __req(y) {
+  if (!(y in __c)) {
+    if (!(y in __f)) throw new Error("Modül yok: " + y);
+    __c[y] = {}; __f[y](__c[y]);
+  }
+  return __c[y];
+}
+__f["js/uygulama.js"] = function(__x) {
+/* uygulama.js — kabuk: menü, üst şerit, yönlendirme
+   El Kitabı: 9.0 (ekran ilkeleri), 9.1 (navigasyon haritası), 5.2 (yedek uyarısı) */
+const { el, $, bosalt, bosDurum, uyari, bildir, donemAd, bugun } = __req("js/ortak.js");
+const V = __req("js/veri.js");
+const { otomatikUret, katman, katmanDinle } = __req("js/hesaplanan.js");
+const BASLANGIC = __req("js/baslangic.js").default;
+const { ekranTanimlar } = __req("js/ekranlar/tanimlar.js");
+const { ekranAyarlar } = __req("js/ekranlar/ayarlar.js");
+/* ------------------------------------------------ ekran kayıtları (9.1) */
+const YAKINDA = (no, ad, faz, aciklama) => ({
+  no, ad, hazir:false, ciz: k => k.append(
+    bosDurum(`${ad} — Faz ${faz}'te geliyor`, aciklama,
+      el("p.kucuk.sessiz", { metin:"El Kitabı Bölüm 12 · Geliştirme yol haritası" }))),
+});
+const EKRANLAR = [
+  { grup:"ÖZET" },
+  YAKINDA(1,"Gösterge Paneli",3,"Durumunuzu tek ekranda özetler: KPI kartları, 24 aylık enerji ve EnPI trendi, CUSUM, yıllık özet ve açık aksiyonlar."),
+  { grup:"VERİ" },
+  YAKINDA(2,"Veri Girişi",2,"Aylık verilerin girildiği ana ekran. Dört giriş yöntemi, geçen ay ve geçen yıl karşılaştırması, canlı özet şeridi."),
+  YAKINDA(3,"Veri Aktarma",2,"Excel dosyanızı sürükleyip bırakarak içe aktarma; önizleme, ya hep ya hiç kuralı ve güvenlik yedeği."),
+  YAKINDA(4,"Veri Denetimi",2,"Bütün veri setinin sağlığı: eksik veri haritası, şüpheli değerler, tutarsızlıklar."),
+  YAKINDA(5,"Hesaplanan Değerler",2,"Hesap motorunun camdan kutusu: dönem × hesaplanan değer tablosu, her sütunun formülü ve iki sayfalı Excel çıktısı."),
+  { grup:"ANALİZ" },
+  YAKINDA(6,"Enerji Dengesi",3,"Enerji nereye gidiyor? Sankey akış diyagramı ve ölçüm kapsamı ağacı."),
+  YAKINDA(7,"Tüketim Analizi",3,"Trend, ısı haritası, Pareto ve dönem karşılaştırması."),
+  YAKINDA(8,"Performans (EnPI)",4,"Platformun kalbi: baz çizgi, normalize EnPI ve CUSUM. İyileştik mi, ne zaman, ne kadar?"),
+  YAKINDA(9,"Dönüşüm Verimliliği",4,"Kojenerasyon ve kazanların yakıtı ne verimle faydalı enerjiye çevirdiği."),
+  YAKINDA(10,"Maliyet",4,"Maliyet artışının ne kadarı fiyattan, ne kadarı tüketimden? Fiyat/hacim ayrıştırması."),
+  YAKINDA(11,"GES",4,"Yozgat ve Adana santrallerinin üretimi ve mali katkısı."),
+  { grup:"YÖNETİM" },
+  YAKINDA(12,"Hedefler ve Aksiyonlar",5,"Dört hedef türü ve tespitlerin sahibi ile termini olan aksiyonlar."),
+  YAKINDA(13,"Raporlar",5,"Aylık enerji raporu, yönetim gözden geçirme raporu ve serbest rapor oluşturucu."),
+  { grup:"SİSTEM" },
+  { no:14, ad:"Tanımlar",             hazir:true, ciz:ekranTanimlar },
+  { no:15, ad:"Ayarlar ve Yedekleme", hazir:true, ciz:ekranAyarlar  },
+];
+const durumu = { ekran: 14, donem: bugun() };
+
+/* ------------------------------------------------------------- menü */
+function menuCiz() {
+  const m = bosalt($("#menu"));
+  m.append(el("div.marka", {},
+    el("b", { metin:"Enerji Yönetim" }),
+    el("span", { metin:"Faz 1 · Çekirdek" })));
+  for (const e of EKRANLAR) {
+    if (e.grup) { m.append(el("div.menu-grup", { metin:e.grup })); continue; }
+    m.append(el("button.menu-og", {
+      "data-hazir": e.hazir ? "1" : "0",
+      "aria-current": durumu.ekran === e.no ? "page" : null,
+      title: e.hazir ? e.ad : `${e.ad} — henüz yapılmadı`,
+      onclick: () => git(e.no),
+    }, el("span.no", { metin:String(e.no) }), el("span", { metin:e.ad })));
+  }
+}
+
+/* -------------------------------------------------------- üst şerit */
+function seritCiz() {
+  const s = bosalt($("#serit"));
+  const y = V.yedekDurumu();
+
+  s.append(el("strong", { metin: ekran()?.ad || "" }));
+  s.append(el("span.bosluk"));
+
+  if (katman.uretim)
+    s.append(el("span.mini.sessiz", {
+      title:`${katman.hucre} hücre · ${katman.sure} ms · ${katman.satirlar.length} dönem`,
+      metin:`hesap katmanı: ${katman.satirlar.length} dönem × ${katman.sutunlar.length} değer` }));
+
+  s.append(el("span.rozet" + (y.uyarmali ? ".dikkat" : ""), {
+    title:y.tarih ? y.metin : "Hiç yedek alınmadı",
+    metin:(y.uyarmali ? "⚠ " : "") + y.aciklama }));
+
+  s.append(el("button.dugme.kucuk", { metin:"Yedek al", onclick: () => {
+    V.yedekAl(); seritCiz(); bildir("Yedek indirildi"); } }));
+
+  const t = document.documentElement.dataset.tema || "otomatik";
+  s.append(el("button.dugme.kucuk", {
+    title:"Tema: " + t, metin: t === "koyu" ? "☾" : t === "acik" ? "☀" : "◐",
+    onclick: () => {
+      const sira = ["otomatik","acik","koyu"];
+      const y2 = sira[(sira.indexOf(t) + 1) % 3];
+      document.documentElement.dataset.tema = y2;
+      V.durum.ayarlar.tema = y2; V.kaydet(); seritCiz();
+    } }));
+  s.append(el("button.dugme.kucuk", { metin:"Yazdır", onclick:() => window.print() }));
+}
+
+/* ------------------------------------------------------------- çizim */
+const ekran = () => EKRANLAR.find(e => e.no === durumu.ekran);
+function git(no) {
+  durumu.ekran = no;
+  location.hash = "e" + no;
+  menuCiz(); seritCiz(); ciz();
+}
+function ciz() {
+  const k = bosalt($("#icerik"));
+  const e = ekran();
+  if (!e) return k.append(bosDurum("Ekran bulunamadı", "Soldaki menüden bir ekran seçin."));
+
+  // Yedek uyarısı — sonucun yanında durur (E-2)
+  const y = V.yedekDurumu();
+  if (y.uyarmali && V.durum.degerler.length)
+    k.append(uyari("dikkat",
+      el("b", { metin:y.aciklama + ". " }),
+      "Veriniz yalnızca bu tarayıcıda duruyor. Tarayıcı verisi temizlenirse kaybolur — yedek alın.",
+      el("div", { stil:{ marginTop:"7px" } },
+        el("button.dugme.kucuk", { metin:"Şimdi yedek al",
+          onclick:() => { V.yedekAl(); bildir("Yedek indirildi"); ciz(); seritCiz(); } }))));
+
+  try { e.ciz(k); }
+  catch (err) { console.error(err); k.append(uyari("kritik", el("b",{metin:"Ekran çizilemedi: "}), err.message)); }
+}
+
+/* ------------------------------------------------------------ başlat */
+async function baslat() {
+  const s = await V.baslat(BASLANGIC);
+  document.documentElement.dataset.tema = V.durum.ayarlar?.tema || "otomatik";
+
+  otomatikUret();                      // K-23: açılışta + her değişimde
+  katmanDinle(() => seritCiz());
+
+  const h = /^#e(\d+)$/.exec(location.hash);
+  durumu.ekran = h ? +h[1] : 14;
+  if (!EKRANLAR.some(e => e.no === durumu.ekran)) durumu.ekran = 14;
+
+  menuCiz(); seritCiz(); ciz();
+
+  window.addEventListener("hashchange", () => {
+    const m = /^#e(\d+)$/.exec(location.hash);
+    if (m && +m[1] !== durumu.ekran) git(+m[1]);
+  });
+
+  // Yedek alınmadan çıkılıyorsa uyar (5.2)
+  window.addEventListener("beforeunload", ev => {
+    const yd = V.yedekDurumu();
+    if (V.durum.degerler.length && yd.uyarmali) { ev.preventDefault(); ev.returnValue = ""; }
+  });
+
+  if (s.kaynak === "baslangic")
+    bildir("Başlangıç tanımları yüklendi — " + V.durum.olcum_noktalari.length + " ölçüm noktası");
+}
+
+  __x.EKRANLAR = EKRANLAR;
+  __x.durumu = durumu;
+  __x.git = git;
+  __x.ciz = ciz;
+  __x.baslat = baslat;
+};
+__f["js/ortak.js"] = function(__x) {
+/* ortak.js — biçimlendirme, ayrıştırma ve DOM yardımcıları
+   El Kitabı: 5.7.3 (Türkçe sayı biçimi), İ-3 (sessiz dönüşüm yok) */
+const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran",
+                      "Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+
+/* ---------------------------------------------------------------- sayı */
+
+/** Türkçe biçimde gösterir: 1250.5 -> "1.250,50" */
+function say(v, ondalik = 0) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return v.toLocaleString("tr-TR", {
+    minimumFractionDigits: ondalik, maximumFractionDigits: ondalik });
+}
+
+/** Kısa gösterim: 137367837 -> "137,4 M" */
+function kisa(v, ondalik = 1) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  const m = Math.abs(v);
+  if (m >= 1e9) return say(v / 1e9, ondalik) + " Mr";
+  if (m >= 1e6) return say(v / 1e6, ondalik) + " M";
+  if (m >= 1e3) return say(v / 1e3, ondalik) + " B";
+  return say(v, ondalik);
+}
+function yuzde(v, ondalik = 1) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return "%" + say(v, ondalik);
+}
+
+/** İşaretli fark: +%4,7 / −%10,2 */
+function fark(v, ondalik = 1) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  const i = v > 0 ? "+" : v < 0 ? "−" : "";
+  return i + "%" + say(Math.abs(v), ondalik);
+}
+
+/**
+ * Türkçe sayı ayrıştırır. Tanımsız biçimi SESSİZCE DÖNÜŞTÜRMEZ (İ-3).
+ *   "1.250,50" -> 1250.5     "1.000" -> 1000      "1250,5" -> 1250.5
+ *   "1.5"      -> HATA (ondalık ayırıcı virgüldür)
+ * @returns {{deger:number}|{hata:string}}
+ */
+function sayiOku(metin) {
+  if (metin === null || metin === undefined) return { hata: "Değer yok" };
+  let t = String(metin).trim().replace(/\s/g, "");
+  if (t === "") return { deger: null };
+
+  let eksi = false;
+  if (/^[-−]/.test(t)) { eksi = true; t = t.slice(1); }
+
+  const nokta = (t.match(/\./g) || []).length;
+  const virgul = (t.match(/,/g) || []).length;
+
+  if (virgul > 1) return { hata: "Birden fazla virgül var" };
+  if (!/^[\d.,]+$/.test(t)) return { hata: "Sayı olmayan karakter içeriyor" };
+
+  if (virgul === 1) {
+    const [tam, kesir] = t.split(",");
+    if (nokta > 0 && !/^\d{1,3}(\.\d{3})*$/.test(tam))
+      return { hata: "Binlik ayırıcı hatalı. Doğru yazım: 1.250,50" };
+    t = tam.replace(/\./g, "") + "." + kesir;
+  } else if (nokta > 0) {
+    // Yalnız nokta var: binlik ayırıcı mı, ondalık mı?
+    if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");   // 1.000 -> 1000
+    else return { hata: "Ondalık ayırıcı virgüldür. Örnek: 1250,5" };
+  }
+
+  const d = Number(t);
+  if (!Number.isFinite(d)) return { hata: "Sayıya çevrilemedi" };
+  return { deger: eksi ? -d : d };
+}
+
+/* ---------------------------------------------------------------- dönem */
+const donemKod = (y, a) => `${y}-${String(a).padStart(2, "0")}`;
+const donemAd  = (y, a) => `${AYLAR[a - 1]} ${y}`;
+const donemKisa= (y, a) => `${AYLAR[a - 1].slice(0, 3)} ${String(y).slice(2)}`;
+function donemAyri(kod) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(kod || ""));
+  return m ? { yil: +m[1], ay: +m[2] } : null;
+}
+/** Kaç ay ileri/geri */
+function donemKaydir(y, a, n) {
+  const t = y * 12 + (a - 1) + n;
+  return { yil: Math.floor(t / 12), ay: (t % 12) + 1 };
+}
+/** Başlangıç–bitiş arası dönem listesi */
+function donemAraligi(by, ba, sy, sa) {
+  const l = [];
+  let y = by, a = ba;
+  while (y < sy || (y === sy && a <= sa)) { l.push({ yil: y, ay: a });
+    ({ yil: y, ay: a } = donemKaydir(y, a, 1)); }
+  return l;
+}
+const bugun = () => { const d = new Date();
+  return { yil: d.getFullYear(), ay: d.getMonth() + 1 }; };
+function tarihMetni(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
+       + " " + d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+}
+function gunFarki(iso) {
+  if (!iso) return null;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
+/* ---------------------------------------------------------------- DOM */
+
+/** el("div.kart", {onclick}, cocuk...) */
+function el(tanim, ozellik = {}, ...cocuklar) {
+  const [etiket, ...siniflar] = String(tanim).split(".");
+  const d = document.createElement(etiket || "div");
+  if (siniflar.length) d.className = siniflar.join(" ");
+  for (const [k, v] of Object.entries(ozellik || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "sinif") d.className = [d.className, v].filter(Boolean).join(" ");
+    else if (k === "metin") d.textContent = v;
+    else if (k === "html") d.innerHTML = v;
+    else if (k.startsWith("on") && typeof v === "function") d.addEventListener(k.slice(2), v);
+    else if (k === "stil") Object.assign(d.style, v);
+    else d.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of cocuklar.flat()) {
+    if (c === null || c === undefined || c === false) continue;
+    d.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return d;
+}
+const $  = (s, k = document) => k.querySelector(s);
+const $$ = (s, k = document) => [...k.querySelectorAll(s)];
+function bosalt(d) { while (d.firstChild) d.removeChild(d.firstChild); return d; }
+
+/** Basit tablo kurar. sutunlar: [{ad, anahtar|deger(satir), sayi?, ondalik?}] */
+function tablo(sutunlar, satirlar, secenek = {}) {
+  const t = el("table");
+  const thead = el("thead");
+  thead.append(el("tr", {}, sutunlar.map(s =>
+    el("th" + (s.sayi ? ".s" : ""), { metin: s.ad }))));
+  const tbody = el("tbody");
+  for (const sat of satirlar) {
+    const tr = el("tr", secenek.satirOzellik ? secenek.satirOzellik(sat) : {});
+    for (const s of sutunlar) {
+      const ham = s.deger ? s.deger(sat) : sat[s.anahtar];
+      const td = el("td" + (s.sayi ? ".s" : ""));
+      if (ham instanceof Node) td.append(ham);
+      else if (s.sayi) td.textContent = say(ham, s.ondalik ?? 0);
+      else td.textContent = ham ?? "—";
+      if (s.baslik) td.title = s.baslik(sat) || "";
+      tr.append(td);
+    }
+    tbody.append(tr);
+  }
+  t.append(thead, tbody);
+  return secenek.sarma === false ? t : el("div.tablo-sar", {}, t);
+}
+function uyari(tur, ...icerik) {
+  const ikon = { bilgi:"ℹ", iyi:"✓", dikkat:"⚠", ciddi:"⚠", kritik:"✕" }[tur] || "ℹ";
+  return el("div.uyari." + tur, {}, el("span.ikon", { metin: ikon }), el("div", {}, ...icerik));
+}
+function bosDurum(baslik, aciklama, eylem) {
+  return el("div.bos", {}, el("h3", { metin: baslik }), el("p", { metin: aciklama }), eylem);
+}
+
+/** Onay kutusu. Tehlikeli işlemlerde kullanılır. */
+function onayla(baslik, mesaj, onayMetni = "Onayla", tehlike = false) {
+  return new Promise(coz => {
+    const kapat = c => { ortu.remove(); coz(c); };
+    const ortu = el("div.ortu", { onclick: e => { if (e.target === ortu) kapat(false); } },
+      el("div.modal", {},
+        el("h2", { metin: baslik }),
+        typeof mesaj === "string" ? el("p", { metin: mesaj }) : mesaj,
+        el("div.satir", { stil: { marginTop: "18px", justifyContent: "flex-end" } },
+          el("button.dugme", { metin: "Vazgeç", onclick: () => kapat(false) }),
+          el("button.dugme" + (tehlike ? ".tehlike" : ".ana"),
+             { metin: onayMetni, onclick: () => kapat(true) }))));
+    document.body.append(ortu);
+  });
+}
+
+/** Kısa bildirim */
+function bildir(mesaj, tur = "iyi") {
+  const k = el("div", { stil: {
+    position:"fixed", bottom:"20px", left:"50%", transform:"translateX(-50%)",
+    background:"var(--yuzey)", border:"1px solid var(--cerceve)",
+    borderLeft:`3px solid var(--${tur === "iyi" ? "iyi" : tur === "kritik" ? "kritik" : "s1"})`,
+    borderRadius:"6px", padding:"10px 16px", zIndex:"60",
+    boxShadow:"0 6px 24px rgba(0,0,0,.2)", fontSize:"13px" }, metin: mesaj });
+  document.body.append(k);
+  setTimeout(() => k.remove(), 3200);
+}
+function dosyaIndir(ad, icerik, tip = "application/json") {
+  const b = icerik instanceof Blob ? icerik : new Blob([icerik], { type: tip });
+  const u = URL.createObjectURL(b);
+  const a = el("a", { href: u, download: ad });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 1000);
+}
+
+  __x.AYLAR = AYLAR;
+  __x.say = say;
+  __x.kisa = kisa;
+  __x.yuzde = yuzde;
+  __x.fark = fark;
+  __x.sayiOku = sayiOku;
+  __x.donemKod = donemKod;
+  __x.donemAd = donemAd;
+  __x.donemKisa = donemKisa;
+  __x.donemAyri = donemAyri;
+  __x.donemKaydir = donemKaydir;
+  __x.donemAraligi = donemAraligi;
+  __x.bugun = bugun;
+  __x.tarihMetni = tarihMetni;
+  __x.gunFarki = gunFarki;
+  __x.el = el;
+  __x.$ = $;
+  __x.$$ = $$;
+  __x.bosalt = bosalt;
+  __x.tablo = tablo;
+  __x.uyari = uyari;
+  __x.bosDurum = bosDurum;
+  __x.onayla = onayla;
+  __x.bildir = bildir;
+  __x.dosyaIndir = dosyaIndir;
+};
+__f["js/hesaplanan.js"] = function(__x) {
+/* hesaplanan.js — HESAPLANAN DEĞERLER KATMANI (K-23)
+   Açılışta ve HER VERİ DEĞİŞİMİNDE baştan üretilir.
+   Bütün ekranlar sayıyı buradan çeker (İ-2).
+   Bu katman bir AYNADIR, kayıt değil: yedek dosyasına yazılmaz (İ-1, 5.3). */
+const { durum, dinle, veriAraligi } = __req("js/veri.js");
+const { donemAraligi, donemKod } = __req("js/ortak.js");
+const { varlik, nokta } = __req("js/model.js");
+const H = __req("js/hesap.js");
+/** Katmanın son hâli */
+const katman = {
+  satirlar: [],        // [{yil, ay, kod, ...değerler}]
+  sutunlar: [],        // sütun tanımları (formül + kaynak dahil)
+  uretim: null,        // ISO zaman damgası
+  sure: 0,             // ms
+  hucre: 0,
+  eksikler: [],        // üretilemeyen değerler ve nedenleri (İ-3)
+};
+
+const dinleyiciler = new Set();
+function katmanDinle(fn) { dinleyiciler.add(fn); return () => dinleyiciler.delete(fn); }
+
+/* ------------------------------------------------------- sütun tanımları */
+/** Her sütun: kod, ad, birim, ondalik, formul (insan okur), kaynak, hesapla() */
+function sutunlariKur() {
+  const s = [];
+
+  s.push({
+    kod:"TOPLAM_ENERJI", ad:"Toplam Enerji", birim:"kWh", ondalik:0,
+    formul:"rolü `satın alınan` ve toplama dahil olan bütün noktaların kWh toplamı",
+    kaynak:() => durum.olcum_noktalari
+      .filter(n => n.aktif && n.rol === "satin_alinan" && n.toplama_dahil)
+      .map(n => `${n.kod} (${n.ad})`),
+    kural:"7.1 · K-24 — sabit liste değil, rol filtresi",
+    hesapla:(y,a) => H.toplamEnerji(y,a,"kWh"),
+  });
+
+  s.push({
+    kod:"TOPLAM_MALIYET", ad:"Toplam Maliyet", birim:"TL", ondalik:0,
+    formul:"rolü `maliyet` olan bütün noktalar − GES mahsubu",
+    kaynak:() => durum.olcum_noktalari.filter(n => n.aktif && n.rol === "maliyet")
+      .map(n => `${n.kod} (${n.ad})`),
+    kural:"6.5 · K-13, K-24",
+    hesapla:(y,a) => H.toplamMaliyet(y,a),
+  });
+
+  s.push({
+    kod:"NET_ELEKTRIK", ad:"Net Ödenen Elektrik", birim:"TL", ondalik:0,
+    formul:"ELK_FATURA_TL − GES mahsubu",
+    kaynak:() => ["ELK_FATURA_TL", ...durum.olcum_noktalari.filter(n=>n.rol==="gelir").map(n=>n.kod)],
+    kural:"6.5 · K-13 — fatura mahsup öncesi brüttür",
+    hesapla:(y,a) => H.netOdenenElektrik(y,a),
+  });
+
+  s.push({
+    kod:"BIRIM_FIYAT_ELK", ad:"Elektrik Birim Fiyatı", birim:"TL/kWh", ondalik:4,
+    formul:"ELK_FATURA_TL ÷ SEBEKE_ELK",
+    kaynak:() => ["ELK_FATURA_TL","SEBEKE_ELK"],
+    kural:"K-12 — hesaplanır, girilmez",
+    hesapla:(y,a) => H.birimFiyat("ELK_FATURA_TL","SEBEKE_ELK",y,a),
+  });
+
+  // Hesaplanan / dağıtılmış ölçüm noktaları (6.6)
+  for (const n of durum.olcum_noktalari) {
+    if (!n.aktif || (n.veri_tipi !== "hesaplanan" && n.veri_tipi !== "dagitilmis")) continue;
+    s.push({
+      kod:n.kod, ad:n.ad, birim:n.birim, ondalik:n.birim === "TL" ? 0 : 0,
+      formul:n.formul || "—",
+      kaynak:() => (n.formul || "").match(/\b[A-Z][A-Z0-9_]*\b/g)?.filter(x=>x!=="KATSAYI") || [],
+      kural:n.veri_tipi === "dagitilmis"
+        ? "2.2 — ölçüm değil, sabit oranla dağıtım"
+        : "6.6 — türetilmiş nokta",
+      hesapla:(y,a) => H.noktaDeger(n.kod,y,a),
+      noktaMi:true,
+    });
+  }
+
+  // EnPI'ler (8.2)
+  for (const t of durum.enpi_tanimlari) {
+    s.push({
+      kod:"ENPI_" + t.kod, ad:t.ad, birim:t.birim || "", ondalik:t.ondalik ?? 4,
+      formul:`${t.pay} ÷ ${t.payda}`,
+      kaynak:() => [t.pay, t.payda],
+      kural:"8.2 — kullanıcı tanımlı (K-06)" + (t.ana ? " · ANA GÖSTERGE" : ""),
+      hesapla:(y,a) => H.enpi(t.kod,y,a),
+      enpi:true,
+    });
+  }
+
+  // Dönüşüm verimlilikleri (8.6)
+  for (const v of durum.varliklar) {
+    if (v.tip !== "ekipman") continue;
+    const dv = H.donusumVerimi(v.kod, 2024, 1);
+    const nk = durum.olcum_noktalari.filter(n => n.varlik === v.kod);
+    const yakitli = nk.some(n => n.rol === "satin_alinan" && n.birim === "kWh");
+    const ciktili = nk.some(n => n.rol === "tesis_ici_uretim" || n.rol === "ara_enerji");
+    if (!yakitli || !ciktili) continue;
+    s.push({
+      kod:"VERIM_" + v.kod, ad:v.ad + " Toplam Verim", birim:"%", ondalik:1,
+      formul:"(elektrik + buhar + sıcak su) ÷ doğalgaz",
+      kaynak:() => nk.map(n => n.kod),
+      kural:"8.6 — toplam enerjinin dışındadır, ekipman sağlığını ölçer",
+      hesapla:(y,a) => { const r = H.donusumVerimi(v.kod,y,a);
+        return r ? { deger: r.toplamVerim*100 } : { deger:null }; },
+      verim:true,
+    });
+  }
+
+  return s;
+}
+
+/* --------------------------------------------------------------- üretim */
+function uret() {
+  const t0 = performance.now();
+  const sutunlar = sutunlariKur();
+  const ar = veriAraligi();
+  const satirlar = [];
+  const eksikler = [];
+
+  if (ar) {
+    for (const { yil, ay } of donemAraligi(ar.ilk.yil, ar.ilk.ay, ar.son.yil, ar.son.ay)) {
+      const satir = { yil, ay, kod: donemKod(yil, ay) };
+      for (const s of sutunlar) {
+        let r;
+        try { r = s.hesapla(yil, ay); } catch (e) { r = { eksik: e.message }; }
+        if (r?.eksik) {
+          satir[s.kod] = null;
+          satir["_eksik_" + s.kod] = r.eksik;
+          eksikler.push({ donem: satir.kod, sutun: s.kod, ad: s.ad, sebep: r.eksik });
+        } else {
+          satir[s.kod] = r?.deger ?? null;
+        }
+      }
+      satirlar.push(satir);
+    }
+  }
+
+  katman.sutunlar = sutunlar;
+  katman.satirlar = satirlar;
+  katman.uretim   = new Date().toISOString();
+  katman.sure     = Math.round(performance.now() - t0);
+  katman.hucre    = satirlar.length * sutunlar.length;
+  katman.eksikler = eksikler;
+
+  for (const fn of dinleyiciler) { try { fn(katman); } catch (e) { console.error(e); } }
+  return katman;
+}
+
+/** Tek dönem satırı */
+const satir = (yil, ay) =>
+  katman.satirlar.find(s => s.yil === yil && s.ay === ay) || null;
+
+/** Tek hücre */
+function hucre(sutunKod, yil, ay) {
+  const s = satir(yil, ay);
+  return s ? s[sutunKod] ?? null : null;
+}
+
+/** Yıllık toplam (EnPI ve verim gibi oranlar için toplama YAPILMAZ) */
+function yillik(sutunKod, yil) {
+  const s = katman.sutunlar.find(x => x.kod === sutunKod);
+  const satirlar = katman.satirlar.filter(x => x.yil === yil && x[sutunKod] !== null);
+  if (!satirlar.length) return null;
+  if (s?.enpi || s?.verim || sutunKod.startsWith("BIRIM_FIYAT")) return null;  // oran: toplanamaz
+  return satirlar.reduce((t, x) => t + x[sutunKod], 0);
+}
+
+/** Veri her değiştiğinde katman yeniden üretilir (K-23) */
+function otomatikUret() {
+  dinle(() => uret());
+  uret();
+}
+
+  __x.katman = katman;
+  __x.katmanDinle = katmanDinle;
+  __x.uret = uret;
+  __x.satir = satir;
+  __x.hucre = hucre;
+  __x.yillik = yillik;
+  __x.otomatikUret = otomatikUret;
+};
+__f["js/ekranlar/tanimlar.js"] = function(__x) {
+/* ekranlar/tanimlar.js — Ekran 14: Tanımlar (El Kitabı 9.15)
+   Altı sekme. Tanımlar SİLİNMEZ, pasife alınır (İ-5). */
+const { el, $, bosalt, tablo, uyari, bildir, onayla, say, sayiOku, bosDurum } = __req("js/ortak.js");
+const { durum, degisti } = __req("js/veri.js");
+const { agac, varlik, nokta, ROLLER, VERI_TIPLERI, varlikNoktalari, ENERJI_BIRIMLERI, enerjiTuru } = __req("js/model.js");
+const { OZEL } = __req("js/hesap.js");
+let sekme = "agac", secili = null;
+
+const SEKMELER = [
+  ["agac",   "Varlık Ağacı"],
+  ["nokta",  "Ölçüm Noktaları"],
+  ["tur",    "Enerji Türleri"],
+  ["kats",   "Dönüşüm Katsayıları"],
+  ["enpi",   "EnPI Tanımları"],
+  ["baz",    "Baz Çizgiler"],
+];
+function ekranTanimlar(k) {
+  k.append(el("div.sayfa-basi", {},
+    el("h1", { metin:"Tanımlar" }),
+    el("p", { metin:"Sistemin iskeleti. Tanımlar silinmez, pasife alınır — böylece geçmiş veriler her zaman anlamlı kalır." })));
+
+  const s = el("div.sekmeler", {});
+  for (const [kod, ad] of SEKMELER)
+    s.append(el("button.sekme", { "aria-selected": sekme === kod ? "true" : "false",
+      metin:ad, onclick:() => { sekme = kod; secili = null; yenile(); } }));
+  k.append(s);
+
+  const govde = el("div", { id:"tanim-govde" });
+  k.append(govde);
+  cizGovde(govde);
+}
+
+function yenile() {
+  const k = bosalt($("#icerik"));
+  ekranTanimlar(k);
+}
+
+function cizGovde(g) {
+  bosalt(g);
+  ({ agac:cizAgac, nokta:cizNoktalar, tur:cizTurler,
+     kats:cizKatsayilar, enpi:cizEnpi, baz:cizBaz }[sekme])(g);
+}
+
+/* ============================================================ 1 · AĞAÇ */
+function cizAgac(g) {
+  g.append(uyari("bilgi",
+    el("b", { metin:"Hiyerarşiyi değiştirmek hiçbir veriyi bozmaz (İ-7). " }),
+    "Varlık ağacı ile veri seti birbirinden bağımsızdır; bir varlığı başka bir yere taşıdığınızda ölçüm noktaları ve bütün geçmiş değerler yerinde kalır."));
+
+  const sol = el("div.kart", { stil:{ flex:"1 1 320px", minWidth:"300px" } },
+    el("div.satir", { stil:{ justifyContent:"space-between", marginBottom:"10px" } },
+      el("h2", { metin:`Varlık ağacı (${durum.varliklar.length})` }),
+      el("button.dugme.kucuk.ana", { metin:"+ Varlık", onclick:() => varlikDuzenle(null) })),
+    agacListesi(agac()));
+
+  const sag = el("div.kart", { stil:{ flex:"1 1 320px", minWidth:"300px" } });
+  varlikDetay(sag);
+
+  g.append(el("div.satir", { stil:{ alignItems:"flex-start" } }, sol, sag));
+}
+
+function agacListesi(dugumler) {
+  const ul = el("ul.agac");
+  for (const d of dugumler) {
+    const pasif = d.aktif === false || d.devreden_cikis;
+    ul.append(el("li", {},
+      el("div.dugum" + (secili === d.kod ? ".secili" : "") + (pasif ? ".pasif" : ""), {
+        onclick:() => { secili = d.kod; cizGovde($("#tanim-govde")); } },
+        el("span", { metin:d.ad }),
+        el("span.tip", { metin:d.tip || "" }),
+        d.devreden_cikis ? el("span.rozet.dikkat", { metin:"⚠ " + d.devreden_cikis }) : null),
+      d.cocuklar.length ? agacListesi(d.cocuklar) : null));
+  }
+  return ul;
+}
+
+function varlikDetay(k) {
+  if (!secili) { k.append(bosDurum("Varlık seçilmedi",
+    "Soldaki ağaçtan bir varlık seçin; ayrıntıları ve ona bağlı ölçüm noktaları burada görünür.")); return; }
+  const v = varlik(secili);
+  if (!v) return;
+  const nk = varlikNoktalari(v.kod);
+
+  k.append(el("div.satir", { stil:{ justifyContent:"space-between" } },
+    el("h2", { metin:v.ad }),
+    el("button.dugme.kucuk", { metin:"Düzenle", onclick:() => varlikDuzenle(v.kod) })));
+
+  const bilgi = [
+    ["Kod", v.kod], ["Tip", v.tip || "—"],
+    ["Üst varlık", v.ust ? (varlik(v.ust)?.ad || v.ust) : "— (kök)"],
+    ["Devreye giriş", v.devreye_giris || "—"],
+    ["Devreden çıkış", v.devreden_cikis || "—"],
+    ["Durum", v.aktif === false ? "Pasif" : "Aktif"],
+  ];
+  const dl = el("table");
+  for (const [a, b] of bilgi)
+    dl.append(el("tr", {}, el("td.sessiz", { metin:a }), el("td", { metin:String(b) })));
+  k.append(el("div.tablo-sar", { stil:{ maxHeight:"none", marginBottom:"12px" } }, dl));
+
+  if (v.not) k.append(uyari("dikkat", v.not));
+
+  k.append(el("h3", { metin:`Ölçüm noktaları (${nk.length})` }));
+  if (!nk.length) k.append(el("p.sessiz.kucuk", { metin:"Bu varlığa bağlı ölçüm noktası yok." }));
+  else k.append(tablo([
+    { ad:"Ad", anahtar:"ad" },
+    { ad:"Birim", anahtar:"birim" },
+    { ad:"Rol", deger:n => ROLLER[n.rol]?.ad || n.rol },
+    { ad:"Tip", deger:n => VERI_TIPLERI[n.veri_tipi] || n.veri_tipi },
+    { ad:"Toplama", deger:n => n.toplama_dahil ? "✓" : "" },
+  ], nk));
+}
+
+function varlikDuzenle(kod) {
+  const v = kod ? { ...varlik(kod) } : { kod:"", ad:"", tip:"ekipman", ust:null, sira:999, aktif:true };
+  const yeni = !kod;
+  const f = el("div");
+  const g = (etiket, alan, tip = "text", secenekler = null) => {
+    const id = "f_" + alan;
+    let giris;
+    if (secenekler) {
+      giris = el("select", { id });
+      for (const [d, a] of secenekler)
+        giris.append(el("option", { value:d ?? "", metin:a, selected: (v[alan] ?? "") === (d ?? "") }));
+    } else giris = el("input", { id, type:tip, value: v[alan] ?? "" });
+    f.append(el("div.alan", {}, el("label", { for:id, metin:etiket }), giris));
+    return giris;
+  };
+  const gKod = g("Kod (benzersiz, değişmez)", "kod");
+  if (!yeni) gKod.disabled = true;
+  const gAd  = g("Ad", "ad");
+  const gTip = g("Tip", "tip", "text", [["tesis","Tesis"],["grup","Grup"],["bolum","Bölüm"],
+      ["istasyon","İstasyon"],["ekipman","Ekipman"],["hat","Hat"],["proses","Proses"],
+      ["santral","Santral"],["giris_noktasi","Giriş noktası"]]);
+  const gUst = g("Üst varlık", "ust", "text",
+    [[null,"— (kök)"], ...durum.varliklar.filter(x => x.kod !== kod).map(x => [x.kod, x.ad])]);
+  const gGir = g("Devreye giriş (YYYY-AA)", "devreye_giris");
+  const gCik = g("Devreden çıkış (YYYY-AA)", "devreden_cikis");
+  const gNot = g("Not", "not");
+
+  onayla(yeni ? "Yeni varlık" : "Varlığı düzenle", f, "Kaydet").then(ok => {
+    if (!ok) return;
+    const k2 = gKod.value.trim().toUpperCase();
+    if (!k2 || !gAd.value.trim()) return bildir("Kod ve ad zorunlu", "kritik");
+    if (yeni && durum.varliklar.some(x => x.kod === k2)) return bildir("Bu kod zaten var", "kritik");
+    const nesne = { kod:k2, ad:gAd.value.trim(), tip:gTip.value, ust:gUst.value || null,
+      devreye_giris:gGir.value.trim() || null, devreden_cikis:gCik.value.trim() || null,
+      not:gNot.value.trim(), aktif:v.aktif !== false, sira:v.sira ?? 999 };
+    if (yeni) durum.varliklar.push(nesne);
+    else Object.assign(varlik(kod), nesne);
+    secili = k2; degisti("varlik"); yenile(); bildir("Kaydedildi");
+  });
+}
+
+/* ==================================================== 2 · ÖLÇÜM NOKTALARI */
+function cizNoktalar(g) {
+  g.append(uyari("bilgi",
+    el("b", { metin:"Yeni bir makine eklemek burada tek satır eklemektir. " }),
+    "Excel'de bu, yeni sütun açıp bütün formülleri güncellemek demekti (S1)."));
+
+  let sup = "";
+  const ust = el("div.satir", { stil:{ marginBottom:"12px" } },
+    el("input", { type:"text", placeholder:"Ara: ad, kod, varlık…", stil:{ minWidth:"260px" },
+      oninput:e => { sup = e.target.value.toLowerCase(); ciz(); } }),
+    el("span.bosluk", { stil:{ flex:"1" } }),
+    el("button.dugme.kucuk.ana", { metin:"+ Ölçüm noktası", onclick:() => noktaDuzenle(null) }));
+  g.append(ust);
+  const sar = el("div"); g.append(sar);
+
+  function ciz() {
+    bosalt(sar);
+    const l = durum.olcum_noktalari.filter(n => !sup ||
+      (n.ad + n.kod + (varlik(n.varlik)?.ad || "")).toLowerCase().includes(sup));
+    sar.append(el("p.kucuk.sessiz", { metin:`${l.length} / ${durum.olcum_noktalari.length} nokta` }));
+    sar.append(tablo([
+      { ad:"Kod", deger:n => el("code", { metin:n.kod }) },
+      { ad:"Ad", anahtar:"ad" },
+      { ad:"Varlık", deger:n => varlik(n.varlik)?.ad || n.varlik },
+      { ad:"Birim", anahtar:"birim" },
+      { ad:"Rol", deger:n => ROLLER[n.rol]?.ad || n.rol },
+      { ad:"Tip", deger:n => VERI_TIPLERI[n.veri_tipi] || n.veri_tipi },
+      { ad:"Toplama", deger:n => n.toplama_dahil ? "✓" : "" },
+      { ad:"", deger:n => el("button.dugme.kucuk", { metin:"Düzenle",
+          onclick:() => noktaDuzenle(n.kod) }) },
+    ], l, { satirOzellik:n => ({ title:n.not || "", style:n.aktif === false ? "opacity:.5" : "" }) }));
+  }
+  ciz();
+}
+
+function noktaDuzenle(kod) {
+  const n = kod ? { ...nokta(kod) } : { kod:"", ad:"", varlik:durum.varliklar[0]?.kod,
+    enerji_turu:null, birim:"kWh", rol:"satin_alinan", toplama_dahil:false,
+    veri_tipi:"olculen", formul:"", aktif:true, not:"" };
+  const yeni = !kod;
+  const f = el("div");
+  const mk = (etiket, alan, secenekler = null, ipucu = null) => {
+    const id = "n_" + alan; let giris;
+    if (secenekler) {
+      giris = el("select", { id });
+      for (const [d, a] of secenekler)
+        giris.append(el("option", { value:d ?? "", metin:a, selected:(n[alan] ?? "") === (d ?? "") }));
+    } else giris = el("input", { id, type:"text", value:n[alan] ?? "" });
+    f.append(el("div.alan", {}, el("label", { for:id, metin:etiket }), giris,
+      ipucu ? el("div.mini.sessiz", { metin:ipucu }) : null));
+    return giris;
+  };
+  const gKod = mk("Kod (benzersiz)", "kod"); if (!yeni) gKod.disabled = true;
+  const gAd  = mk("Ad", "ad");
+  const gVar = mk("Bağlı varlık", "varlik", durum.varliklar.map(v => [v.kod, v.ad]),
+                  "Değiştirilebilir — geçmiş veri yerinde kalır (İ-7)");
+  const gTur = mk("Enerji türü", "enerji_turu",
+                  [[null,"— (enerji değil)"], ...durum.enerji_turleri.map(t => [t.kod, t.ad])]);
+  const gBir = mk("Birim", "birim", [...ENERJI_BIRIMLERI, "m³","kg","TL","adet"].map(b => [b,b]));
+  const gRol = mk("Rol", "rol", Object.entries(ROLLER).map(([k, r]) => [k, r.ad]));
+  const gTip = mk("Veri tipi", "veri_tipi", Object.entries(VERI_TIPLERI));
+  const gFor = mk("Formül (hesaplanan/dağıtılmış ise)", "formul", null,
+                  "Örnek: KAKAO_YAG + KAKAO_TOZ  ·  CEKIRDEK_KG * 0.34  ·  BUH_KG * KATSAYI(BUH,kg,kWh)");
+  const gDah = el("input", { type:"checkbox", id:"n_dahil" }); gDah.checked = !!n.toplama_dahil;
+  f.append(el("div.alan", {}, el("label", { for:"n_dahil", metin:"Fabrika toplamına dahil" }), gDah,
+    el("div.mini.sessiz", { metin:"Yalnız üst seviye giriş noktaları işaretlenir. Alt kırılımlar (GM-1 doğalgazı gibi) işaretlenmez — çift sayım olur (6.7)." })));
+  const gNot = mk("Not", "not");
+
+  onayla(yeni ? "Yeni ölçüm noktası" : "Ölçüm noktasını düzenle", f, "Kaydet").then(ok => {
+    if (!ok) return;
+    const k2 = gKod.value.trim().toUpperCase();
+    if (!k2 || !gAd.value.trim()) return bildir("Kod ve ad zorunlu", "kritik");
+    if (yeni && durum.olcum_noktalari.some(x => x.kod === k2)) return bildir("Bu kod zaten var", "kritik");
+    const eski = kod ? nokta(kod) : null;
+    const turDegisti = eski && (eski.enerji_turu !== (gTur.value || null) || eski.birim !== gBir.value);
+    const uygula = () => {
+      const nesne = { kod:k2, ad:gAd.value.trim(), varlik:gVar.value,
+        enerji_turu:gTur.value || null, birim:gBir.value, rol:gRol.value,
+        veri_tipi:gTip.value, formul:gFor.value.trim() || null,
+        toplama_dahil:gDah.checked, aktif:eski ? eski.aktif !== false : true,
+        not:gNot.value.trim() };
+      if (yeni) durum.olcum_noktalari.push(nesne); else Object.assign(eski, nesne);
+      degisti("nokta"); yenile(); bildir("Kaydedildi");
+    };
+    const veriVar = kod && durum.degerler.some(d => d.n === kod);
+    if (turDegisti && veriVar)
+      onayla("Dikkat — geçmiş verinin anlamı değişecek",
+        "Bu noktaya girilmiş veriler var. Enerji türünü veya birimini değiştirmek geçmiş dönemlerin anlamını değiştirir (İ-5). Devam edilsin mi?",
+        "Yine de değiştir", true).then(o => { if (o) uygula(); });
+    else uygula();
+  });
+}
+
+/* ========================================================= 3 · TÜRLER */
+function cizTurler(g) {
+  g.append(el("div.satir", { stil:{ justifyContent:"space-between", marginBottom:"10px" } },
+    el("h2", { metin:`Enerji türleri (${durum.enerji_turleri.length})` }),
+    el("button.dugme.kucuk.ana", { metin:"+ Enerji türü", onclick:() => turDuzenle(null) })));
+  g.append(tablo([
+    { ad:"Kod", deger:t => el("code", { metin:t.kod }) },
+    { ad:"Ad", anahtar:"ad" },
+    { ad:"Ana birim", anahtar:"ana_birim" },
+    { ad:"Nokta", sayi:true, deger:t => durum.olcum_noktalari.filter(n => n.enerji_turu === t.kod).length },
+    { ad:"", deger:t => el("button.dugme.kucuk", { metin:"Düzenle", onclick:() => turDuzenle(t.kod) }) },
+  ], durum.enerji_turleri));
+}
+
+function turDuzenle(kod) {
+  const t = kod ? { ...enerjiTuru(kod) } : { kod:"", ad:"", ana_birim:"kWh", aktif:true };
+  const f = el("div");
+  const gk = el("input", { type:"text", value:t.kod }); if (kod) gk.disabled = true;
+  const ga = el("input", { type:"text", value:t.ad });
+  const gb = el("select"); for (const b of [...ENERJI_BIRIMLERI, "m³","kg"])
+    gb.append(el("option", { value:b, metin:b, selected:t.ana_birim === b }));
+  f.append(el("div.alan", {}, el("label", { metin:"Kod" }), gk),
+           el("div.alan", {}, el("label", { metin:"Ad" }), ga),
+           el("div.alan", {}, el("label", { metin:"Ana birim" }), gb));
+  onayla(kod ? "Enerji türünü düzenle" : "Yeni enerji türü", f, "Kaydet").then(ok => {
+    if (!ok || !gk.value.trim() || !ga.value.trim()) return;
+    const n = { kod:gk.value.trim().toUpperCase(), ad:ga.value.trim(), ana_birim:gb.value, aktif:true };
+    if (kod) Object.assign(enerjiTuru(kod), n); else durum.enerji_turleri.push(n);
+    degisti("tur"); yenile(); bildir("Kaydedildi");
+  });
+}
+
+/* ==================================================== 4 · KATSAYILAR */
+function cizKatsayilar(g) {
+  g.append(uyari("bilgi",
+    el("b", { metin:"Sistem katsayı varsaymaz (İ-3). " }),
+    "Katsayı tanımlı değilse dönüştürülmüş değer üretilmez ve nedeni ekranda yazılır. Katsayılar tarihlidir: bir dönem için geçerlilik başlangıcı o dönemden küçük veya eşit olan EN YENİ katsayı kullanılır."));
+  g.append(el("div.satir", { stil:{ justifyContent:"space-between", marginBottom:"10px" } },
+    el("h2", { metin:`Dönüşüm katsayıları (${durum.donusum_katsayilari.length})` }),
+    el("button.dugme.kucuk.ana", { metin:"+ Katsayı", onclick:() => katsDuzenle(null) })));
+  g.append(tablo([
+    { ad:"Enerji türü", deger:k => enerjiTuru(k.enerji_turu)?.ad || k.enerji_turu },
+    { ad:"Dönüşüm", deger:k => `1 ${k.kaynak_birim} = ? ${k.hedef_birim}` },
+    { ad:"Katsayı", sayi:true, ondalik:6, anahtar:"katsayi" },
+    { ad:"Geçerli", anahtar:"gecerli_baslangic" },
+    { ad:"Kaynak", anahtar:"kaynak" },
+    { ad:"", deger:(k,i) => el("button.dugme.kucuk", { metin:"Düzenle",
+        onclick:() => katsDuzenle(durum.donusum_katsayilari.indexOf(k)) }) },
+  ], durum.donusum_katsayilari, { satirOzellik:k => ({ title:k.not || "" }) }));
+
+  const eksik = durum.olcum_noktalari.filter(n =>
+    n.enerji_turu && ["m³","kg"].includes(n.birim) && n.rol === "satin_alinan");
+  const olmayan = eksik.filter(n => !durum.donusum_katsayilari.some(k =>
+    k.enerji_turu === n.enerji_turu && k.kaynak_birim === n.birim));
+  if (olmayan.length)
+    g.append(uyari("dikkat", el("b", { metin:"Katsayısı tanımlı olmayan noktalar: " }),
+      olmayan.map(n => `${n.ad} (${n.birim})`).join(", "),
+      el("div.kucuk", { metin:"Bu noktalara sıfırdan farklı bir değer girilirse toplam enerji üretilemez (6.6)." })));
+}
+
+function katsDuzenle(i) {
+  const k = i !== null ? { ...durum.donusum_katsayilari[i] }
+    : { enerji_turu:durum.enerji_turleri[0]?.kod, kaynak_birim:"m³", hedef_birim:"kWh",
+        katsayi:null, gecerli_baslangic:"2018-01", kaynak:"", not:"" };
+  const f = el("div");
+  const gt = el("select"); for (const t of durum.enerji_turleri)
+    gt.append(el("option", { value:t.kod, metin:t.ad, selected:k.enerji_turu === t.kod }));
+  const gk = el("input", { type:"text", value:k.kaynak_birim });
+  const gh = el("input", { type:"text", value:k.hedef_birim });
+  const gv = el("input", { type:"text", value:k.katsayi != null ? say(k.katsayi, 6) : "" });
+  const gb = el("input", { type:"text", value:k.gecerli_baslangic || "" });
+  const gs = el("input", { type:"text", value:k.kaynak || "" });
+  const gn = el("input", { type:"text", value:k.not || "" });
+  f.append(
+    el("div.alan", {}, el("label", { metin:"Enerji türü" }), gt),
+    el("div.satir", {}, el("div.alan", {}, el("label", { metin:"Kaynak birim" }), gk),
+                        el("div.alan", {}, el("label", { metin:"Hedef birim" }), gh)),
+    el("div.alan", {}, el("label", { metin:"Katsayı (1 kaynak = ? hedef)" }), gv),
+    el("div.alan", {}, el("label", { metin:"Geçerlilik başlangıcı (YYYY-AA)" }), gb),
+    el("div.alan", {}, el("label", { metin:"Kaynak" }), gs,
+       el("div.mini.sessiz", { metin:"Katsayının nereden geldiği. Denetimde sorulur." })),
+    el("div.alan", {}, el("label", { metin:"Not" }), gn));
+
+  onayla(i !== null ? "Katsayıyı düzenle" : "Yeni katsayı", f, "Kaydet").then(ok => {
+    if (!ok) return;
+    const s = sayiOku(gv.value);
+    if (s.hata) return bildir("Katsayı: " + s.hata, "kritik");
+    if (s.deger === null) return bildir("Katsayı zorunlu", "kritik");
+    const n = { enerji_turu:gt.value, kaynak_birim:gk.value.trim(), hedef_birim:gh.value.trim(),
+      katsayi:s.deger, gecerli_baslangic:gb.value.trim() || null,
+      kaynak:gs.value.trim(), not:gn.value.trim() };
+    if (i !== null) durum.donusum_katsayilari[i] = n; else durum.donusum_katsayilari.push(n);
+    degisti("katsayi"); yenile(); bildir("Kaydedildi");
+  });
+}
+
+/* ========================================================== 5 · EnPI */
+function cizEnpi(g) {
+  g.append(uyari("bilgi",
+    el("b", { metin:"Sistem gösterge dayatmaz (K-06). " }),
+    "Pay ve paydayı siz seçersiniz; istediğiniz kadar EnPI tanımlayabilirsiniz. Ham EnPI üretim düştüğünde kendiliğinden kötüleşir — bu verimsizlik değildir; Faz 4'te yanına normalize EnPI gelecek."));
+  g.append(el("div.satir", { stil:{ justifyContent:"space-between", marginBottom:"10px" } },
+    el("h2", { metin:`EnPI tanımları (${durum.enpi_tanimlari.length})` }),
+    el("button.dugme.kucuk.ana", { metin:"+ EnPI", onclick:() => enpiDuzenle(null) })));
+  const ad = x => OZEL[x]?.ad || nokta(x)?.ad || x;
+  g.append(tablo([
+    { ad:"Ad", anahtar:"ad" },
+    { ad:"Pay", deger:t => ad(t.pay) },
+    { ad:"Payda", deger:t => ad(t.payda) },
+    { ad:"Birim", anahtar:"birim" },
+    { ad:"Ana", deger:t => t.ana ? "✓" : "" },
+    { ad:"", deger:t => el("button.dugme.kucuk", { metin:"Düzenle", onclick:() => enpiDuzenle(t.kod) }) },
+  ], durum.enpi_tanimlari));
+}
+
+function enpiDuzenle(kod) {
+  const t = kod ? { ...durum.enpi_tanimlari.find(x => x.kod === kod) }
+    : { kod:"", ad:"", pay:"@TOPLAM_ENERJI_KWH", payda:"", birim:"kWh/kg", ondalik:4, ana:false };
+  const secenekler = [
+    ...Object.entries(OZEL).map(([k, v]) => [k, "★ " + v.ad]),
+    ...durum.olcum_noktalari.map(n => [n.kod, `${n.ad} (${n.birim})`]),
+  ];
+  const f = el("div");
+  const mkSec = (etiket, deger) => { const s = el("select");
+    for (const [d, a] of secenekler) s.append(el("option", { value:d, metin:a, selected:deger === d }));
+    f.append(el("div.alan", {}, el("label", { metin:etiket }), s)); return s; };
+  const gk = el("input", { type:"text", value:t.kod }); if (kod) gk.disabled = true;
+  const ga = el("input", { type:"text", value:t.ad });
+  f.append(el("div.alan", {}, el("label", { metin:"Kod" }), gk),
+           el("div.alan", {}, el("label", { metin:"Ad" }), ga));
+  const gp = mkSec("Pay (bölünen)", t.pay);
+  const gq = mkSec("Payda (bölen)", t.payda);
+  const gb = el("input", { type:"text", value:t.birim || "" });
+  const gd = el("input", { type:"number", value:t.ondalik ?? 4, min:0, max:6 });
+  const gn = el("input", { type:"checkbox" }); gn.checked = !!t.ana;
+  f.append(el("div.satir", {}, el("div.alan", {}, el("label", { metin:"Birim" }), gb),
+                               el("div.alan", {}, el("label", { metin:"Ondalık" }), gd)),
+           el("div.alan", {}, el("label", { metin:"Ana gösterge" }), gn));
+
+  onayla(kod ? "EnPI'yi düzenle" : "Yeni EnPI", f, "Kaydet").then(ok => {
+    if (!ok || !gk.value.trim() || !ga.value.trim()) return;
+    const n = { kod:gk.value.trim().toUpperCase(), ad:ga.value.trim(), pay:gp.value,
+      payda:gq.value, birim:gb.value.trim(), ondalik:+gd.value, ana:gn.checked };
+    if (n.ana) durum.enpi_tanimlari.forEach(x => { if (x.kod !== n.kod) x.ana = false; });
+    if (kod) Object.assign(durum.enpi_tanimlari.find(x => x.kod === kod), n);
+    else durum.enpi_tanimlari.push(n);
+    degisti("enpi"); yenile(); bildir("Kaydedildi");
+  });
+}
+
+/* ==================================================== 6 · BAZ ÇİZGİLER */
+function cizBaz(g) {
+  g.append(uyari("bilgi",
+    el("b", { metin:"Baz çizgi Faz 4'te kurulacak (K-19). " }),
+    "Burada birden çok baz çizgi tanımlayabilecek ve aralarında geçiş yapabileceksiniz: sabit (referans dönem ortalaması) ve regresyonlu (beklenen = a × üretim + b). Regresyon için en az 12 veri noktası gerekir; R² 0,50'nin altındaysa sistem açık uyarı gösterir."));
+  if (!durum.baz_cizgiler.length)
+    g.append(bosDurum("Henüz baz çizgi tanımlanmadı",
+      "Baz çizgi, enerji performansındaki gerçek değişimi ölçmenin referansıdır. ISO 50001'in zorunlu parçasıdır (madde 6.5). Faz 4'te veri üzerinden kurulacak."));
+  else g.append(tablo([
+    { ad:"Ad", anahtar:"ad" }, { ad:"Referans dönem", anahtar:"donem" },
+    { ad:"Model", anahtar:"model_tipi" },
+    { ad:"a", sayi:true, ondalik:4, anahtar:"a" },
+    { ad:"b", sayi:true, anahtar:"b" },
+    { ad:"R²", sayi:true, ondalik:2, anahtar:"r2" },
+  ], durum.baz_cizgiler));
+}
+
+  __x.ekranTanimlar = ekranTanimlar;
+};
+__f["js/ekranlar/ayarlar.js"] = function(__x) {
+/* ekranlar/ayarlar.js — Ekran 15: Ayarlar ve Yedekleme (El Kitabı 9.16)
+   Tek HTML mimarisinde (K-09) bu ekran veri güvenliğinin merkezidir. */
+const { el, $, bosalt, say, kisa, uyari, bildir, onayla, tarihMetni, donemAd, dosyaIndir, tablo } = __req("js/ortak.js");
+const V = __req("js/veri.js");
+const { katman, uret } = __req("js/hesaplanan.js");
+function ekranAyarlar(k) {
+  k.append(el("div.sayfa-basi", {},
+    el("h1", { metin:"Ayarlar ve Yedekleme" }),
+    el("p", { metin:"Program tek bir HTML dosyasıdır ve veriniz ayrı durur. Veri kaybı bu mimarinin tek ciddi riskidir — bu ekran onu görünür tutar." })));
+
+  genel(k); veri(k); yedek(k); tanilama(k); tehlikeli(k);
+}
+
+const yenile = () => { const k = bosalt($("#icerik")); ekranAyarlar(k); };
+
+/* ------------------------------------------------------------- genel */
+function genel(k) {
+  const a = V.durum.ayarlar;
+  const kart = el("div.kart", {}, el("h2", { metin:"Genel" }));
+  const alan = (etiket, deger, uygula, ipucu) => {
+    const g = el("input", { type:"text", value:deger ?? "",
+      onchange:e => { uygula(e.target.value); V.degisti("ayar"); bildir("Kaydedildi"); } });
+    kart.append(el("div.alan", {}, el("label", { metin:etiket }), g,
+      ipucu ? el("div.mini.sessiz", { metin:ipucu }) : null));
+  };
+  alan("Fabrika adı", a.fabrika_adi, v => a.fabrika_adi = v);
+  alan("Para birimi", a.para_birimi, v => a.para_birimi = v);
+
+  const sec = (etiket, deger, secenekler, uygula, ipucu) => {
+    const g = el("select", { onchange:e => { uygula(e.target.value); V.degisti("ayar"); bildir("Kaydedildi"); } });
+    for (const [d, ad] of secenekler)
+      g.append(el("option", { value:d, metin:ad, selected:deger === d }));
+    kart.append(el("div.alan", {}, el("label", { metin:etiket }), g,
+      ipucu ? el("div.mini.sessiz", { metin:ipucu }) : null));
+  };
+  sec("Varsayılan enerji birimi", a.varsayilan_birim,
+      [["kWh","kWh"],["MJ","MJ"],["GJ","GJ"],["TEP","TEP"]], v => a.varsayilan_birim = v,
+      "Ortak birimde toplam gösterilirken kullanılır. 1 TEP = 41,868 GJ = 11.630 kWh");
+  sec("Ana EnPI göstergesi", a.ana_enpi,
+      V.durum.enpi_tanimlari.map(t => [t.kod, t.ad]), v => a.ana_enpi = v);
+  sec("Tema", a.tema || "otomatik",
+      [["otomatik","İşletim sistemine uy"],["acik","Açık"],["koyu","Koyu"]],
+      v => { a.tema = v; document.documentElement.dataset.tema = v; });
+  k.append(kart);
+}
+
+/* -------------------------------------------------------------- veri */
+function veri(k) {
+  const ar = V.veriAraligi();
+  const kart = el("div.kart", {}, el("h2", { metin:"Veri özeti" }));
+  const sat = [
+    ["Ham değer", say(V.durum.degerler.length)],
+    ["Dönem aralığı", ar ? `${donemAd(ar.ilk.yil, ar.ilk.ay)} → ${donemAd(ar.son.yil, ar.son.ay)}` : "— veri yok"],
+    ["Varlık", say(V.durum.varliklar.length)],
+    ["Ölçüm noktası", say(V.durum.olcum_noktalari.length)],
+    ["  · ölçülen", say(V.durum.olcum_noktalari.filter(n => n.veri_tipi === "olculen").length)],
+    ["  · hesaplanan", say(V.durum.olcum_noktalari.filter(n => n.veri_tipi !== "olculen").length)],
+    ["Dönüşüm katsayısı", say(V.durum.donusum_katsayilari.length)],
+    ["EnPI tanımı", say(V.durum.enpi_tanimlari.length)],
+    ["Baz çizgi", say(V.durum.baz_cizgiler.length)],
+  ];
+  const t = el("table");
+  for (const [a, b] of sat) t.append(el("tr", {}, el("td.sessiz", { metin:a }), el("td.s", { metin:String(b) })));
+  kart.append(el("div.tablo-sar", { stil:{ maxHeight:"none" } }, t));
+
+  kart.append(el("h3", { metin:"Hesaplanan değerler katmanı", stil:{ marginTop:"16px" } }));
+  kart.append(el("p.kucuk.sessiz", { metin:
+    "Bu katman bir aynadır, kayıt değil (K-23). Açılışta ve her veri değişiminde baştan üretilir; yedek dosyasına yazılmaz." }));
+  const t2 = el("table");
+  for (const [a, b] of [
+    ["Son üretim", katman.uretim ? tarihMetni(katman.uretim) : "—"],
+    ["Süre", katman.sure + " ms"],
+    ["Dönem × değer", `${katman.satirlar.length} × ${katman.sutunlar.length} = ${say(katman.hucre)} hücre`],
+    ["Üretilemeyen değer", say(katman.eksikler.length)],
+  ]) t2.append(el("tr", {}, el("td.sessiz", { metin:a }), el("td.s", { metin:String(b) })));
+  kart.append(el("div.tablo-sar", { stil:{ maxHeight:"none" } }, t2));
+  kart.append(el("button.dugme.kucuk", { metin:"Katmanı yeniden üret", stil:{ marginTop:"10px" },
+    onclick:() => { uret(); yenile(); bildir(`Katman yeniden üretildi (${katman.sure} ms)`); } }));
+
+  if (katman.eksikler.length) {
+    const ilk = katman.eksikler.slice(0, 5);
+    kart.append(uyari("dikkat",
+      el("b", { metin:`${katman.eksikler.length} değer üretilemedi. ` }),
+      "Sistem eksik veriyi sıfır saymaz (İ-3); nedeni aşağıda:",
+      el("ul.kuciik", { stil:{ margin:"6px 0 0 18px", padding:"0" } },
+        ilk.map(e => el("li", { metin:`${e.donem} · ${e.ad}: ${e.sebep}` })),
+        katman.eksikler.length > 5 ? el("li.sessiz", { metin:`…ve ${katman.eksikler.length - 5} tane daha` }) : null)));
+  }
+  k.append(kart);
+}
+
+/* ----------------------------------------------------------- yedekleme */
+function yedek(k) {
+  const y = V.yedekDurumu();
+  const kart = el("div.kart", {}, el("h2", { metin:"Yedekleme" }));
+
+  kart.append(uyari(y.uyarmali ? "dikkat" : "iyi",
+    el("b", { metin:y.aciklama }),
+    y.tarih ? el("div.kucuk", { metin:y.metin }) : null,
+    el("div.kucuk", { stil:{ marginTop:"4px" }, metin:
+      "Veri tarayıcının deposunda otomatik saklanır. Ancak tarayıcı verisi temizlenirse silinir, gizli sekmede görünmez ve başka bilgisayara taşınmaz. Yedek dosyası bu üçünün de çözümüdür." })));
+
+  kart.append(el("div.satir", {},
+    el("button.dugme.ana", { metin:"Yedek al (.json)",
+      onclick:() => { V.yedekAl(); yenile(); bildir("Yedek indirildi"); } }),
+    el("label.dugme", { metin:"Geri yükle…", stil:{ cursor:"pointer" } },
+      el("input", { type:"file", accept:".json,application/json", stil:{ display:"none" },
+        onchange:e => geriYukle(e.target.files[0]) }))));
+
+  /* Chrome/Edge: dosyaya doğrudan yazma (K-11) */
+  kart.append(el("h3", { metin:"Dosyaya doğrudan yazma", stil:{ marginTop:"18px" } }));
+  if (!V.dosyaYazmaDestegi())
+    kart.append(el("p.kucuk.sessiz", { metin:
+      "Bu tarayıcı desteklemiyor. Chrome veya Edge'de program veriyi seçtiğiniz dosyaya doğrudan yazabilir — tıpkı Excel gibi." }));
+  else if (V.dosyaYazmaAcik())
+    kart.append(uyari("iyi", "Açık — her değişiklik doğrudan dosyaya yazılıyor.",
+      el("div", { stil:{ marginTop:"6px" } }, el("button.dugme.kucuk", { metin:"Kapat",
+        onclick:() => { V.dosyaYazmaKapat(); yenile(); } }))));
+  else
+    kart.append(el("div", {},
+      el("p.kucuk.sessiz", { metin:"Bir kez veri dosyası seçersiniz; program bundan sonra her değişikliği doğrudan o dosyaya yazar. Yedek alma işi kendiliğinden halledilir." }),
+      el("button.dugme", { metin:"Veri dosyası seç", onclick:async () => {
+        try { const ad = await V.dosyaYazmaAc(); yenile(); bildir("Bağlandı: " + ad); }
+        catch (e) { if (e.name !== "AbortError") bildir(e.message, "kritik"); } } })));
+  k.append(kart);
+}
+
+async function geriYukle(dosya) {
+  if (!dosya) return;
+  let c;
+  try { c = await V.yedegiCoz(dosya); }
+  catch (e) { return bildir(e.message, "kritik"); }
+  const o = c.ozet;
+  const ozet = el("div", {},
+    el("p", {}, "Bu yedek dosyasının içeriği:"),
+    el("div.tablo-sar", { stil:{ maxHeight:"none" } }, (() => {
+      const t = el("table");
+      for (const [a, b] of [
+        ["Ham değer", say(o.deger)],
+        ["Dönem aralığı", o.ilk ? `${donemAd(o.ilk.y, o.ilk.a)} → ${donemAd(o.son.y, o.son.a)}` : "veri yok"],
+        ["Ölçüm noktası", say(o.nokta)], ["Varlık", say(o.varlik)],
+        ["Oluşturma", tarihMetni(o.olusturma)], ["Son güncelleme", tarihMetni(o.guncelleme)],
+      ]) t.append(el("tr", {}, el("td.sessiz", { metin:a }), el("td.s", { metin:String(b) })));
+      return t;
+    })()),
+    uyari("kritik", el("b", { metin:"Mevcut veriniz silinecek ve bu yedekle değiştirilecek. " }),
+      `Şu an sistemde ${say(V.durum.degerler.length)} ham değer var.`),
+    el("p.kucuk.sessiz", { metin:"Onaylarsanız önce mevcut verinizin güvenlik yedeği indirilecek." }));
+
+  const ok = await onayla("Yedeği geri yükle", ozet, "Geri yükle", true);
+  if (!ok) return;
+  V.guvenlikYedegi();
+  V.yedegiUygula(c.nesne);
+  yenile();
+  bildir(`Geri yüklendi — ${say(o.deger)} değer`);
+}
+
+/* ----------------------------------------------------------- tanılama */
+function tanilama(k) {
+  const kart = el("div.kart", {}, el("h2", { metin:"Tanılama" }));
+  const t = el("table");
+  const sat = [
+    ["Program sürümü", "Faz 1 · Çekirdek"],
+    ["Veri şema sürümü", String(V.SEMA_SURUMU)],
+    ["Tarayıcı", navigator.userAgent.includes("Edg") ? "Edge"
+                : navigator.userAgent.includes("Chrome") ? "Chrome"
+                : navigator.userAgent.includes("Firefox") ? "Firefox" : "Diğer"],
+    ["Dosyaya yazma desteği", V.dosyaYazmaDestegi() ? "Var" : "Yok"],
+  ];
+  for (const [a, b] of sat) t.append(el("tr", {}, el("td.sessiz", { metin:a }), el("td", { metin:b })));
+  kart.append(el("div.tablo-sar", { stil:{ maxHeight:"none" } }, t));
+  V.depoKullanimi().then(d => {
+    if (!d) return;
+    kart.append(el("p.kucuk.sessiz", { stil:{ marginTop:"8px" }, metin:
+      `Tarayıcı deposu: ${kisa(d.kullanim / 1048576, 1)} MB kullanılıyor / ${kisa(d.kota / 1048576, 0)} MB ayrılmış` }));
+  });
+  k.append(kart);
+}
+
+/* ---------------------------------------------------------- tehlikeli */
+function tehlikeli(k) {
+  const kart = el("div.kart", { stil:{ borderColor:"var(--kritik)" } },
+    el("h2", { metin:"Tehlikeli işlemler" }),
+    el("p.kucuk.sessiz", { metin:"Bu işlemler geri alınamaz." }));
+  kart.append(el("button.dugme.tehlike", { metin:"Bütün ham veriyi sil", onclick:async () => {
+    if (!V.durum.degerler.length) return bildir("Zaten veri yok");
+    const ok1 = await onayla("Bütün ham veriyi sil",
+      `${say(V.durum.degerler.length)} ham değer silinecek. Tanımlar (varlık ağacı, ölçüm noktaları) kalacak. Bu işlem geri alınamaz.`,
+      "Devam et", true);
+    if (!ok1) return;
+    const ok2 = await onayla("Emin misiniz?",
+      "Önce güvenlik yedeği indirilecek. Yine de devam edilsin mi?", "Evet, sil", true);
+    if (!ok2) return;
+    V.guvenlikYedegi();
+    await V.hepsiniSil();
+    yenile(); bildir("Ham veri silindi", "kritik");
+  } }));
+  k.append(kart);
+}
+
+  __x.ekranAyarlar = ekranAyarlar;
+};
+__f["js/veri.js"] = function(__x) {
+/* veri.js — depolama katmanı
+   El Kitabı: K-09, K-10, K-11, 5.2, 5.3
+   Katman 1: IndexedDB, otomatik.  Katman 2: .json yedek dosyası, elle.
+   Hesaplanan değerler burada SAKLANMAZ (K-23, İ-1). */
+const { tarihMetni, gunFarki, dosyaIndir, donemKod } = __req("js/ortak.js");
+const DB_AD = "enerji-yonetim", DB_SURUM = 1, DEPO = "durum", ANAHTAR = "tek";
+const SEMA_SURUMU = 1;
+const YEDEK_UYARI_GUN = 7;
+
+let db = null;
+let yazmaZaman = null;
+const dinleyiciler = new Set();
+
+/** Bellekteki tek doğruluk kaynağı. Türetilmiş değer İÇERMEZ (İ-1). */
+const durum = {
+  sema_surumu: SEMA_SURUMU,
+  olusturma: null,
+  ayarlar: {},
+  enerji_turleri: [], varliklar: [], olcum_noktalari: [],
+  donusum_katsayilari: [], enpi_tanimlari: [], baz_cizgiler: [],
+  hedefler: [], aksiyonlar: [],
+  degerler: [],           // [{n:kod, y:yıl, a:ay, v:değer, k:kalite, not:""}]
+  _son_yedek: null,       // ISO
+};
+
+/* ----------------------------------------------------------- değer dizini */
+/* degerler dizisi doğrudan taranmaz; hızlı erişim için dizin tutulur. */
+let dizin = new Map();                       // "kod|yyyy-mm" -> kayıt
+const dz = (n, y, a) => `${n}|${donemKod(y, a)}`;
+
+function dizinKur() {
+  dizin = new Map();
+  for (const d of durum.degerler) dizin.set(dz(d.n, d.y, d.a), d);
+}
+const deger    = (n, y, a) => dizin.get(dz(n, y, a))?.v ?? null;
+const degerKayit= (n, y, a) => dizin.get(dz(n, y, a)) ?? null;
+
+/** Değer yazar/siler. null veya "" gönderilirse kayıt silinir (İ-3: 0 değildir). */
+function degerYaz(n, y, a, v, ek = {}) {
+  const k = dz(n, y, a);
+  const mevcut = dizin.get(k);
+  if (v === null || v === undefined || v === "") {
+    if (mevcut) {
+      durum.degerler.splice(durum.degerler.indexOf(mevcut), 1);
+      dizin.delete(k);
+      degisti("deger");
+    }
+    return;
+  }
+  if (mevcut) Object.assign(mevcut, { v, ...ek });
+  else { const yeni = { n, y, a, v, ...ek }; durum.degerler.push(yeni); dizin.set(k, yeni); }
+  degisti("deger");
+}
+
+/** Bir ölçüm noktasının dolu dönemleri */
+function noktaDonemleri(n) {
+  return durum.degerler.filter(d => d.n === n)
+    .map(d => ({ yil: d.y, ay: d.a, v: d.v }))
+    .sort((x, y2) => x.yil - y2.yil || x.ay - y2.ay);
+}
+
+/** Veride bulunan en eski ve en yeni dönem */
+function veriAraligi() {
+  if (!durum.degerler.length) return null;
+  let min = null, max = null;
+  for (const d of durum.degerler) {
+    const t = d.y * 12 + d.a;
+    if (min === null || t < min.t) min = { t, yil: d.y, ay: d.a };
+    if (max === null || t > max.t) max = { t, yil: d.y, ay: d.a };
+  }
+  return { ilk: min, son: max };
+}
+
+/* ----------------------------------------------------------- değişim olayı */
+/** Her veri değişiminde hesap katmanı yeniden üretilir (K-23). */
+function dinle(fn) { dinleyiciler.add(fn); return () => dinleyiciler.delete(fn); }
+function degisti(ne = "genel") {
+  for (const fn of dinleyiciler) { try { fn(ne); } catch (e) { console.error(e); } }
+  kaydet();
+}
+
+/* ----------------------------------------------------------- IndexedDB */
+function ac() {
+  return new Promise((coz, red) => {
+    const i = indexedDB.open(DB_AD, DB_SURUM);
+    i.onupgradeneeded = () => {
+      const d = i.result;
+      if (!d.objectStoreNames.contains(DEPO)) d.createObjectStore(DEPO);
+    };
+    i.onsuccess = () => coz(i.result);
+    i.onerror = () => red(i.error);
+  });
+}
+
+function yaz(nesne) {
+  return new Promise((coz, red) => {
+    if (!db) return coz();
+    const t = db.transaction(DEPO, "readwrite");
+    t.objectStore(DEPO).put(nesne, ANAHTAR);
+    t.oncomplete = coz; t.onerror = () => red(t.error);
+  });
+}
+
+function oku() {
+  return new Promise((coz, red) => {
+    if (!db) return coz(null);
+    const t = db.transaction(DEPO, "readonly");
+    const i = t.objectStore(DEPO).get(ANAHTAR);
+    i.onsuccess = () => coz(i.result || null);
+    i.onerror = () => red(i.error);
+  });
+}
+
+/** Yazma gecikmeli: hızlı ardışık girişlerde diske tek kez yazılır. */
+function kaydet() {
+  clearTimeout(yazmaZaman);
+  yazmaZaman = setTimeout(async () => {
+    try {
+      await yaz(disaVer());
+      if (dosyaKolu) await dosyayaYaz();      // K-11, isteğe bağlı
+    } catch (e) { console.error("Kaydedilemedi:", e); }
+  }, 350);
+}
+
+/* ----------------------------------------------------------- aç / yükle */
+async function baslat(baslangicTanimlari) {
+  try { db = await ac(); } catch { db = null; }      // gizli sekme vb.
+  const kayitli = await oku().catch(() => null);
+  if (kayitli) { iceYukle(kayitli); return { kaynak: "depo" }; }
+  iceYukle({ ...baslangicTanimlari, olusturma: new Date().toISOString() });
+  await yaz(disaVer()).catch(() => {});
+  return { kaynak: "baslangic" };
+}
+
+function iceYukle(nesne) {
+  const g = gocEt(nesne);
+  for (const k of Object.keys(durum)) if (k in g) durum[k] = g[k];
+  durum.degerler ||= [];
+  dizinKur();
+}
+
+/** Şema göçü. Bir yedek dosyası hiçbir zaman okunamaz hale gelmemelidir (5.3). */
+function gocEt(n) {
+  const s = n.sema_surumu ?? 1;
+  if (s > SEMA_SURUMU)
+    throw new Error(`Bu yedek daha yeni bir sürümle oluşturulmuş (şema ${s}). Programı güncelleyin.`);
+  // Gelecekte: if (s < 2) { ...dönüştür... }
+  return n;
+}
+
+/** Kaydedilecek nesne — hesaplanan katman ASLA dahil değil (K-23). */
+function disaVer() {
+  return {
+    sema_surumu: SEMA_SURUMU,
+    olusturma: durum.olusturma,
+    guncelleme: new Date().toISOString(),
+    ayarlar: durum.ayarlar,
+    enerji_turleri: durum.enerji_turleri,
+    varliklar: durum.varliklar,
+    olcum_noktalari: durum.olcum_noktalari,
+    donusum_katsayilari: durum.donusum_katsayilari,
+    enpi_tanimlari: durum.enpi_tanimlari,
+    baz_cizgiler: durum.baz_cizgiler,
+    hedefler: durum.hedefler,
+    aksiyonlar: durum.aksiyonlar,
+    degerler: durum.degerler,
+    _son_yedek: durum._son_yedek,
+  };
+}
+
+/* ----------------------------------------------------------- yedekleme */
+function yedekAdi() {
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  return `enerji-veri-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`;
+}
+function yedekAl(isaretle = true) {
+  const nesne = disaVer();
+  dosyaIndir(yedekAdi(), JSON.stringify(nesne, null, 1));
+  if (isaretle) { durum._son_yedek = new Date().toISOString(); kaydet(); }
+  return nesne;
+}
+
+/** Güvenlik yedeği: içe aktarma öncesi, "son yedek" damgasını DEĞİŞTİRMEZ. */
+function guvenlikYedegi() {
+  if (!durum.degerler.length && !durum.olcum_noktalari.length) return false;
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  dosyaIndir(`guvenlik-yedegi-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`,
+             JSON.stringify(disaVer(), null, 1));
+  return true;
+}
+function yedekDurumu() {
+  const g = gunFarki(durum._son_yedek);
+  return {
+    tarih: durum._son_yedek, metin: tarihMetni(durum._son_yedek), gun: g,
+    uyarmali: g === null || g >= YEDEK_UYARI_GUN,
+    aciklama: g === null ? "Hiç yedek alınmadı"
+            : g === 0   ? "Bugün yedek alındı"
+            : `Son yedek ${g} gün önce alındı`,
+  };
+}
+
+/** Yedek dosyasını okur ve ÖNİZLEME döndürür — henüz uygulamaz. */
+async function yedegiCoz(dosya) {
+  const metin = await dosya.text();
+  let n;
+  try { n = JSON.parse(metin); }
+  catch { throw new Error("Dosya geçerli bir JSON değil."); }
+  if (!n || typeof n !== "object" || !Array.isArray(n.olcum_noktalari))
+    throw new Error("Bu dosya bir enerji yönetim yedeği değil.");
+  gocEt(n);
+  const dg = n.degerler || [];
+  let ilk = null, son = null;
+  for (const d of dg) { const t = d.y * 12 + d.a;
+    if (ilk === null || t < ilk.t) ilk = { t, y: d.y, a: d.a };
+    if (son === null || t > son.t) son = { t, y: d.y, a: d.a }; }
+  return { nesne: n, ozet: {
+    deger: dg.length, nokta: n.olcum_noktalari.length, varlik: (n.varliklar || []).length,
+    ilk, son, olusturma: n.olusturma, guncelleme: n.guncelleme } };
+}
+
+/** Önizleme onaylandıktan SONRA uygulanır. */
+function yedegiUygula(nesne) {
+  iceYukle(nesne);
+  degisti("yukle");
+}
+
+/* ------------------------------------------- dosyaya doğrudan yazma (K-11) */
+let dosyaKolu = null;
+const dosyaYazmaDestegi = () => "showSaveFilePicker" in window;
+const dosyaYazmaAcik = () => !!dosyaKolu;
+async function dosyaYazmaAc() {
+  if (!dosyaYazmaDestegi()) throw new Error("Bu tarayıcı desteklemiyor. Chrome veya Edge kullanın.");
+  dosyaKolu = await window.showSaveFilePicker({
+    suggestedName: yedekAdi(),
+    types: [{ description: "Enerji verisi", accept: { "application/json": [".json"] } }],
+  });
+  await dosyayaYaz();
+  return dosyaKolu.name;
+}
+function dosyaYazmaKapat() { dosyaKolu = null; }
+
+async function dosyayaYaz() {
+  try {
+    const y = await dosyaKolu.createWritable();
+    await y.write(JSON.stringify(disaVer(), null, 1));
+    await y.close();
+    durum._son_yedek = new Date().toISOString();
+  } catch (e) { console.error("Dosyaya yazılamadı:", e); dosyaKolu = null; }
+}
+
+/* ----------------------------------------------------------- tanılama */
+async function depoKullanimi() {
+  if (!navigator.storage?.estimate) return null;
+  const { usage, quota } = await navigator.storage.estimate();
+  return { kullanim: usage, kota: quota };
+}
+async function hepsiniSil() {
+  durum.degerler = []; dizinKur();
+  await yaz(disaVer()).catch(() => {});
+  degisti("sil");
+}
+
+  __x.SEMA_SURUMU = SEMA_SURUMU;
+  __x.YEDEK_UYARI_GUN = YEDEK_UYARI_GUN;
+  __x.durum = durum;
+  __x.deger = deger;
+  __x.degerKayit = degerKayit;
+  __x.degerYaz = degerYaz;
+  __x.noktaDonemleri = noktaDonemleri;
+  __x.veriAraligi = veriAraligi;
+  __x.dinle = dinle;
+  __x.degisti = degisti;
+  __x.kaydet = kaydet;
+  __x.baslat = baslat;
+  __x.disaVer = disaVer;
+  __x.yedekAdi = yedekAdi;
+  __x.yedekAl = yedekAl;
+  __x.guvenlikYedegi = guvenlikYedegi;
+  __x.yedekDurumu = yedekDurumu;
+  __x.yedegiCoz = yedegiCoz;
+  __x.yedegiUygula = yedegiUygula;
+  __x.dosyaYazmaDestegi = dosyaYazmaDestegi;
+  __x.dosyaYazmaAcik = dosyaYazmaAcik;
+  __x.dosyaYazmaAc = dosyaYazmaAc;
+  __x.dosyaYazmaKapat = dosyaYazmaKapat;
+  __x.depoKullanimi = depoKullanimi;
+  __x.hepsiniSil = hepsiniSil;
+};
+__f["js/model.js"] = function(__x) {
+/* model.js — veri modeli sorguları, birim dönüşümü ve doğrulama
+   El Kitabı: 6.2 (üç katman), 6.4 (roller), 6.8 (veri kalitesi), İ-3, İ-5 */
+const { durum, deger, noktaDonemleri } = __req("js/veri.js");
+const { donemKod, donemKaydir } = __req("js/ortak.js");
+/* ----------------------------------------------------------- roller (6.4) */
+const ROLLER = {
+  satin_alinan:      { ad:"Satın alınan enerji",   enerji:true,  toplam:true  },
+  tesis_ici_uretim:  { ad:"Tesis içi üretim",      enerji:true,  toplam:false },
+  ara_enerji:        { ad:"Ara enerji taşıyıcısı", enerji:true,  toplam:false },
+  ayri_tesis_uretim: { ad:"Ayrı tesis üretimi",    enerji:true,  toplam:false },
+  sebekeye_satilan:  { ad:"Şebekeye satılan",      enerji:true,  toplam:false },
+  uretim_miktari:    { ad:"Üretim miktarı",        enerji:false, toplam:false },
+  girdi_miktari:     { ad:"Girdi miktarı",         enerji:false, toplam:false },
+  maliyet:           { ad:"Maliyet (TL)",          enerji:false, toplam:true  },
+  gelir:             { ad:"Gelir (TL)",            enerji:false, toplam:false },
+};
+const VERI_TIPLERI = {
+  olculen:    "Ölçülen",     hesaplanan: "Hesaplanan",
+  dagitilmis: "Dağıtılmış",  tahmini:    "Tahmini",
+};
+
+/* ----------------------------------------------------------- varlık ağacı */
+const varlik  = kod => durum.varliklar.find(v => v.kod === kod) || null;
+const nokta   = kod => durum.olcum_noktalari.find(n => n.kod === kod) || null;
+const enerjiTuru = kod => durum.enerji_turleri.find(t => t.kod === kod) || null;
+function agac() {
+  const cocuk = new Map();
+  for (const v of durum.varliklar) {
+    if (!cocuk.has(v.ust)) cocuk.set(v.ust, []);
+    cocuk.get(v.ust).push(v);
+  }
+  for (const l of cocuk.values()) l.sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0));
+  const kur = ust => (cocuk.get(ust) || []).map(v => ({ ...v, cocuklar: kur(v.kod) }));
+  return kur(null);
+}
+function varlikYolu(kod) {
+  const yol = []; let v = varlik(kod); let guvenlik = 0;
+  while (v && guvenlik++ < 50) { yol.unshift(v); v = v.ust ? varlik(v.ust) : null; }
+  return yol;
+}
+
+/** Bir varlığın kendisi + bütün alt varlıkları */
+function altAgac(kod) {
+  const sonuc = [], sira = [kod];
+  while (sira.length) {
+    const k = sira.shift(); const v = varlik(k);
+    if (!v) continue;
+    sonuc.push(v);
+    for (const c of durum.varliklar) if (c.ust === k) sira.push(c.kod);
+  }
+  return sonuc;
+}
+const varlikNoktalari = kod =>
+  durum.olcum_noktalari.filter(n => n.varlik === kod);
+
+/** Varlık o dönemde devrede mi? (İ-5, S6) */
+function devrede(varlikKod, yil, ay) {
+  const v = varlik(varlikKod);
+  if (!v) return true;
+  const d = donemKod(yil, ay);
+  if (v.devreye_giris  && d < v.devreye_giris)  return false;
+  if (v.devreden_cikis && d > v.devreden_cikis) return false;
+  return v.aktif !== false;
+}
+
+/* ------------------------------------------------- birim dönüşümü (8.1) */
+/* Matematiksel dönüşüm SABİTTİR; referans birim GJ.
+   1 TEP = 41,868 GJ = 11.630 kWh (El Kitabı 8.1) */
+const GJ_KARSILIGI = { kWh: 0.0036, MJ: 0.001, GJ: 1, TEP: 41.868 };
+const ENERJI_BIRIMLERI = Object.keys(GJ_KARSILIGI);
+const enerjiBirimiMi = b => b in GJ_KARSILIGI;
+
+/** Tarihli enerji içeriği katsayısı (İ-5). Sistem katsayı VARSAYMAZ (İ-3). */
+function katsayi(turKod, kaynakBirim, hedefBirim, yil, ay) {
+  const d = donemKod(yil, ay);
+  const uygun = durum.donusum_katsayilari
+    .filter(k => k.enerji_turu === turKod &&
+                 k.kaynak_birim === kaynakBirim && k.hedef_birim === hedefBirim &&
+                 (!k.gecerli_baslangic || k.gecerli_baslangic <= d))
+    .sort((a, b) => String(a.gecerli_baslangic).localeCompare(String(b.gecerli_baslangic)));
+  return uygun.length ? uygun[uygun.length - 1] : null;
+}
+
+/**
+ * Değeri hedef enerji birimine çevirir.
+ * @returns {{deger:number, katsayi?:object}} veya {eksik:"açıklama"}
+ * KURAL (6.6): değer yok veya 0 ise katsayı olmasa da sonuç üretilir.
+ */
+function cevir(v, kaynakBirim, hedefBirim, turKod, yil, ay) {
+  if (v === null || v === undefined) return { deger: null };
+  if (kaynakBirim === hedefBirim) return { deger: v };
+  if (v === 0) return { deger: 0 };                       // 6.6 kenar durumu
+
+  if (enerjiBirimiMi(kaynakBirim) && enerjiBirimiMi(hedefBirim))
+    return { deger: v * GJ_KARSILIGI[kaynakBirim] / GJ_KARSILIGI[hedefBirim] };
+
+  // Enerji içeriği katsayısı gerekiyor (m³→kWh, kg→kWh)
+  const k = katsayi(turKod, kaynakBirim, hedefBirim, yil, ay);
+  if (k) return { deger: v * k.katsayi, katsayi: k };
+
+  // kaynak → kWh → hedef
+  const ara = katsayi(turKod, kaynakBirim, "kWh", yil, ay);
+  if (ara && enerjiBirimiMi(hedefBirim)) {
+    const kwh = v * ara.katsayi;
+    return { deger: kwh * GJ_KARSILIGI.kWh / GJ_KARSILIGI[hedefBirim], katsayi: ara };
+  }
+  const t = enerjiTuru(turKod);
+  return { eksik: `${t ? t.ad : turKod} için ${kaynakBirim} → ${hedefBirim} dönüşüm katsayısı tanımlı değil` };
+}
+
+/* ----------------------------------------------------- doğrulama (6.8) */
+const ENGEL = "engel", UYAR = "uyar";
+
+function medyan(liste) {
+  if (!liste.length) return null;
+  const s = [...liste].sort((a, b) => a - b), o = s.length >> 1;
+  return s.length % 2 ? s[o] : (s[o - 1] + s[o]) / 2;
+}
+
+/** Bir değerin son 12 dönemdeki medyanı (kendisi hariç) */
+function gecmisMedyan(noktaKod, yil, ay) {
+  const v = [];
+  for (let i = 1; i <= 12; i++) {
+    const { yil: y, ay: a } = donemKaydir(yil, ay, -i);
+    const d = deger(noktaKod, y, a);
+    if (d !== null && d !== 0) v.push(d);
+  }
+  return v.length >= 4 ? medyan(v) : null;
+}
+
+/**
+ * Giriş anında çalışan denetimler. Sistem asla sessizce düzeltmez (İ-3, İ-4).
+ * @returns [{seviye:"engel"|"uyar", mesaj:string}]
+ */
+function dogrula(noktaKod, yil, ay, v) {
+  const bulgular = [];
+  const n = nokta(noktaKod);
+  if (!n) return [{ seviye: ENGEL, mesaj: "Ölçüm noktası tanımlı değil" }];
+  if (v === null || v === undefined || v === "") return bulgular;
+
+  if (v < 0) bulgular.push({ seviye: ENGEL, mesaj: "Negatif değer girilemez" });
+
+  const bug = new Date();
+  if (yil * 12 + ay > bug.getFullYear() * 12 + bug.getMonth() + 1)
+    bulgular.push({ seviye: UYAR, mesaj: "Bu dönem gelecekte" });
+
+  if (!devrede(n.varlik, yil, ay)) {
+    const va = varlik(n.varlik);
+    bulgular.push({ seviye: UYAR,
+      mesaj: `${va?.ad || n.varlik} bu dönemde devrede görünmüyor${va?.devreden_cikis ? ` (${va.devreden_cikis} sonrası)` : ""}` });
+  }
+
+  const m = gecmisMedyan(noktaKod, yil, ay);
+  if (m !== null && v > 0) {
+    if (v > m * 3)
+      bulgular.push({ seviye: UYAR, mesaj: `Son 12 ayın medyanının 3 katından büyük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
+    else if (v < m / 3)
+      bulgular.push({ seviye: UYAR, mesaj: `Son 12 ayın medyanının üçte birinden küçük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
+  }
+
+  // Atlanan ay: bir önceki dönem boş ama daha öncesi dolu
+  const o = donemKaydir(yil, ay, -1);
+  if (deger(noktaKod, o.yil, o.ay) === null) {
+    const oo = donemKaydir(yil, ay, -2);
+    if (deger(noktaKod, oo.yil, oo.ay) !== null)
+      bulgular.push({ seviye: UYAR, mesaj: "Bir önceki dönem boş — atlanmış olabilir" });
+  }
+
+  // Doğalgaz kWh ↔ m³ tutarlılığı (K-04)
+  const es = esBirimNoktasi(n);
+  if (es) {
+    const ev = deger(es.kod, yil, ay);
+    if (ev !== null && ev !== 0 && v !== 0) {
+      const kwh = n.birim === "kWh" ? v : ev;
+      const m3  = n.birim === "m³"  ? v : ev;
+      const oran = kwh / m3;
+      const k = katsayi(n.enerji_turu, "m³", "kWh", yil, ay);
+      const bek = k ? k.katsayi : 10.92;
+      if (Math.abs(oran - bek) / bek > 0.05)
+        bulgular.push({ seviye: UYAR,
+          mesaj: `kWh/m³ oranı ${oran.toFixed(2)} — beklenen ${bek.toFixed(2)} (%5'ten fazla sapma)` });
+    }
+  }
+  return bulgular;
+}
+
+/** Aynı varlık + aynı enerji türü, farklı birim (doğalgaz kWh ↔ m³) */
+function esBirimNoktasi(n) {
+  if (!n.enerji_turu || !["kWh", "m³"].includes(n.birim)) return null;
+  const hedef = n.birim === "kWh" ? "m³" : "kWh";
+  return durum.olcum_noktalari.find(x =>
+    x.kod !== n.kod && x.varlik === n.varlik &&
+    x.enerji_turu === n.enerji_turu && x.birim === hedef) || null;
+}
+
+/* ----------------------------------------------------- formül çözümleme */
+/**
+ * "A + B - C * 0.34" ve "KATSAYI(TUR,kaynak,hedef)" destekler.
+ *
+ * @param cozucu  (kod, yil, ay) => {deger}|{eksik}
+ *   Verilmezse yalnız HAM değer okunur. hesap.js kendi çözücüsünü geçirir;
+ *   böylece hesaplanan bir nokta başka bir hesaplanan noktaya inebilir
+ *   (TOPLAM_URETIM -> TOPLAM_KAKAO -> ham değerler).
+ */
+function formulCoz(formul, yil, ay, cozucu = null) {
+  if (!formul) return { eksik: "Formül tanımlı değil" };
+  const eksikler = [];
+  let ifade = String(formul);
+
+  ifade = ifade.replace(/KATSAYI\(\s*([A-Z_]+)\s*,\s*([^,)]+)\s*,\s*([^)]+)\s*\)/g,
+    (_, tur, kay, hed) => {
+      const k = katsayi(tur.trim(), kay.trim(), hed.trim(), yil, ay);
+      if (!k) { eksikler.push(`${tur} için ${kay.trim()} → ${hed.trim()} katsayısı tanımlı değil`); return "NaN"; }
+      return String(k.katsayi);
+    });
+
+  ifade = ifade.replace(/\b([A-Z][A-Z0-9_]*)\b/g, (tam) => {
+    if (/^(NaN|KATSAYI)$/.test(tam)) return tam;
+    const r = cozucu ? cozucu(tam, yil, ay)
+                     : (v => v === null ? { deger: null } : { deger: v })(deger(tam, yil, ay));
+    if (r.eksik)        { eksikler.push(`${tam}: ${r.eksik}`); return "NaN"; }
+    if (r.deger === null){ eksikler.push(`${tam} değeri yok`); return "NaN"; }
+    return String(r.deger);
+  });
+
+  if (!/^[\d+\-*/().\sNa]+$/.test(ifade)) return { eksik: "Formül çözümlenemedi" };
+  let s;
+  try { s = Function(`"use strict";return (${ifade});`)(); } catch { return { eksik: "Formül hesaplanamadı" }; }
+  if (!Number.isFinite(s)) return { eksik: eksikler[0] || "Sonuç üretilemedi", eksikler };
+  return { deger: s };
+}
+
+  __x.ROLLER = ROLLER;
+  __x.VERI_TIPLERI = VERI_TIPLERI;
+  __x.varlik = varlik;
+  __x.nokta = nokta;
+  __x.enerjiTuru = enerjiTuru;
+  __x.agac = agac;
+  __x.varlikYolu = varlikYolu;
+  __x.altAgac = altAgac;
+  __x.varlikNoktalari = varlikNoktalari;
+  __x.devrede = devrede;
+  __x.ENERJI_BIRIMLERI = ENERJI_BIRIMLERI;
+  __x.enerjiBirimiMi = enerjiBirimiMi;
+  __x.katsayi = katsayi;
+  __x.cevir = cevir;
+  __x.ENGEL = ENGEL;
+  __x.dogrula = dogrula;
+  __x.formulCoz = formulCoz;
+};
+__f["js/hesap.js"] = function(__x) {
+/* hesap.js — HESAP ÇEKİRDEĞİ. Tek hesap kaynağı (İ-2).
+   Hiçbir ekran kendi hesabını yapmaz; hepsi buradan okur.
+   El Kitabı: 7.1, 8.1-8.7, K-24 (rol filtresi), İ-1, İ-3 */
+const { durum, deger } = __req("js/veri.js");
+const { nokta, varlik, altAgac, varlikNoktalari, cevir, formulCoz, ROLLER, enerjiBirimiMi } = __req("js/model.js");
+/** Özel toplam kodları — EnPI tanımlarında @ ile kullanılır */
+const OZEL = {
+  "@TOPLAM_ENERJI_KWH": { ad:"Toplam Enerji (kWh)",       birim:"kWh" },
+  "@TOPLAM_MALIYET_TL": { ad:"Toplam Enerji Maliyeti",    birim:"TL"  },
+  "@NET_ODENEN_TL":     { ad:"Net Ödenen Elektrik",       birim:"TL"  },
+};
+
+/* --------------------------------------------------------- nokta değeri */
+/**
+ * Ham veya türetilmiş değer. Türetilmiş SAKLANMAZ, burada üretilir (İ-1).
+ * Hesaplanan bir nokta başka bir hesaplanan noktaya inebilir; `ziyaret`
+ * kümesi döngüsel formülü yakalar.
+ */
+function noktaDeger(kod, yil, ay, ziyaret = null) {
+  const n = nokta(kod);
+  if (!n) return { eksik: `${kod} tanımlı değil` };
+  if (n.veri_tipi === "olculen" || n.veri_tipi === "tahmini") {
+    const v = deger(kod, yil, ay);
+    return v === null ? { deger: null } : { deger: v };
+  }
+  const z = ziyaret || new Set();
+  if (z.has(kod)) return { eksik: `Döngüsel formül: ${kod}` };
+  z.add(kod);
+  const r = formulCoz(n.formul, yil, ay, (k, y, a) => noktaDeger(k, y, a, z));
+  z.delete(kod);
+  return r;
+}
+
+/* ------------------------------------------------- toplam enerji (K-24) */
+/**
+ * SABİT LİSTE DEĞİL, ROL FİLTRESİ:
+ * rolü `satin_alinan` ve toplama_dahil olan bütün noktaların ortak birimdeki toplamı.
+ * Yeni bir yakıt tanımlandığında hiçbir formül değişmeden toplama girer.
+ */
+function toplamEnerji(yil, ay, birim = "kWh") {
+  let toplam = 0, katkida = 0;
+  const eksikler = [], kalemler = [];
+  for (const n of durum.olcum_noktalari) {
+    if (!n.aktif || n.rol !== "satin_alinan" || !n.toplama_dahil) continue;
+    const d = noktaDeger(n.kod, yil, ay);
+    if (d.eksik) { eksikler.push(`${n.ad}: ${d.eksik}`); continue; }
+    if (d.deger === null) continue;
+    const c = cevir(d.deger, n.birim, birim, n.enerji_turu, yil, ay);
+    if (c.eksik) { eksikler.push(c.eksik); continue; }
+    if (c.deger === null) continue;
+    toplam += c.deger; katkida++;
+    kalemler.push({ kod:n.kod, ad:n.ad, ham:d.deger, birim:n.birim, cevrilen:c.deger });
+  }
+  // İ-3: eksik katsayı varsa sonuç ÜRETİLMEZ
+  if (eksikler.length) return { eksik: eksikler[0], eksikler, kalemler };
+  if (!katkida) return { deger: null, kalemler };
+  return { deger: toplam, kalemler, birim };
+}
+
+/* ------------------------------------------------------- maliyet (6.5) */
+function rolToplami(rol, yil, ay, yalnizDahil = true) {
+  let t = 0, n_ = 0; const kalemler = [];
+  for (const n of durum.olcum_noktalari) {
+    if (!n.aktif || n.rol !== rol) continue;
+    if (yalnizDahil && !n.toplama_dahil) continue;
+    const d = noktaDeger(n.kod, yil, ay);
+    if (d.eksik || d.deger === null) continue;
+    t += d.deger; n_++;
+    kalemler.push({ kod:n.kod, ad:n.ad, deger:d.deger });
+  }
+  return n_ ? { deger: t, kalemler } : { deger: null, kalemler };
+}
+
+/** GES mahsubu + satış (K-13, A-11: tek kalem de olabilir) */
+function gesKatkisi(yil, ay) {
+  return rolToplami("gelir", yil, ay, false);
+}
+function netOdenenElektrik(yil, ay) {
+  const f = noktaDeger("ELK_FATURA_TL", yil, ay);
+  const g = gesKatkisi(yil, ay);
+  if (f.eksik || f.deger === null) return { deger: null };
+  return { deger: f.deger - (g.deger || 0), brut: f.deger, mahsup: g.deger || 0 };
+}
+
+/** Toplam maliyet = rolü `maliyet` olan bütün noktalar − GES mahsubu (K-24) */
+function toplamMaliyet(yil, ay) {
+  const m = rolToplami("maliyet", yil, ay);
+  if (m.deger === null) return { deger: null, kalemler: m.kalemler };
+  const g = gesKatkisi(yil, ay);
+  return { deger: m.deger - (g.deger || 0), brut: m.deger,
+           mahsup: g.deger || 0, kalemler: m.kalemler };
+}
+
+/** Ortalama birim fiyat — hesaplanır, girilmez (K-12) */
+function birimFiyat(faturaKod, tuketimKod, yil, ay) {
+  const f = noktaDeger(faturaKod, yil, ay), t = noktaDeger(tuketimKod, yil, ay);
+  if (f.deger === null || t.deger === null || !t.deger) return { deger: null };
+  return { deger: f.deger / t.deger };
+}
+
+/* -------------------------------------------------- hiyerarşi toplamı */
+/** Bir varlığın altındaki bütün noktaların toplamı (6.6a) */
+function varlikToplami(varlikKod, yil, ay, { rol = null, birim = "kWh" } = {}) {
+  let t = 0, say = 0; const eksikler = [];
+  for (const v of altAgac(varlikKod)) {
+    for (const n of varlikNoktalari(v.kod)) {
+      if (!n.aktif) continue;
+      if (rol && n.rol !== rol) continue;
+      if (!ROLLER[n.rol]?.enerji) continue;
+      const d = noktaDeger(n.kod, yil, ay);
+      if (d.eksik || d.deger === null) continue;
+      const c = cevir(d.deger, n.birim, birim, n.enerji_turu, yil, ay);
+      if (c.eksik) { eksikler.push(c.eksik); continue; }
+      t += c.deger; say++;
+    }
+  }
+  return say ? { deger: t, say, eksikler } : { deger: null, say: 0, eksikler };
+}
+
+/* --------------------------------------------------- ölçüm kapsamı (6.7) */
+/**
+ * Üst toplam, ölçülen alt toplam ve ölçülmeyen fark.
+ * Satırların toplamı HER ZAMAN üst toplama eşittir; üzerine eklenmez.
+ */
+function olcumKapsami(ustNoktaKod, altNoktaKodlari, yil, ay, birim = "kWh") {
+  const u = noktaDeger(ustNoktaKod, yil, ay);
+  if (u.eksik || u.deger === null) return { ust: null };
+  const un = nokta(ustNoktaKod);
+  const uc = cevir(u.deger, un.birim, birim, un.enerji_turu, yil, ay);
+  if (uc.eksik) return { ust: null, eksik: uc.eksik };
+
+  let olculen = 0, say = 0;
+  for (const k of altNoktaKodlari) {
+    const n = nokta(k); if (!n || !n.aktif) continue;
+    const d = noktaDeger(k, yil, ay);
+    if (d.eksik || d.deger === null) continue;
+    const c = cevir(d.deger, n.birim, birim, n.enerji_turu, yil, ay);
+    if (c.eksik) continue;
+    olculen += c.deger; say++;
+  }
+  const fark = uc.deger - olculen;
+  return {
+    ust: uc.deger, olculen, olcumeyen: fark, say, birim,
+    oran: uc.deger ? olculen / uc.deger : null,
+    tutarsiz: fark < 0,       // S3: alt toplam üstü aştı
+  };
+}
+
+/* ------------------------------------------------------------ EnPI (8.2) */
+function enpiTerimi(ifade, yil, ay, birim = "kWh") {
+  if (ifade === "@TOPLAM_ENERJI_KWH") return toplamEnerji(yil, ay, birim);
+  if (ifade === "@TOPLAM_MALIYET_TL") return toplamMaliyet(yil, ay);
+  if (ifade === "@NET_ODENEN_TL")     return netOdenenElektrik(yil, ay);
+  return noktaDeger(ifade, yil, ay);
+}
+function enpi(tanimKod, yil, ay) {
+  const t = durum.enpi_tanimlari.find(x => x.kod === tanimKod);
+  if (!t) return { eksik: "EnPI tanımı bulunamadı" };
+  const p = enpiTerimi(t.pay, yil, ay), q = enpiTerimi(t.payda, yil, ay);
+  if (p.eksik) return { eksik: `Pay: ${p.eksik}` };
+  if (q.eksik) return { eksik: `Payda: ${q.eksik}` };
+  if (p.deger === null || q.deger === null) return { deger: null };
+  if (!q.deger) return { eksik: "Payda sıfır" };
+  return { deger: p.deger / q.deger, pay: p.deger, payda: q.deger, tanim: t };
+}
+
+/* -------------------------------------------- dönüşüm verimliliği (8.6) */
+function donusumVerimi(varlikKod, yil, ay) {
+  const nk = varlikNoktalari(varlikKod);
+  const bul = (rol, tur, birim) => nk.find(n =>
+    n.rol === rol && (!tur || n.enerji_turu === tur) && (!birim || n.birim === birim));
+
+  const yakit = nk.find(n => n.rol === "satin_alinan" && n.birim === "kWh");
+  if (!yakit) return null;
+  const y = noktaDeger(yakit.kod, yil, ay);
+  if (y.eksik || !y.deger) return null;
+
+  const elk = bul("tesis_ici_uretim", "ELK", "kWh");
+  const buh = nk.find(n => n.rol === "ara_enerji" && n.enerji_turu === "BUH" && n.birim === "kWh");
+  const ssu = nk.find(n => n.rol === "ara_enerji" && n.enerji_turu === "SSU");
+
+  const al = k => { if (!k) return 0; const d = noktaDeger(k.kod, yil, ay);
+                    return (d.eksik || d.deger === null) ? 0 : d.deger; };
+  const e = al(elk), b = al(buh), s = al(ssu);
+  if (!e && !b && !s) return null;
+  return {
+    yakit: y.deger, elektrik: e, buhar: b, sicakSu: s,
+    elektrikVerimi: e ? e / y.deger : null,
+    toplamVerim: (e + b + s) / y.deger,
+    kayip: 1 - (e + b + s) / y.deger,
+  };
+}
+
+/* ------------------------------------- fiyat / hacim ayrıştırması (8.7) */
+function fiyatHacim(fiyat1, tuketim1, fiyat2, tuketim2) {
+  if ([fiyat1, tuketim1, fiyat2, tuketim2].some(x => x === null || x === undefined))
+    return null;
+  const fiyatEtkisi   = (fiyat2 - fiyat1) * tuketim1;
+  const hacimEtkisi   = (tuketim2 - tuketim1) * fiyat1;
+  const bilesikEtki   = (fiyat2 - fiyat1) * (tuketim2 - tuketim1);
+  return { fiyatEtkisi, hacimEtkisi, bilesikEtki,
+           toplam: fiyatEtkisi + hacimEtkisi + bilesikEtki };
+}
+
+/* ------------------------------------------------ baz çizgi (8.3, 8.4) */
+/** En küçük kareler. En az 12 nokta yoksa regresyon KURULMAZ (8.3). */
+function regresyon(ciftler) {
+  const g = ciftler.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+  if (g.length < 12) return { yetersiz: true, n: g.length };
+  const n = g.length;
+  const sx = g.reduce((t, p) => t + p.x, 0), sy = g.reduce((t, p) => t + p.y, 0);
+  const sxx = g.reduce((t, p) => t + p.x * p.x, 0);
+  const sxy = g.reduce((t, p) => t + p.x * p.y, 0);
+  const payda = n * sxx - sx * sx;
+  if (!payda) return { yetersiz: true, n, sebep: "Bağlam değişkeni hiç değişmiyor" };
+  const a = (n * sxy - sx * sy) / payda;
+  const b = (sy - a * sx) / n;
+  const ort = sy / n;
+  const sst = g.reduce((t, p) => t + (p.y - ort) ** 2, 0);
+  const sse = g.reduce((t, p) => t + (p.y - (a * p.x + b)) ** 2, 0);
+  const r2 = sst ? 1 - sse / sst : 0;
+  return { a, b, r2, n,
+    zayif: r2 < 0.5,                          // 8.3: açık uyarı gerektirir
+    supheli: a < 0 };                          // üretim arttıkça enerji azalıyor
+}
+function beklenen(bazCizgi, baglamDegeri) {
+  if (!bazCizgi) return null;
+  if (bazCizgi.model_tipi === "sabit") return bazCizgi.ortalama ?? null;
+  if (baglamDegeri === null || baglamDegeri === undefined) return null;
+  if (bazCizgi.a === undefined || bazCizgi.b === undefined) return null;
+  return bazCizgi.a * baglamDegeri + bazCizgi.b;
+}
+
+/** CUSUM — kümülatif sapma (8.5) */
+function cusum(sapmalar) {
+  let t = 0;
+  return sapmalar.map(s => { t += (s ?? 0); return t; });
+}
+
+  __x.OZEL = OZEL;
+  __x.noktaDeger = noktaDeger;
+  __x.toplamEnerji = toplamEnerji;
+  __x.gesKatkisi = gesKatkisi;
+  __x.netOdenenElektrik = netOdenenElektrik;
+  __x.toplamMaliyet = toplamMaliyet;
+  __x.birimFiyat = birimFiyat;
+  __x.varlikToplami = varlikToplami;
+  __x.olcumKapsami = olcumKapsami;
+  __x.enpi = enpi;
+  __x.donusumVerimi = donusumVerimi;
+  __x.fiyatHacim = fiyatHacim;
+  __x.regresyon = regresyon;
+  __x.beklenen = beklenen;
+  __x.cusum = cusum;
+};
+__f["js/baslangic.js"] = function(__x) {
+  __x.default = {"sema_surumu":1,"ayarlar":{"fabrika_adi":"","para_birimi":"TL","varsayilan_birim":"kWh","ana_enpi":"ENPI_ANA","tema":"otomatik","ondalik":2},"enerji_turleri":[{"kod":"ELK","ad":"Elektrik","ana_birim":"kWh","aktif":true},{"kod":"DG","ad":"Doğalgaz","ana_birim":"kWh","aktif":true},{"kod":"BUH","ad":"Buhar","ana_birim":"kg","aktif":true},{"kod":"SSU","ad":"Sıcak Su","ana_birim":"kWh","aktif":true},{"kod":"MOT","ad":"Motorin","ana_birim":"kg","aktif":true}],"varliklar":[{"kod":"FAB","ust":null,"ad":"Fabrika","tip":"tesis","sira":0,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"GIRIS","ust":"FAB","ad":"Enerji Girişi","tip":"grup","sira":10,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"SEBEKE","ust":"GIRIS","ad":"Şebeke Elektrik","tip":"giris_noktasi","sira":20,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"IST1","ust":"GIRIS","ad":"İstasyon 1 (Gaz Motoru)","tip":"istasyon","sira":30,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"IST2","ust":"GIRIS","ad":"İstasyon 2 (Kazan)","tip":"istasyon","sira":40,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"IST3","ust":"GIRIS","ad":"İstasyon 3 (Türbin)","tip":"istasyon","sira":50,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"MOTORIN","ust":"GIRIS","ad":"Motorin","tip":"giris_noktasi","sira":60,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"DONUSUM","ust":"FAB","ad":"Enerji Dönüşüm","tip":"grup","sira":70,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"TURBIN","ust":"DONUSUM","ad":"Türbin","tip":"ekipman","sira":80,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"GM1","ust":"DONUSUM","ad":"GM-1","tip":"ekipman","sira":90,"devreye_giris":null,"devreden_cikis":"2024-12","aktif":true,"not":"S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli."},{"kod":"GM2","ust":"DONUSUM","ad":"GM-2","tip":"ekipman","sira":100,"devreye_giris":null,"devreden_cikis":"2024-12","aktif":true,"not":"S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli."},{"kod":"GM3","ust":"DONUSUM","ad":"GM-3","tip":"ekipman","sira":110,"devreye_giris":null,"devreden_cikis":"2024-12","aktif":true,"not":"S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli."},{"kod":"KAZAN1","ust":"DONUSUM","ad":"Kazan-1","tip":"ekipman","sira":120,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"KAZAN2","ust":"DONUSUM","ad":"Kazan-2","tip":"ekipman","sira":130,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"YARDIMCI","ust":"FAB","ad":"Yardımcı Tesisler","tip":"grup","sira":140,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"KOMP","ust":"YARDIMCI","ad":"Kompresörler","tip":"grup","sira":150,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"KOMP1","ust":"KOMP","ad":"Kompresör 1","tip":"ekipman","sira":160,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"KOMP2","ust":"KOMP","ad":"Kompresör 2","tip":"ekipman","sira":170,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"KOMP3","ust":"KOMP","ad":"Kompresör 3","tip":"ekipman","sira":180,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"KOMP4","ust":"KOMP","ad":"Kompresör 4","tip":"ekipman","sira":190,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CHILLER","ust":"YARDIMCI","ad":"Chiller'lar","tip":"grup","sira":200,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CH_KAKAO","ust":"CHILLER","ad":"Kakao Chiller","tip":"ekipman","sira":210,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CH_PULV","ust":"CHILLER","ad":"Pulvarizatör Chiller","tip":"ekipman","sira":220,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CH_BLOK","ust":"CHILLER","ad":"Blok Paketleme Chiller","tip":"ekipman","sira":230,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CH_FINER1","ust":"CHILLER","ad":"Finer-1 Chiller","tip":"ekipman","sira":240,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CH_FINER2","ust":"CHILLER","ad":"Finer-2 Chiller","tip":"ekipman","sira":250,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CH_TREN","ust":"CHILLER","ad":"Tren Chiller","tip":"ekipman","sira":260,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"URETIM","ust":"FAB","ad":"Üretim","tip":"grup","sira":270,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"KAKAO","ust":"URETIM","ad":"Kakao Prosesi","tip":"proses","sira":280,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"CIKOLATA","ust":"URETIM","ad":"Çikolata Prosesi","tip":"proses","sira":290,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"HATLAR","ust":"URETIM","ad":"Çekirdek Hatları","tip":"grup","sira":300,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"HAT1","ust":"HATLAR","ad":"Hat-1","tip":"hat","sira":310,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"HAT2","ust":"HATLAR","ad":"Hat-2","tip":"hat","sira":320,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"HAT3","ust":"HATLAR","ad":"Hat-3","tip":"hat","sira":330,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"HAT4","ust":"HATLAR","ad":"Hat-4","tip":"hat","sira":340,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"GES","ust":null,"ad":"Güneş Santralleri","tip":"tesis","sira":350,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"GES_YOZGAT","ust":"GES","ad":"Yozgat GES","tip":"santral","sira":360,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""},{"kod":"GES_ADANA","ust":"GES","ad":"Adana GES","tip":"santral","sira":370,"devreye_giris":null,"devreden_cikis":null,"aktif":true,"not":""}],"olcum_noktalari":[{"kod":"SEBEKE_ELK","varlik":"SEBEKE","ad":"Şebekeden Çekilen Elektrik","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel N"},{"kod":"IST1_DG_KWH","varlik":"IST1","ad":"İstasyon 1 Doğalgaz","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel V"},{"kod":"IST2_DG_KWH","varlik":"IST2","ad":"İstasyon 2 Doğalgaz","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel X"},{"kod":"IST3_DG_KWH","varlik":"IST3","ad":"İstasyon 3 Doğalgaz","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel Z"},{"kod":"MOTORIN_KG","varlik":"MOTORIN","ad":"Motorin Tüketimi","enerji_turu":"MOT","birim":"kg","rol":"satin_alinan","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AE - K-24: toplama dahil"},{"kod":"IST1_DG_M3","varlik":"IST1","ad":"İstasyon 1 Doğalgaz","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel W - kWh ile tutarlilik denetlenir"},{"kod":"IST2_DG_M3","varlik":"IST2","ad":"İstasyon 2 Doğalgaz","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel Y"},{"kod":"IST3_DG_M3","varlik":"IST3","ad":"İstasyon 3 Doğalgaz","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AA"},{"kod":"ELK_FATURA_TL","varlik":"SEBEKE","ad":"Elektrik Faturası","enerji_turu":null,"birim":"TL","rol":"maliyet","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel O - K-13 mahsup oncesi brut"},{"kod":"DG_FATURA_TL","varlik":"GIRIS","ad":"Doğalgaz Faturası","enerji_turu":null,"birim":"TL","rol":"maliyet","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AD"},{"kod":"MOT_FATURA_TL","varlik":"MOTORIN","ad":"Motorin Faturası","enerji_turu":null,"birim":"TL","rol":"maliyet","toplama_dahil":true,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AF - K-24"},{"kod":"GES_YOZ_KWH","varlik":"GES_YOZGAT","ad":"Yozgat GES Üretimi","enerji_turu":"ELK","birim":"kWh","rol":"ayri_tesis_uretim","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel R"},{"kod":"GES_YOZ_TL","varlik":"GES_YOZGAT","ad":"Yozgat GES Geliri","enerji_turu":null,"birim":"TL","rol":"gelir","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel S - A-11: mahsup/satis ayrismamis"},{"kod":"GES_ADA_KWH","varlik":"GES_ADANA","ad":"Adana GES Üretimi","enerji_turu":"ELK","birim":"kWh","rol":"ayri_tesis_uretim","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel T"},{"kod":"GES_ADA_TL","varlik":"GES_ADANA","ad":"Adana GES Geliri","enerji_turu":null,"birim":"TL","rol":"gelir","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel U"},{"kod":"CEKIRDEK_KG","varlik":"URETIM","ad":"Toplam Çekirdek Tüketimi","enerji_turu":null,"birim":"kg","rol":"girdi_miktari","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel G"},{"kod":"KAKAO_YAG","varlik":"KAKAO","ad":"Kakao Yağı Üretimi","enerji_turu":null,"birim":"kg","rol":"uretim_miktari","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel H"},{"kod":"KAKAO_TOZ","varlik":"KAKAO","ad":"Kakao Tozu Üretimi","enerji_turu":null,"birim":"kg","rol":"uretim_miktari","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel I"},{"kod":"KAKAO_LIKOR","varlik":"KAKAO","ad":"Kakao Likör Üretimi","enerji_turu":null,"birim":"kg","rol":"uretim_miktari","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel J"},{"kod":"CIKOLATA_KG","varlik":"CIKOLATA","ad":"Çikolata Üretimi","enerji_turu":null,"birim":"kg","rol":"uretim_miktari","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel L"},{"kod":"TURBIN_DG_KWH","varlik":"TURBIN","ad":"Türbin Doğalgaz Tüketimi","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AI - istasyon olcumunun alt kirilimi, toplama girmez"},{"kod":"TURBIN_DG_M3","varlik":"TURBIN","ad":"Türbin Doğalgaz Tüketimi","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AJ"},{"kod":"TURBIN_EL","varlik":"TURBIN","ad":"Türbin Elektrik Üretimi","enerji_turu":"ELK","birim":"kWh","rol":"tesis_ici_uretim","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AK"},{"kod":"TURBIN_BUH_KG","varlik":"TURBIN","ad":"Türbin Buhar Üretimi","enerji_turu":"BUH","birim":"kg","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AL"},{"kod":"TURBIN_BUH_KWH","varlik":"TURBIN","ad":"Türbin Buhar Üretimi","enerji_turu":"BUH","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"TURBIN_BUH_KG * KATSAYI(BUH,kg,kWh)","aktif":true,"not":"6.6 - tarihli katsayi"},{"kod":"GM1_DG_KWH","varlik":"GM1","ad":"GM-1 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AN - istasyon olcumunun alt kirilimi, toplama girmez"},{"kod":"GM1_DG_M3","varlik":"GM1","ad":"GM-1 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AO"},{"kod":"GM1_EL","varlik":"GM1","ad":"GM-1 Elektrik Üretimi","enerji_turu":"ELK","birim":"kWh","rol":"tesis_ici_uretim","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AP"},{"kod":"GM1_BUH_KG","varlik":"GM1","ad":"GM-1 Buhar Üretimi","enerji_turu":"BUH","birim":"kg","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AQ"},{"kod":"GM1_BUH_KWH","varlik":"GM1","ad":"GM-1 Buhar Üretimi","enerji_turu":"BUH","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"GM1_BUH_KG * KATSAYI(BUH,kg,kWh)","aktif":true,"not":"6.6 - tarihli katsayi"},{"kod":"GM1_SSU","varlik":"GM1","ad":"GM-1 Sıcak Su Üretimi","enerji_turu":"SSU","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AS"},{"kod":"GM2_DG_KWH","varlik":"GM2","ad":"GM-2 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AT - istasyon olcumunun alt kirilimi, toplama girmez"},{"kod":"GM2_DG_M3","varlik":"GM2","ad":"GM-2 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AU"},{"kod":"GM2_EL","varlik":"GM2","ad":"GM-2 Elektrik Üretimi","enerji_turu":"ELK","birim":"kWh","rol":"tesis_ici_uretim","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AV"},{"kod":"GM2_BUH_KG","varlik":"GM2","ad":"GM-2 Buhar Üretimi","enerji_turu":"BUH","birim":"kg","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AW"},{"kod":"GM2_BUH_KWH","varlik":"GM2","ad":"GM-2 Buhar Üretimi","enerji_turu":"BUH","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"GM2_BUH_KG * KATSAYI(BUH,kg,kWh)","aktif":true,"not":"6.6 - tarihli katsayi"},{"kod":"GM2_SSU","varlik":"GM2","ad":"GM-2 Sıcak Su Üretimi","enerji_turu":"SSU","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AY"},{"kod":"GM3_DG_KWH","varlik":"GM3","ad":"GM-3 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel AZ - istasyon olcumunun alt kirilimi, toplama girmez"},{"kod":"GM3_DG_M3","varlik":"GM3","ad":"GM-3 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BA"},{"kod":"GM3_EL","varlik":"GM3","ad":"GM-3 Elektrik Üretimi","enerji_turu":"ELK","birim":"kWh","rol":"tesis_ici_uretim","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BB"},{"kod":"GM3_BUH_KG","varlik":"GM3","ad":"GM-3 Buhar Üretimi","enerji_turu":"BUH","birim":"kg","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BC"},{"kod":"GM3_BUH_KWH","varlik":"GM3","ad":"GM-3 Buhar Üretimi","enerji_turu":"BUH","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"GM3_BUH_KG * KATSAYI(BUH,kg,kWh)","aktif":true,"not":"6.6 - tarihli katsayi"},{"kod":"GM3_SSU","varlik":"GM3","ad":"GM-3 Sıcak Su Üretimi","enerji_turu":"SSU","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BE"},{"kod":"KAZAN1_DG_KWH","varlik":"KAZAN1","ad":"Kazan-1 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BF - alt kirilim"},{"kod":"KAZAN1_DG_M3","varlik":"KAZAN1","ad":"Kazan-1 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BG"},{"kod":"KAZAN1_BUH_KG","varlik":"KAZAN1","ad":"Kazan-1 Buhar Üretimi","enerji_turu":"BUH","birim":"kg","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BH"},{"kod":"KAZAN1_BUH_KWH","varlik":"KAZAN1","ad":"Kazan-1 Buhar Üretimi","enerji_turu":"BUH","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"KAZAN1_BUH_KG * KATSAYI(BUH,kg,kWh)","aktif":true,"not":"6.6"},{"kod":"KAZAN2_DG_KWH","varlik":"KAZAN2","ad":"Kazan-2 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BJ - alt kirilim"},{"kod":"KAZAN2_DG_M3","varlik":"KAZAN2","ad":"Kazan-2 Doğalgaz Tüketimi","enerji_turu":"DG","birim":"m³","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BK"},{"kod":"KAZAN2_BUH_KG","varlik":"KAZAN2","ad":"Kazan-2 Buhar Üretimi","enerji_turu":"BUH","birim":"kg","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BL"},{"kod":"KAZAN2_BUH_KWH","varlik":"KAZAN2","ad":"Kazan-2 Buhar Üretimi","enerji_turu":"BUH","birim":"kWh","rol":"ara_enerji","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"KAZAN2_BUH_KG * KATSAYI(BUH,kg,kWh)","aktif":true,"not":"6.6"},{"kod":"KOMP1_EL","varlik":"KOMP1","ad":"Kompresör 1 Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BN - alt sayac, kapsama girer"},{"kod":"KOMP2_EL","varlik":"KOMP2","ad":"Kompresör 2 Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BO - alt sayac, kapsama girer"},{"kod":"KOMP3_EL","varlik":"KOMP3","ad":"Kompresör 3 Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BP - alt sayac, kapsama girer"},{"kod":"KOMP4_EL","varlik":"KOMP4","ad":"Kompresör 4 Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BQ - alt sayac, kapsama girer"},{"kod":"CH_KAKAO_EL","varlik":"CH_KAKAO","ad":"Kakao Chiller Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BR - alt sayac, kapsama girer"},{"kod":"CH_PULV_EL","varlik":"CH_PULV","ad":"Pulvarizatör Chiller Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BS - alt sayac, kapsama girer"},{"kod":"CH_BLOK_EL","varlik":"CH_BLOK","ad":"Blok Paketleme Chiller Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BT - alt sayac, kapsama girer"},{"kod":"CH_FINER1_EL","varlik":"CH_FINER1","ad":"Finer-1 Chiller Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BU - alt sayac, kapsama girer"},{"kod":"CH_FINER2_EL","varlik":"CH_FINER2","ad":"Finer-2 Chiller Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BV - alt sayac, kapsama girer"},{"kod":"CH_TREN_EL","varlik":"CH_TREN","ad":"Tren Chiller Elektrik Tüketimi","enerji_turu":"ELK","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"olculen","formul":null,"aktif":true,"not":"Excel BW - alt sayac, kapsama girer"},{"kod":"HAT1_CEKIRDEK","varlik":"HAT1","ad":"Hat-1 Çekirdek Tüketimi","enerji_turu":null,"birim":"kg","rol":"girdi_miktari","toplama_dahil":false,"veri_tipi":"dagitilmis","formul":"CEKIRDEK_KG * 0.34","aktif":true,"not":"2.2 - olcum degil, sabit oranla dagitim"},{"kod":"HAT2_CEKIRDEK","varlik":"HAT2","ad":"Hat-2 Çekirdek Tüketimi","enerji_turu":null,"birim":"kg","rol":"girdi_miktari","toplama_dahil":false,"veri_tipi":"dagitilmis","formul":"CEKIRDEK_KG * 0.12","aktif":true,"not":"2.2"},{"kod":"HAT3_CEKIRDEK","varlik":"HAT3","ad":"Hat-3 Çekirdek Tüketimi","enerji_turu":null,"birim":"kg","rol":"girdi_miktari","toplama_dahil":false,"veri_tipi":"dagitilmis","formul":"CEKIRDEK_KG * 0.32","aktif":true,"not":"2.2"},{"kod":"HAT4_CEKIRDEK","varlik":"HAT4","ad":"Hat-4 Çekirdek Tüketimi","enerji_turu":null,"birim":"kg","rol":"girdi_miktari","toplama_dahil":false,"veri_tipi":"dagitilmis","formul":"CEKIRDEK_KG * 0.22","aktif":true,"not":"2.2 - S7: Excel'de basligi yanlis"},{"kod":"TOPLAM_KAKAO","varlik":"KAKAO","ad":"Toplam Kakao Üretimi","enerji_turu":null,"birim":"kg","rol":"uretim_miktari","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"KAKAO_YAG + KAKAO_TOZ + KAKAO_LIKOR","aktif":true,"not":"6.6"},{"kod":"TOPLAM_URETIM","varlik":"URETIM","ad":"Toplam Üretim","enerji_turu":null,"birim":"kg","rol":"uretim_miktari","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"TOPLAM_KAKAO + CIKOLATA_KG","aktif":true,"not":"6.6"},{"kod":"URETILEN_ELK","varlik":"DONUSUM","ad":"Üretilen Elektrik","enerji_turu":"ELK","birim":"kWh","rol":"tesis_ici_uretim","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"TURBIN_EL + GM1_EL + GM2_EL + GM3_EL","aktif":true,"not":"6.6"},{"kod":"MOTORIN_KWH","varlik":"MOTORIN","ad":"Motorin Enerji Karşılığı","enerji_turu":"MOT","birim":"kWh","rol":"satin_alinan","toplama_dahil":false,"veri_tipi":"hesaplanan","formul":"MOTORIN_KG * KATSAYI(MOT,kg,kWh)","aktif":true,"not":"K-24, A-12 - katsayi tanimsiz"}],"donusum_katsayilari":[{"enerji_turu":"DG","kaynak_birim":"m³","hedef_birim":"kWh","katsayi":10.92,"gecerli_baslangic":"2018-01","kaynak":"Excel'deki kWh/m³ oranından türetildi","not":"2018-2025 arası ölçülen oran 10,918-10,919. Dağıtım şirketinin aylık üst ısıl değerine göre güncellenmelidir."},{"enerji_turu":"BUH","kaynak_birim":"kg","hedef_birim":"kWh","katsayi":0.6976744186046512,"gecerli_baslangic":"2018-01","kaynak":"Excel formülü: kg × 600 / 860","not":"600 kcal/kg entalpi ÷ 860 kcal/kWh = 0,697674 kWh/kg. A-08: basınca göre değişken mi, teyit bekliyor."}],"enpi_tanimlari":[{"kod":"ENPI_ANA","ad":"Toplam Enerji / Toplam Üretim","pay":"@TOPLAM_ENERJI_KWH","payda":"TOPLAM_URETIM","birim":"kWh/kg","ondalik":4,"ana":true},{"kod":"ENPI_ELK","ad":"Şebeke Elektriği / Toplam Üretim","pay":"SEBEKE_ELK","payda":"TOPLAM_URETIM","birim":"kWh/kg","ondalik":4,"ana":false},{"kod":"ENPI_CIK","ad":"Toplam Enerji / Çikolata Üretimi","pay":"@TOPLAM_ENERJI_KWH","payda":"CIKOLATA_KG","birim":"kWh/kg","ondalik":4,"ana":false}],"baz_cizgiler":[],"hedefler":[],"aksiyonlar":[],"degerler":[]};
+};
+
+__req("js/uygulama.js").baslat().catch(function (e) {
+  document.getElementById("icerik").innerHTML =
+    '<div class="uyari kritik"><span class="ikon">\u2715</span><div><b>Başlatılamadı:</b> ' +
+    e.message + '</div></div>';
+  console.error(e);
+});
+
+</script>
+</body>
+</html>

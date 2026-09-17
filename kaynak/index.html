@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enerji Yönetim Platformu</title>
+<meta name="description" content="Aylık enerji ve üretim verilerini izleyen, ISO 50001 yaklaşımını destekleyen tek dosyalık enerji yönetim platformu.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<!--STIL-->
+<link rel="stylesheet" href="css/stil.css">
+<!--/STIL-->
+</head>
+<body>
+<div id="uyg">
+  <nav id="menu" aria-label="Ana menü"></nav>
+  <div id="govde">
+    <header id="serit"></header>
+    <main id="icerik"></main>
+  </div>
+</div>
+<noscript><p style="padding:24px">Bu program JavaScript gerektirir.</p></noscript>
+<!--BETIK-->
+<script type="module">
+  import { baslat } from "./js/uygulama.js";
+  baslat().catch(e => {
+    document.getElementById("icerik").innerHTML =
+      '<div class="uyari kritik"><span class="ikon">✕</span><div><b>Başlatılamadı:</b> ' +
+      e.message + '</div></div>';
+    console.error(e);
+  });
+</script>
+<!--/BETIK-->
+</body>
+</html>
