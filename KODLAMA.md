@@ -5,7 +5,7 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 
 ## Durum
 
-**Faz 1 — Çekirdek · tamamlandı.**  **Faz 2 — Veri · tamamlandı.** (El Kitabı Bölüm 12)
+**Faz 1 · Çekirdek** ✅  **Faz 2 · Veri** ✅  **Faz 3 · Görme** ✅ (El Kitabı Bölüm 12)
 
 | Adım | İçerik | Durum |
 |---|---|---|
@@ -24,8 +24,27 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 | 2.4 | Ekran 4 — Veri Denetimi | ✅ |
 | 2.5 | Ekran 5 — Hesaplanan Değerler + Excel çıktısı | ✅ |
 
-**Excel'e ihtiyaç kalmadı.** Sıradaki: **Faz 3 — Görme** (SVG grafik motoru,
-Ekran 1 Panel, 7 Tüketim Analizi, 6 Enerji Dengesi).
+| Adım | İçerik | Durum |
+|---|---|---|
+| 3.1 | SVG grafik motoru (`js/grafik.js`) | ✅ |
+| 3.2 | Ekran 1 — Gösterge Paneli | ✅ |
+| 3.3 | Ekran 7 — Tüketim Analizi | ✅ |
+| 3.4 | Ekran 6 — Enerji Dengesi (Sankey) | ✅ |
+
+**Excel'e ihtiyaç kalmadı ve veri artık görünür.**
+Sıradaki: **Faz 4 — Anlama** (baz çizgi, normalize EnPI, CUSUM, dönüşüm
+verimliliği, maliyet, GES).
+
+## Grafik motoru — kütüphanesiz
+
+`js/grafik.js` (~470 satır, sıfır bağımlılık): sütun (tekli/yığılmış), çizgi
+(referans hattı destekli), ısı haritası, Pareto, Sankey, mini grafik, oran
+çubuğu. Her grafikte fare üstü kutucuğu, çizgilerde dikey nişangâh ve
+**"Tablo olarak göster"** seçeneği (E-3) var.
+
+El Kitabı 5.7.2'deki yasaklar koda gömülü: çift eksen yok, kesikli kılavuz
+yok, kategorik renkler sabit sırayla, 8'den fazlası "Diğer"e katlanıyor,
+Pareto'nun kümülatif yüzdesi ikinci eksende değil tablo sütununda.
 
 ## .xlsx okuma/yazma — kütüphanesiz
 
@@ -72,6 +91,8 @@ ile çözülür. Modül gizliliği korunur, ad çakışması olmaz.
 ```bash
 python3 betikler/sina.py     # duman testi: açılış, ekranlar, sekmeler, tema
 python3 betikler/kabul.py    # El Kitabı Bölüm 13 kabul kriterleri
+python3 betikler/faz2.py     # uçtan uca: Excel aktarımı + 8 yılın altın sayıları
+python3 betikler/faz3.py     # grafik ekranları
 ```
 
 `kabul.py`, gerçek 2024 Haziran verisiyle programın **altın sayıları** üretip
@@ -92,6 +113,9 @@ kuralları (6.8), motorin kenar durumu (K-24) ve yedek gidiş-dönüşü (K-10).
 altın sayılarını** doğrular, kaynak veri hatalarının yakalandığını sınar ve iki
 sayfalı Excel çıktısının gidiş-dönüşünü kontrol eder. **36 kontrol, hepsi
 geçiyor.**
+
+`faz3.py` grafik ekranlarını sınar: boş durum, SVG çizimi, tablo görünümüne
+geçiş, kesikli çizgi olmaması ve koyu tema. **14 kontrol, hepsi geçiyor.**
 
 > `derle.py` artık çıktıyı `node --check` ile ayrıştırır; sözdizimi hatası
 > varsa dosya **yazılmaz**. Bozuk bir paket teslim edilemez.

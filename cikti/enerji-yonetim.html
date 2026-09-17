@@ -255,6 +255,9 @@ const { ekranAktarma } = __req("js/ekranlar/aktarma.js");
 const { ekranGiris } = __req("js/ekranlar/giris.js");
 const { ekranDenetim } = __req("js/ekranlar/denetim.js");
 const { ekranHesaplanan } = __req("js/ekranlar/hesaplanan.js");
+const { ekranPanel } = __req("js/ekranlar/panel.js");
+const { ekranTuketim } = __req("js/ekranlar/tuketim.js");
+const { ekranDenge } = __req("js/ekranlar/denge.js");
 /* ------------------------------------------------ ekran kayıtları (9.1) */
 const YAKINDA = (no, ad, faz, aciklama) => ({
   no, ad, hazir:false, ciz: k => k.append(
@@ -263,15 +266,15 @@ const YAKINDA = (no, ad, faz, aciklama) => ({
 });
 const EKRANLAR = [
   { grup:"ÖZET" },
-  YAKINDA(1,"Gösterge Paneli",3,"Durumunuzu tek ekranda özetler: KPI kartları, 24 aylık enerji ve EnPI trendi, CUSUM, yıllık özet ve açık aksiyonlar."),
+  { no:1, ad:"Gösterge Paneli", hazir:true, ciz:ekranPanel },
   { grup:"VERİ" },
   { no:2, ad:"Veri Girişi", hazir:true, ciz:ekranGiris },
   { no:3, ad:"Veri Aktarma", hazir:true, ciz:ekranAktarma },
   { no:4, ad:"Veri Denetimi", hazir:true, ciz:ekranDenetim },
   { no:5, ad:"Hesaplanan Değerler", hazir:true, ciz:ekranHesaplanan },
   { grup:"ANALİZ" },
-  YAKINDA(6,"Enerji Dengesi",3,"Enerji nereye gidiyor? Sankey akış diyagramı ve ölçüm kapsamı ağacı."),
-  YAKINDA(7,"Tüketim Analizi",3,"Trend, ısı haritası, Pareto ve dönem karşılaştırması."),
+  { no:6, ad:"Enerji Dengesi", hazir:true, ciz:ekranDenge },
+  { no:7, ad:"Tüketim Analizi", hazir:true, ciz:ekranTuketim },
   YAKINDA(8,"Performans (EnPI)",4,"Platformun kalbi: baz çizgi, normalize EnPI ve CUSUM. İyileştik mi, ne zaman, ne kadar?"),
   YAKINDA(9,"Dönüşüm Verimliliği",4,"Kojenerasyon ve kazanların yakıtı ne verimle faydalı enerjiye çevirdiği."),
   YAKINDA(10,"Maliyet",4,"Maliyet artışının ne kadarı fiyattan, ne kadarı tüketimden? Fiyat/hacim ayrıştırması."),
@@ -290,7 +293,7 @@ function menuCiz() {
   const m = bosalt($("#menu"));
   m.append(el("div.marka", {},
     el("b", { metin:"Enerji Yönetim" }),
-    el("span", { metin:"Faz 2 · Veri" })));
+    el("span", { metin:"Faz 3 · Görme" })));
   for (const e of EKRANLAR) {
     if (e.grup) { m.append(el("div.menu-grup", { metin:e.grup })); continue; }
     m.append(el("button.menu-og", {
@@ -369,8 +372,8 @@ async function baslat() {
   katmanDinle(() => seritCiz());
 
   const h = /^#e(\d+)$/.exec(location.hash);
-  durumu.ekran = h ? +h[1] : 14;
-  if (!EKRANLAR.some(e => e.no === durumu.ekran)) durumu.ekran = 14;
+  durumu.ekran = h ? +h[1] : 1;
+  if (!EKRANLAR.some(e => e.no === durumu.ekran)) durumu.ekran = 1;
 
   menuCiz(); seritCiz(); ciz();
 
@@ -776,6 +779,18 @@ function uret() {
   return katman;
 }
 
+/** Enerji verisinin ÜRETİLEBİLDİĞİ son dönem.
+    Veri aralığının sonu GES gibi yan kayıtlardan gelebilir; ekranlar
+    varsayılan aralığı buna göre değil, gerçek enerji verisine göre seçer. */
+function sonEnerjiDonemi() {
+  for (let i = katman.satirlar.length - 1; i >= 0; i--) {
+    const r = katman.satirlar[i];
+    if (Number.isFinite(r.TOPLAM_ENERJI)) return { yil: r.yil, ay: r.ay };
+  }
+  const s = katman.satirlar[katman.satirlar.length - 1];
+  return s ? { yil: s.yil, ay: s.ay } : null;
+}
+
 /** Tek dönem satırı */
 const satir = (yil, ay) =>
   katman.satirlar.find(s => s.yil === yil && s.ay === ay) || null;
@@ -804,6 +819,7 @@ function otomatikUret() {
   __x.katman = katman;
   __x.katmanDinle = katmanDinle;
   __x.uret = uret;
+  __x.sonEnerjiDonemi = sonEnerjiDonemi;
   __x.satir = satir;
   __x.hucre = hucre;
   __x.yillik = yillik;
@@ -2469,6 +2485,691 @@ async function excelAktar() {
 
   __x.ekranHesaplanan = ekranHesaplanan;
 };
+__f["js/ekranlar/panel.js"] = function(__x) {
+/* ekranlar/panel.js — Ekran 1: Gösterge Paneli (El Kitabı 9.2)
+   "Durumumuz ne?" Karar verdirmez; nereye bakılacağını gösterir.
+   SALT OKUNUR — bakılan yerle yazılan yer ayrıdır. */
+const { el, $, bosalt, say, kisa, yuzde, fark, uyari, bosDurum, tablo, donemAd, donemKisa, donemKaydir, AYLAR } = __req("js/ortak.js");
+const V = __req("js/veri.js");
+const { nokta, varlik } = __req("js/model.js");
+const H = __req("js/hesap.js");
+const { katman, hucre, sonEnerjiDonemi } = __req("js/hesaplanan.js");
+const G = __req("js/grafik.js");
+let donem = null;
+function ekranPanel(k) {
+  const ar = V.veriAraligi();
+  if (!ar) {
+    k.append(el("div.sayfa-basi", {}, el("h1", { metin:"Gösterge Paneli" })));
+    k.append(bosDurum("Henüz veri yok",
+      "Panel, girdiğiniz veriden beslenir. Excel dosyanızı Veri Aktarma ekranından alın; " +
+      "panel anında dolar.",
+      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    return;
+  }
+  if (!donem || !V.durum.degerler.some(d => d.y === donem.yil && d.a === donem.ay))
+    donem = sonDoluDonem(ar);
+
+  k.append(el("div.sayfa-basi", {},
+    el("h1", { metin:"Gösterge Paneli" }),
+    el("p", { metin:`${donemAd(donem.yil, donem.ay)} · ${V.durum.ayarlar?.fabrika_adi || "Fabrika"}` })));
+
+  donemSecici(k, ar);
+  kartlar(k);
+  uyarilar(k);
+  grafikler(k);
+  yillikOzet(k);
+}
+
+const yenile = () => { const k = bosalt($("#icerik")); ekranPanel(k); };
+
+const sonDoluDonem = ar => sonEnerjiDonemi() || { yil:ar.son.yil, ay:ar.son.ay };
+
+function donemSecici(k, ar) {
+  const ay = el("select", { onchange:e => { donem = { ...donem, ay:+e.target.value }; yenile(); } });
+  AYLAR.forEach((a, i) => ay.append(el("option", { value:i + 1, metin:a, selected:donem.ay === i + 1 })));
+  const yil = el("select", { onchange:e => { donem = { ...donem, yil:+e.target.value }; yenile(); } });
+  for (let y = ar.ilk.yil; y <= ar.son.yil; y++)
+    yil.append(el("option", { value:y, metin:y, selected:donem.yil === y }));
+  const kaydir = n => { donem = donemKaydir(donem.yil, donem.ay, n); yenile(); };
+  k.append(el("div.satir", { stil:{ marginBottom:"16px", alignItems:"center" } },
+    el("button.dugme.kucuk", { metin:"‹", onclick:() => kaydir(-1) }), ay, yil,
+    el("button.dugme.kucuk", { metin:"›", onclick:() => kaydir(1) })));
+}
+
+/* ------------------------------------------------------- KPI kartları */
+function son12(sutun) {
+  const l = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = donemKaydir(donem.yil, donem.ay, -i);
+    l.push(hucre(sutun, d.yil, d.ay));
+  }
+  return l;
+}
+
+function kart(baslik, deger, birim, { ondalik = 0, gecenYil = null, seri = null,
+                                      alt = null, rozet = null } = {}) {
+  const d = gecenYil !== null && gecenYil !== 0 && Number.isFinite(deger)
+    ? (deger / gecenYil - 1) * 100 : null;
+  return el("div.kart", { stil:{ flex:"1 1 210px", margin:"0", minWidth:"190px" } },
+    el("div.mini.sessiz", { metin:baslik }),
+    el("div", { stil:{ fontSize:"23px", fontWeight:"600", margin:"5px 0 2px",
+                       fontVariantNumeric:"tabular-nums" },
+      metin:Number.isFinite(deger) ? say(deger, ondalik) : "—" },
+      birim ? el("span", { stil:{ fontSize:"12px", fontWeight:"400", color:"var(--ink-mut)",
+        marginLeft:"5px" }, metin:birim }) : null),
+    el("div.satir", { stil:{ gap:"8px", alignItems:"center", minHeight:"22px" } },
+      d !== null ? el("span.mini", { stil:{ color:Math.abs(d) < 1 ? "var(--ink-mut)" : "" },
+        metin:fark(d) + " (geçen yıl)" }) : el("span.mini.sessiz", { metin:alt || "" }),
+      rozet),
+    seri ? el("div", { stil:{ marginTop:"6px" } }, G.miniGrafik(seri, { en:170, boy:24 })) : null);
+}
+
+function kartlar(k) {
+  const gy = donemKaydir(donem.yil, donem.ay, -12);
+  const al = s2 => hucre(s2, donem.yil, donem.ay);
+  const alGY = s2 => hucre(s2, gy.yil, gy.ay);
+
+  const anaKod = V.durum.ayarlar?.ana_enpi || V.durum.enpi_tanimlari[0]?.kod;
+  const enpiSutun = anaKod ? "ENPI_" + anaKod : null;
+  const enpiTanim = V.durum.enpi_tanimlari.find(t => t.kod === anaKod);
+
+  // Ölçüm kapsamı — TEK HESAP KAYNAĞI (İ-2): tanım hesap.js'dedir
+  const kap = H.elektrikKapsami(donem.yil, donem.ay);
+  const kapsam = kap.oran, sayac = kap.sayac || 0;
+
+  const ges = H.gesKatkisi(donem.yil, donem.ay);
+
+  k.append(el("div", { stil:{ display:"grid", marginBottom:"16px", gap:"12px",
+    gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))" } },
+    kart("Toplam enerji", al("TOPLAM_ENERJI"), "kWh",
+      { gecenYil:alGY("TOPLAM_ENERJI"), seri:son12("TOPLAM_ENERJI") }),
+    kart("Enerji maliyeti", al("TOPLAM_MALIYET"), "TL",
+      { gecenYil:alGY("TOPLAM_MALIYET"), seri:son12("TOPLAM_MALIYET"),
+        alt:"net (GES mahsubu sonrası)" }),
+    enpiSutun ? kart(enpiTanim?.ad || "EnPI", al(enpiSutun), enpiTanim?.birim || "",
+      { ondalik:enpiTanim?.ondalik ?? 4, gecenYil:alGY(enpiSutun), seri:son12(enpiSutun),
+        rozet:el("span.rozet", { title:"Baz çizgi Faz 4'te gelecek", metin:"baz çizgi yok" }) }) : null,
+    kart("Üretim", H.noktaDeger("TOPLAM_URETIM", donem.yil, donem.ay).deger, "kg",
+      { gecenYil:H.noktaDeger("TOPLAM_URETIM", gy.yil, gy.ay).deger,
+        seri:son12("TOPLAM_URETIM") }),
+    kart("Ölçüm kapsamı", kapsam === null ? null : kapsam * 100, "%",
+      { ondalik:1, alt:`${sayac} alt sayaç · ${kapsam !== null ? yuzde((1 - kapsam) * 100, 1) : "—"} ölçülmüyor`,
+        rozet:kapsam !== null && kapsam < 0.5
+          ? el("span.rozet.dikkat", { metin:"⚠ düşük" }) : null }),
+    kart("GES katkısı", ges.deger, "TL",
+      { alt:ges.deger ? "elektrik faturasından düşülen" : "bu dönem yok" })));
+}
+
+/* ----------------------------------------------------------- uyarılar */
+function uyarilar(k) {
+  const u = [];
+  const bosluk = (katman.bosluklar || []).filter(b => b.donem === `${donem.yil}-${String(donem.ay).padStart(2,"0")}`);
+  if (bosluk.length) u.push(["dikkat", `Bu dönemde ${bosluk.length} türetilmiş değer üretilemedi: ` +
+    bosluk.slice(0, 2).map(b => b.ad).join(", ") + (bosluk.length > 2 ? "…" : "")]);
+  if (katman.eksikler.length) u.push(["ciddi",
+    `${katman.eksikler.length} değer hesaplanamıyor — dönüşüm katsayısı eksik olabilir.`]);
+  const yd = V.yedekDurumu();
+  if (yd.uyarmali) u.push(["dikkat", yd.aciklama + " — veriniz yalnızca bu tarayıcıda."]);
+  for (const [tur, m] of u) k.append(uyari(tur, m));
+}
+
+/* ---------------------------------------------------------- grafikler */
+function grafikler(k) {
+  const d24 = [], e24 = [], enpi24 = [];
+  const anaKod = V.durum.ayarlar?.ana_enpi || V.durum.enpi_tanimlari[0]?.kod;
+  for (let i = 23; i >= 0; i--) {
+    const d = donemKaydir(donem.yil, donem.ay, -i);
+    d24.push(donemKisa(d.yil, d.ay));
+    e24.push(hucre("TOPLAM_ENERJI", d.yil, d.ay));
+    enpi24.push(anaKod ? hucre("ENPI_" + anaKod, d.yil, d.ay) : null);
+  }
+
+  // G1 — toplam enerji (tek seri → açıklama yok, başlık adlandırır)
+  const g1 = el("div.kart", {}, el("h2", { metin:"Son 24 ay · Toplam enerji tüketimi" }));
+  k.append(g1);
+  G.sutun(g1, { seriler:[{ ad:"Toplam enerji", degerler:e24 }], etiketler:d24,
+                birim:"kWh", boy:250 });
+
+  // G2 — EnPI: AYRI GRAFİK (çift eksen yasak, 5.7.2)
+  const t = V.durum.enpi_tanimlari.find(x => x.kod === anaKod);
+  if (t) {
+    const g2 = el("div.kart", {}, el("h2", { metin:`Son 24 ay · ${t.ad}` }),
+      el("p.mini.sessiz", { metin:
+        "Tüketimle aynı grafikte gösterilmez: iki ölçeğin hizası keyfî olur ve " +
+        "veride olmayan bir ilişki uydurur (5.7.2)." }));
+    k.append(g2);
+    G.cizgi(g2, { seriler:[{ ad:t.ad, degerler:enpi24 }], etiketler:d24,
+                  birim:t.birim || "", boy:230, ondalik:t.ondalik ?? 4 });
+  }
+
+  // G3 — enerji türü dağılımı (yığılmış, kategorik)
+  const d12 = [], elk = [], dg = [], mot = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = donemKaydir(donem.yil, donem.ay, -i);
+    d12.push(donemKisa(d.yil, d.ay));
+    elk.push(V.deger("SEBEKE_ELK", d.yil, d.ay));
+    const g = ["IST1_DG_KWH","IST2_DG_KWH","IST3_DG_KWH"]
+      .map(c => V.deger(c, d.yil, d.ay)).filter(x => x !== null);
+    dg.push(g.length ? g.reduce((a, b) => a + b, 0) : null);
+    mot.push(hucre("MOTORIN_KWH", d.yil, d.ay));
+  }
+  const seriler = [{ ad:"Şebeke elektriği", degerler:elk }, { ad:"Doğalgaz", degerler:dg }];
+  if (mot.some(Number.isFinite)) seriler.push({ ad:"Motorin", degerler:mot });
+  const g3 = el("div.kart", {}, el("h2", { metin:"Son 12 ay · Enerji türü dağılımı" }));
+  k.append(g3);
+  G.sutun(g3, { seriler, etiketler:d12, birim:"kWh", yigili:true, boy:250 });
+}
+
+/* -------------------------------------------------------- yıllık özet */
+function yillikOzet(k) {
+  const yillar = [...new Set(katman.satirlar.map(r => r.yil))].sort((a, b) => b - a).slice(0, 5);
+  const anaKod = V.durum.ayarlar?.ana_enpi || V.durum.enpi_tanimlari[0]?.kod;
+  const satirlar = yillar.map(y => {
+    const r = katman.satirlar.filter(x => x.yil === y);
+    const t = (s2) => { const v = r.map(x => x[s2]).filter(Number.isFinite);
+      return v.length ? v.reduce((a, b) => a + b, 0) : null; };
+    const enerji = t("TOPLAM_ENERJI");
+    const uretim = r.map(x => H.noktaDeger("TOPLAM_URETIM", x.yil, x.ay).deger)
+      .filter(Number.isFinite).reduce((a, b) => a + b, 0) || null;
+    const eksikAy = r.filter(x => !Number.isFinite(
+      H.noktaDeger("TOPLAM_URETIM", x.yil, x.ay).deger)).length;
+    return { yil:y, ay:r.length, enerji, uretim,
+      enpi:enerji && uretim ? enerji / uretim : null,
+      maliyet:t("TOPLAM_MALIYET"), eksikAy };
+  });
+
+  const kart2 = el("div.kart", {}, el("h2", { metin:"Yıllık özet" }));
+  kart2.append(tablo([
+    { ad:"Yıl", deger:r => el("span", {}, String(r.yil),
+        r.eksikAy ? el("span.rozet.dikkat", { stil:{ marginLeft:"6px" },
+          title:"Bu yılın bazı aylarında üretim değeri üretilemedi",
+          metin:`${r.eksikAy} ay eksik` }) : null) },
+    { ad:"Ay", sayi:true, anahtar:"ay" },
+    { ad:"Enerji (kWh)", sayi:true, anahtar:"enerji" },
+    { ad:"Üretim (kg)", sayi:true, anahtar:"uretim" },
+    { ad:"EnPI (kWh/kg)", sayi:true, ondalik:4, anahtar:"enpi" },
+    { ad:"Maliyet (TL)", sayi:true, anahtar:"maliyet" },
+  ], satirlar));
+  k.append(kart2);
+}
+
+  __x.ekranPanel = ekranPanel;
+};
+__f["js/ekranlar/tuketim.js"] = function(__x) {
+/* ekranlar/tuketim.js — Ekran 7: Tüketim Analizi (El Kitabı 9.8)
+   "Nereye bakmalıyım?" */
+const { el, $, bosalt, say, kisa, yuzde, fark, uyari, bosDurum, tablo, donemAd, donemKisa, donemKaydir, donemAraligi, AYLAR } = __req("js/ortak.js");
+const V = __req("js/veri.js");
+const { nokta, varlik, agac, altAgac, varlikNoktalari, cevir, ENERJI_BIRIMLERI } = __req("js/model.js");
+const H = __req("js/hesap.js");
+const { sonEnerjiDonemi } = __req("js/hesaplanan.js");
+const G = __req("js/grafik.js");
+let f = null;   // filtre durumu
+function ekranTuketim(k) {
+  const ar = V.veriAraligi();
+  if (!ar) { k.append(el("div.sayfa-basi", {}, el("h1", { metin:"Tüketim Analizi" })));
+    k.append(bosDurum("Henüz veri yok", "Önce Veri Aktarma ekranından verinizi alın.",
+      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    return; }
+
+  if (!f) {
+    const son = sonEnerjiDonemi() || ar.son;          // GES'e değil, enerji verisine göre
+    f = { bas:{ yil:Math.max(ar.ilk.yil, son.yil - 2), ay:1 },
+          son:{ yil:son.yil, ay:son.ay }, varlik:"FAB", birim:"kWh",
+          karsilastir:true, sekme:"trend" };
+  }
+
+  k.append(el("div.sayfa-basi", {},
+    el("h1", { metin:"Tüketim Analizi" }),
+    el("p", { metin:"Tüketimi farklı kırılımlarda inceleyip en büyük ve en anormal kalemleri bulun." })));
+
+  filtreCubugu(k, ar);
+
+  const s = el("div.sekmeler", {});
+  for (const [kod, ad] of [["trend","Trend"],["isi","Isı haritası"],
+                           ["pareto","Pareto"],["karsilastir","Dönem karşılaştırma"]])
+    s.append(el("button.sekme", { "aria-selected":f.sekme === kod ? "true" : "false",
+      metin:ad, onclick:() => { f.sekme = kod; yenile(); } }));
+  k.append(s);
+
+  ({ trend:cizTrend, isi:cizIsi, pareto:cizPareto, karsilastir:cizKarsilastir }[f.sekme])(k);
+}
+
+const yenile = () => { const k = bosalt($("#icerik")); ekranTuketim(k); };
+
+/* --------------------------------------------------------- filtreler */
+function filtreCubugu(k, ar) {
+  const donemSec = (etiket, hedef) => {
+    const ay = el("select", { onchange:e => { f[hedef].ay = +e.target.value; yenile(); } });
+    AYLAR.forEach((a, i) => ay.append(el("option", { value:i + 1, metin:a.slice(0, 3),
+      selected:f[hedef].ay === i + 1 })));
+    const yil = el("select", { onchange:e => { f[hedef].yil = +e.target.value; yenile(); } });
+    for (let y = ar.ilk.yil; y <= ar.son.yil; y++)
+      yil.append(el("option", { value:y, metin:y, selected:f[hedef].yil === y }));
+    return el("div.alan", { stil:{ margin:"0" } }, el("label", { metin:etiket }),
+      el("div.satir", { stil:{ gap:"4px" } }, ay, yil));
+  };
+
+  const vSec = el("select", { onchange:e => { f.varlik = e.target.value; yenile(); } });
+  const gez = (d, derinlik) => {
+    for (const x of d) {
+      vSec.append(el("option", { value:x.kod, metin:"　".repeat(derinlik) + x.ad,
+        selected:f.varlik === x.kod }));
+      gez(x.cocuklar, derinlik + 1);
+    }
+  };
+  gez(agac(), 0);
+
+  const bSec = el("select", { onchange:e => { f.birim = e.target.value; yenile(); } });
+  for (const b of ENERJI_BIRIMLERI)
+    bSec.append(el("option", { value:b, metin:b, selected:f.birim === b }));
+
+  k.append(el("div.kart", { stil:{ padding:"12px 16px" } },
+    el("div.satir", { stil:{ alignItems:"flex-end" } },
+      donemSec("Başlangıç", "bas"), donemSec("Bitiş", "son"),
+      el("div.alan", { stil:{ margin:"0", minWidth:"200px" } },
+        el("label", { metin:"Varlık" }), vSec),
+      el("div.alan", { stil:{ margin:"0" } }, el("label", { metin:"Birim" }), bSec))));
+}
+
+const donemler = () => donemAraligi(f.bas.yil, f.bas.ay, f.son.yil, f.son.ay);
+
+/** Seçilen varlığın altındaki enerji tüketimi (seçilen birimde) */
+function seriDeger(varlikKod, yil, ay) {
+  const r = H.varlikToplami(varlikKod, yil, ay, { rol:"satin_alinan", birim:f.birim });
+  return r.deger;
+}
+
+/* ------------------------------------------------------------- trend */
+function cizTrend(k) {
+  const d = donemler();
+  if (d.length > 120) { k.append(uyari("dikkat", "Seçilen aralık çok uzun (120 aydan fazla).")); return; }
+  const et = d.map(x => donemKisa(x.yil, x.ay));
+  const deg = d.map(x => seriDeger(f.varlik, x.yil, x.ay));
+  const v = varlik(f.varlik);
+
+  if (!deg.some(Number.isFinite)) {
+    k.append(bosDurum(`${v?.ad} için veri yok`,
+      "Bu varlığın altında bu dönem aralığında ölçüm yok. Başka bir varlık veya aralık seçin."));
+    return;
+  }
+  const kart = el("div.kart", {}, el("h2", { metin:`${v?.ad} · tüketim trendi` }));
+  k.append(kart);
+  G.sutun(kart, { seriler:[{ ad:v?.ad || "Tüketim", degerler:deg }], etiketler:et,
+                  birim:f.birim, boy:280 });
+
+  const gecerli = deg.filter(Number.isFinite);
+  if (gecerli.length) {
+    const t = gecerli.reduce((a, b) => a + b, 0);
+    kart.append(el("div.satir", { stil:{ gap:"22px", marginTop:"10px", fontSize:"13px" } },
+      el("span", {}, el("span.sessiz", { metin:"Toplam: " }),
+        el("b.sayi", { metin:`${say(t, 0)} ${f.birim}` })),
+      el("span", {}, el("span.sessiz", { metin:"Ortalama: " }),
+        el("b.sayi", { metin:`${say(t / gecerli.length, 0)} ${f.birim}/ay` })),
+      el("span", {}, el("span.sessiz", { metin:"En yüksek: " }),
+        el("b.sayi", { metin:say(Math.max(...gecerli), 0) })),
+      el("span", {}, el("span.sessiz", { metin:"En düşük: " }),
+        el("b.sayi", { metin:say(Math.min(...gecerli), 0) }))));
+  }
+}
+
+/* ------------------------------------------------------- ısı haritası */
+function cizIsi(k) {
+  const d = donemler();
+  const yillar = [...new Set(d.map(x => x.yil))];
+  const deg = yillar.map(y => AYLAR.map((_, i) => {
+    const bul = d.find(x => x.yil === y && x.ay === i + 1);
+    return bul ? seriDeger(f.varlik, y, i + 1) : null;
+  }));
+  const v = varlik(f.varlik);
+  const kart = el("div.kart", {}, el("h2", { metin:`${v?.ad} · yıl × ay` }),
+    el("p.mini.sessiz", { metin:
+      "Mevsimselliği açığa çıkarır: aynı ayın yıllar boyunca nasıl değiştiği ve " +
+      "yıl içindeki aylık örüntü tek bakışta görünür." }));
+  k.append(kart);
+  if (!deg.flat().some(Number.isFinite)) { kart.append(el("p.sessiz", { metin:"Veri yok." })); return; }
+  G.isiHaritasi(kart, { satirAd:yillar.map(String), sutunAd:AYLAR.map(a => a.slice(0, 3)),
+                        degerler:deg, birim:f.birim });
+}
+
+/* ------------------------------------------------------------ Pareto */
+function cizPareto(k) {
+  const d = donemler();
+  const alt = altAgac(f.varlik).filter(x => x.kod !== f.varlik);
+  const kalemler = [];
+  for (const v of alt) {
+    // yalnız en yakın seviye: kendi altında başka düğüm olanları atla
+    if (alt.some(y => y.ust === v.kod)) continue;
+    let t = 0, varMi = false;
+    for (const x of d) {
+      const r = H.varlikToplami(v.kod, x.yil, x.ay, { rol:"satin_alinan", birim:f.birim });
+      if (Number.isFinite(r.deger)) { t += r.deger; varMi = true; }
+    }
+    if (varMi && t > 0) kalemler.push({ ad:v.ad, deger:t });
+  }
+  const kart = el("div.kart", {},
+    el("h2", { metin:`${varlik(f.varlik)?.ad} altındaki kalemler · ${f.birim}` }),
+    el("p.mini.sessiz", { metin:
+      "Klasik Pareto çift eksenlidir (çubuk + kümülatif % çizgisi) — bu yasaktır (5.7.2). " +
+      "Kümülatif yüzde tablo sütununda, %80 eşiği satır ayracıyla gösterilir." }));
+  k.append(kart);
+  if (!kalemler.length) { kart.append(bosDurum("Kırılacak kalem yok",
+    "Seçilen varlığın altında ölçüm noktası bulunan alt varlık yok.")); return; }
+  G.pareto(kart, { kalemler, birim:f.birim });
+}
+
+/* --------------------------------------------------- dönem karşılaştırma */
+function cizKarsilastir(k) {
+  const d = donemler();
+  const uzunluk = d.length;
+  const oncekiBas = donemKaydir(f.bas.yil, f.bas.ay, -uzunluk);
+  const oncekiSon = donemKaydir(f.son.yil, f.son.ay, -uzunluk);
+  const onceki = donemAraligi(oncekiBas.yil, oncekiBas.ay, oncekiSon.yil, oncekiSon.ay);
+
+  const alt = altAgac(f.varlik).filter(x => x.kod !== f.varlik &&
+    !altAgac(f.varlik).some(y => y.ust === x.kod));
+  const topla = (kod, liste) => {
+    let t = 0, varMi = false;
+    for (const x of liste) {
+      const r = H.varlikToplami(kod, x.yil, x.ay, { rol:"satin_alinan", birim:f.birim });
+      if (Number.isFinite(r.deger)) { t += r.deger; varMi = true; }
+    }
+    return varMi ? t : null;
+  };
+
+  const satirlar = alt.map(v => {
+    const a = topla(v.kod, d), b = topla(v.kod, onceki);
+    return { ad:v.ad, simdi:a, once:b,
+      fark:a !== null && b !== null ? a - b : null,
+      oran:a !== null && b ? (a / b - 1) * 100 : null };
+  }).filter(r => r.simdi !== null || r.once !== null)
+    .sort((x, y) => Math.abs(y.fark ?? 0) - Math.abs(x.fark ?? 0));
+
+  const kart = el("div.kart", {},
+    el("h2", { metin:"Dönem karşılaştırma" }),
+    el("p.kucuk.sessiz", { metin:
+      `${donemAd(f.bas.yil, f.bas.ay)} – ${donemAd(f.son.yil, f.son.ay)}  ↔  ` +
+      `${donemAd(oncekiBas.yil, oncekiBas.ay)} – ${donemAd(oncekiSon.yil, oncekiSon.ay)}  ` +
+      `(${uzunluk} ay)` }));
+  k.append(kart);
+
+  if (uzunluk % 12) kart.append(uyari("dikkat",
+    "Karşılaştırılan aralık tam yıl değil; mevsimsellik farkı sonucu etkileyebilir. " +
+    "Sistem otomatik normalleştirme yapmaz."));
+
+  kart.append(tablo([
+    { ad:"Kalem", anahtar:"ad" },
+    { ad:`Bu dönem (${f.birim})`, sayi:true, anahtar:"simdi" },
+    { ad:`Önceki (${f.birim})`, sayi:true, anahtar:"once" },
+    { ad:"Fark", deger:r => r.fark === null ? "—"
+        : el("span", { stil:`color:${r.fark > 0 ? "var(--kritik)" : "var(--iyi-ink)"}` },
+            (r.fark > 0 ? "+" : "−") + say(Math.abs(r.fark), 0)) },
+    { ad:"%", deger:r => r.oran === null ? "—"
+        : el("span", { stil:`color:${r.oran > 0 ? "var(--kritik)" : "var(--iyi-ink)"}` },
+            fark(r.oran)) },
+  ], satirlar));
+
+  kart.append(el("p.mini.sessiz", { metin:
+    "Kutuplu renk (5.7.1): artan kırmızı, azalan mavi/yeşil. Renk tek başına anlam " +
+    "taşımaz — işaret ve sayı da yazılıdır." }));
+}
+
+  __x.ekranTuketim = ekranTuketim;
+};
+__f["js/ekranlar/denge.js"] = function(__x) {
+/* ekranlar/denge.js — Ekran 6: Enerji Dengesi (El Kitabı 9.7)
+   "Enerji nereye gidiyor?" — ve ölçülmeyen payı DÜRÜSTÇE göster (6.7, S2). */
+const { el, $, bosalt, say, kisa, yuzde, uyari, bosDurum, tablo, donemAd, donemAraligi, AYLAR } = __req("js/ortak.js");
+const V = __req("js/veri.js");
+const { varlik, nokta, agac, altAgac, varlikNoktalari } = __req("js/model.js");
+const H = __req("js/hesap.js");
+const { sonEnerjiDonemi } = __req("js/hesaplanan.js");
+const G = __req("js/grafik.js");
+let ar2 = null;
+function ekranDenge(k) {
+  const ar = V.veriAraligi();
+  if (!ar) { k.append(el("div.sayfa-basi", {}, el("h1", { metin:"Enerji Dengesi" })));
+    k.append(bosDurum("Henüz veri yok", "Önce Veri Aktarma ekranından verinizi alın.",
+      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    return; }
+  if (!ar2) {
+    const son = sonEnerjiDonemi() || ar.son;          // GES'e değil, enerji verisine göre
+    ar2 = { bas:{ yil:son.yil, ay:1 }, son:{ yil:son.yil, ay:son.ay } };
+  }
+
+  k.append(el("div.sayfa-basi", {},
+    el("h1", { metin:"Enerji Dengesi" }),
+    el("p", { metin:"Satın alınan enerjinin tesise girişinden tüketildiği yere kadar izi — ve ölçülmeyen pay." })));
+
+  donemSecici(k, ar);
+  const b = hesapla();
+  if (!b) {
+    const se = sonEnerjiDonemi();
+    k.append(bosDurum("Seçilen aralıkta enerji verisi yok",
+      se ? `Bu dönemlerde şebeke elektriği ve doğalgaz kaydı bulunmuyor. Enerji verisi ${donemAd(se.yil, se.ay)} tarihine kadar var — yukarıdan başka bir aralık seçin.`
+         : "Önce veri aktarın."));
+    return;
+  }
+
+  ozet(k, b);
+  sankeyCiz(k, b);
+  kapsamAgaci(k, b);
+}
+
+const yenile = () => { const k = bosalt($("#icerik")); ekranDenge(k); };
+
+function donemSecici(k, ar) {
+  const sec = (etiket, hedef) => {
+    const ay = el("select", { onchange:e => { ar2[hedef].ay = +e.target.value; yenile(); } });
+    AYLAR.forEach((a, i) => ay.append(el("option", { value:i + 1, metin:a.slice(0, 3),
+      selected:ar2[hedef].ay === i + 1 })));
+    const yil = el("select", { onchange:e => { ar2[hedef].yil = +e.target.value; yenile(); } });
+    for (let y = ar.ilk.yil; y <= ar.son.yil; y++)
+      yil.append(el("option", { value:y, metin:y, selected:ar2[hedef].yil === y }));
+    return el("div.alan", { stil:{ margin:"0" } }, el("label", { metin:etiket }),
+      el("div.satir", { stil:{ gap:"4px" } }, ay, yil));
+  };
+  k.append(el("div.kart", { stil:{ padding:"12px 16px" } },
+    el("div.satir", { stil:{ alignItems:"flex-end" } }, sec("Başlangıç","bas"), sec("Bitiş","son"))));
+}
+
+/* ------------------------------------------------------------ hesap */
+function hesapla() {
+  const d = donemAraligi(ar2.bas.yil, ar2.bas.ay, ar2.son.yil, ar2.son.ay);
+  const T = kod => { let t = 0, v = false;
+    for (const x of d) { const r = H.noktaDeger(kod, x.yil, x.ay);
+      if (Number.isFinite(r.deger)) { t += r.deger; v = true; } }
+    return v ? t : 0; };
+
+  const sebeke = T("SEBEKE_ELK");
+  const ist = { IST1:T("IST1_DG_KWH"), IST2:T("IST2_DG_KWH"), IST3:T("IST3_DG_KWH") };
+  const dogalgaz = ist.IST1 + ist.IST2 + ist.IST3;
+  if (!sebeke && !dogalgaz) return null;
+
+  // Dönüşüm ekipmanları — hangi istasyondan beslendiği
+  const EKIP = [
+    ["TURBIN","IST3"], ["GM1","IST1"], ["GM2","IST1"], ["GM3","IST1"],
+    ["KAZAN1","IST2"], ["KAZAN2","IST2"],
+  ];
+  let kojenElk = 0, buhar = 0, sicakSu = 0;
+  const ekipman = [];
+  for (const [kod, istKod] of EKIP) {
+    const yakit = T(`${kod}_DG_KWH`);
+    const elk = T(`${kod}_EL`), bh = T(`${kod}_BUH_KWH`), ss = T(`${kod}_SSU`);
+    if (!yakit && !elk && !bh && !ss) continue;
+    kojenElk += elk; buhar += bh; sicakSu += ss;
+    ekipman.push({ kod, ad:varlik(kod)?.ad || kod, ist:istKod, yakit,
+      elk, buhar:bh, sicakSu:ss, faydali:elk + bh + ss,
+      verim:yakit ? (elk + bh + ss) / yakit : null });
+  }
+  const olculenYakit = ekipman.reduce((t, e) => t + e.yakit, 0);
+  const donusumKaybi = Math.max(0, olculenYakit - (kojenElk + buhar + sicakSu));
+  const olculmeyenYakit = Math.max(0, dogalgaz - olculenYakit);
+
+  // Elektrik tüketicileri — alt sayaç tanımı hesap.js'den (İ-2)
+  const tuketici = [];
+  for (const n of H.elektrikAltSayaclari()) {
+    const t = T(n.kod);
+    if (t > 0) tuketici.push({ kod:n.kod, ad:n.ad, varlik:n.varlik, deger:t });
+  }
+  // Kapsamın paydası hesap.js'deki elektrikKapsami() ile AYNI: şebeke + kojen
+  const elkToplam = sebeke + kojenElk;
+  const olculenElk = tuketici.reduce((t, x) => t + x.deger, 0);
+  const olculmeyenElk = elkToplam - olculenElk;
+
+  return { d, sebeke, dogalgaz, ist, ekipman, kojenElk, buhar, sicakSu,
+           donusumKaybi, olculenYakit, olculmeyenYakit,
+           tuketici, elkToplam, olculenElk, olculmeyenElk,
+           kapsam:elkToplam ? olculenElk / elkToplam : null,
+           toplamEnerji:sebeke + dogalgaz };
+}
+
+/* ------------------------------------------------------------- özet */
+function ozet(k, b) {
+  const kutu = (ad, v, birim, alt) => el("div.kart", { stil:{ flex:"1 1 200px", margin:"0" } },
+    el("div.mini.sessiz", { metin:ad }),
+    el("div", { stil:{ fontSize:"21px", fontWeight:"600", margin:"4px 0 2px",
+      fontVariantNumeric:"tabular-nums" } }, say(v, 0),
+      el("span", { stil:{ fontSize:"12px", fontWeight:"400", color:"var(--ink-mut)",
+        marginLeft:"5px" }, metin:birim })),
+    alt ? el("div.mini.sessiz", { metin:alt }) : null);
+
+  k.append(el("div.satir", { stil:{ marginBottom:"14px" } },
+    kutu("Satın alınan enerji", b.toplamEnerji, "kWh",
+      `${say(b.d.length)} ay · elektrik + doğalgaz`),
+    kutu("Şebeke elektriği", b.sebeke, "kWh", yuzde(b.sebeke / b.toplamEnerji * 100, 1)),
+    kutu("Doğalgaz", b.dogalgaz, "kWh", yuzde(b.dogalgaz / b.toplamEnerji * 100, 1)),
+    kutu("Kojenerasyon elektriği", b.kojenElk, "kWh", "toplam enerjiye GİRMEZ")));
+
+  if (b.kapsam !== null)
+    k.append(uyari(b.kapsam < 0.5 ? "dikkat" : "iyi",
+      el("b", { metin:`Elektrikte ölçüm kapsamı: ${yuzde(b.kapsam * 100, 1)}. ` }),
+      `${say(b.olculmeyenElk, 0)} kWh (${yuzde((1 - b.kapsam) * 100, 1)}) nereye gittiğini bilmiyorsunuz. ` +
+      "Bu, alt sayaç yatırımının nereye yapılacağını söyleyen sayıdır."));
+
+  k.append(uyari("bilgi",
+    el("b", { metin:"Kojenerasyon elektriği ve buhar toplam enerjiye eklenmez. " }),
+    "Onları üreten doğalgaz zaten sayılmıştır; eklenirse çift sayım olur (7.1). " +
+    "GES üretimi de girmez — fabrikada fiziksel olarak hiç bulunmamıştır (K-03)."));
+}
+
+/* ----------------------------------------------------------- Sankey */
+function sankeyCiz(k, b) {
+  const dugumler = [
+    { kod:"SEBEKE",   ad:"Şebeke Elektriği", katman:0, renk:"var(--s1)" },
+    { kod:"DOGALGAZ", ad:"Doğalgaz",         katman:0, renk:"var(--s2)" },
+  ];
+  const akislar = [];
+
+  for (const [kod, ad] of [["IST1","İstasyon 1"],["IST2","İstasyon 2"],["IST3","İstasyon 3"]]) {
+    if (!b.ist[kod]) continue;
+    dugumler.push({ kod, ad, katman:1, renk:"var(--s2)" });
+    akislar.push({ kaynak:"DOGALGAZ", hedef:kod, deger:b.ist[kod], slot:1 });
+  }
+  if (b.olculmeyenYakit > 0) {
+    dugumler.push({ kod:"DG_OLCULMEYEN", ad:"Ölçülmeyen gaz", katman:2, renk:"var(--ink-mut)" });
+    // istasyon altında ölçülmeyen: en büyük istasyondan akıt
+    const enb = Object.entries(b.ist).sort((a, c) => c[1] - a[1])[0];
+    if (enb && enb[1]) akislar.push({ kaynak:enb[0], hedef:"DG_OLCULMEYEN",
+      deger:b.olculmeyenYakit, slot:7 });
+  }
+
+  const cikti = [["KOJEN","Kojen Elektriği", b.kojenElk, "var(--s1)", 0],
+                 ["BUHAR","Buhar",           b.buhar,    "var(--s3)", 2],
+                 ["SSU","Sıcak Su",          b.sicakSu,  "var(--s4)", 3],
+                 ["KAYIP","Dönüşüm Kaybı",   b.donusumKaybi, "var(--ink-mut)", 7]];
+  for (const [kod, ad, deger, renk, slot] of cikti) {
+    if (deger <= 0) continue;
+    dugumler.push({ kod, ad, katman:2, renk });
+    // ekipmanların bağlı olduğu istasyonlardan payla
+    const toplamYakit = b.ekipman.reduce((t, e) => t + e.yakit, 0) || 1;
+    for (const istKod of ["IST1","IST2","IST3"]) {
+      const pay = b.ekipman.filter(e => e.ist === istKod).reduce((t, e) => t + e.yakit, 0);
+      if (pay > 0 && b.ist[istKod])
+        akislar.push({ kaynak:istKod, hedef:kod, deger:deger * pay / toplamYakit, slot });
+    }
+  }
+
+  dugumler.push({ kod:"ELK", ad:"Elektrik", katman:3, renk:"var(--s1)" });
+  if (b.sebeke) akislar.push({ kaynak:"SEBEKE", hedef:"ELK", deger:b.sebeke, slot:0 });
+  if (b.kojenElk) akislar.push({ kaynak:"KOJEN", hedef:"ELK", deger:b.kojenElk, slot:0 });
+
+  // Tüketiciler: üst varlığa göre grupla, en fazla 6 + Diğer (≤8 renk kuralı)
+  const grup = new Map();
+  for (const t of b.tuketici) {
+    const v = varlik(t.varlik);
+    const ust = v?.ust ? (varlik(v.ust)?.ad || v.ad) : (v?.ad || t.ad);
+    grup.set(ust, (grup.get(ust) || 0) + t.deger);
+  }
+  const sirali = [...grup.entries()].sort((a, c) => c[1] - a[1]);
+  const ilk = sirali.slice(0, 5), kalan = sirali.slice(5);
+  ilk.forEach(([ad, deger], i) => {
+    const kod = "T" + i;
+    dugumler.push({ kod, ad, katman:4, renk:G.renk(i + 2) });
+    akislar.push({ kaynak:"ELK", hedef:kod, deger, slot:i + 2 });
+  });
+  if (kalan.length) {
+    const t = kalan.reduce((s2, [, v]) => s2 + v, 0);
+    dugumler.push({ kod:"TDIGER", ad:"Diğer", katman:4, renk:"var(--s6)" });
+    akislar.push({ kaynak:"ELK", hedef:"TDIGER", deger:t, slot:5 });
+  }
+  if (b.olculmeyenElk > 0) {
+    dugumler.push({ kod:"OLCULMEYEN", ad:"ÖLÇÜLMEYEN", katman:4, renk:"var(--ciddi)" });
+    akislar.push({ kaynak:"ELK", hedef:"OLCULMEYEN", deger:b.olculmeyenElk, renk:"var(--ciddi)" });
+  }
+
+  const kart = el("div.kart", {}, el("h2", { metin:"Enerji akışı" }),
+    el("p.mini.sessiz", { metin:
+      "Kalınlık enerji miktarıyla orantılıdır. En kalın kolun 'ÖLÇÜLMEYEN' olması rahatsız edicidir " +
+      "ama doğrudur — ve alt sayaç yatırımının nereye yapılacağını söyler." }));
+  k.append(kart);
+  G.sankey(kart, { dugumler, akislar, birim:"kWh", boy:400 });
+}
+
+/* ----------------------------------------------------- kapsam ağacı */
+function kapsamAgaci(k, b) {
+  const kart = el("div.kart", {}, el("h2", { metin:"Ölçüm kapsamı" }),
+    el("p.mini.sessiz", { metin:
+      "Satırların toplamı her zaman üst toplama eşittir; ölçülmeyen pay üzerine eklenmez (6.7)." }));
+
+  const satirlar = [
+    { ad:"Elektrik — toplam", deger:b.elkToplam, pay:1, tip:"ust" },
+    ...b.tuketici.sort((a, c) => c.deger - a.deger).map(t =>
+      ({ ad:"  " + t.ad, deger:t.deger, pay:b.elkToplam ? t.deger / b.elkToplam : null, tip:"alt" })),
+    { ad:"  Ölçülmeyen / dağıtılmamış", deger:b.olculmeyenElk,
+      pay:b.elkToplam ? b.olculmeyenElk / b.elkToplam : null, tip:"eksik" },
+  ];
+  kart.append(tablo([
+    { ad:"Kalem", deger:r => el("span", { stil:r.tip === "ust" ? "font-weight:600"
+        : r.tip === "eksik" ? "color:var(--ciddi);font-weight:600" : "" }, r.ad) },
+    { ad:"kWh", sayi:true, anahtar:"deger" },
+    { ad:"Pay", deger:r => r.pay === null ? "—"
+        : el("div.satir", { stil:{ gap:"8px", alignItems:"center" } },
+            G.oranCubugu(r.pay, { en:70, cizgiRenk:r.tip === "eksik" ? "var(--ciddi)" : "var(--s1)" }),
+            el("span.sayi.mini", { metin:yuzde(r.pay * 100, 1) })) },
+  ], satirlar));
+
+  if (b.ekipman.length) {
+    kart.append(el("h3", { metin:"Dönüşüm ekipmanları", stil:{ marginTop:"20px" } }));
+    kart.append(el("p.mini.sessiz", { metin:
+      "Bu ekipmanlar toplam enerjinin dışındadır; yakıtı faydalı enerjiye ne verimle " +
+      "çevirdiklerini gösterir (8.6). Ayrıntı Faz 4'te Dönüşüm Verimliliği ekranında." }));
+    kart.append(tablo([
+      { ad:"Ekipman", anahtar:"ad" },
+      { ad:"Yakıt (kWh)", sayi:true, anahtar:"yakit" },
+      { ad:"Elektrik", sayi:true, anahtar:"elk" },
+      { ad:"Buhar", sayi:true, anahtar:"buhar" },
+      { ad:"Sıcak su", sayi:true, anahtar:"sicakSu" },
+      { ad:"Toplam verim", deger:e => e.verim === null ? "—"
+          : el("span", { stil:e.verim < 0.55 ? "color:var(--ciddi)" : "" },
+              yuzde(e.verim * 100, 1)) },
+    ], b.ekipman.filter(e => e.yakit > 0)));
+  }
+  k.append(kart);
+}
+
+  __x.ekranDenge = ekranDenge;
+};
 __f["js/veri.js"] = function(__x) {
 /* veri.js — depolama katmanı
    El Kitabı: K-09, K-10, K-11, 5.2, 5.3
@@ -3182,6 +3883,38 @@ function olcumKapsami(ustNoktaKod, altNoktaKodlari, yil, ay, birim = "kWh") {
   };
 }
 
+/* --------------------------------------------- elektrik ölçüm kapsamı (6.7) */
+/**
+ * TEK TANIM (İ-2). Panel ve Enerji Dengesi aynı sayıyı göstermek ZORUNDA.
+ *   toplam elektrik = şebekeden çekilen + tesis içi üretim (kojen)
+ *   ölçülen         = alt sayaçlar (toplama dahil OLMAYAN elektrik noktaları)
+ */
+function elektrikAltSayaclari() {
+  return durum.olcum_noktalari.filter(n =>
+    n.aktif !== false && n.rol === "satin_alinan" && !n.toplama_dahil &&
+    n.birim === "kWh" && n.enerji_turu === "ELK" && n.veri_tipi === "olculen");
+}
+function elektrikKapsami(yil, ay) {
+  const sebeke = noktaDeger("SEBEKE_ELK", yil, ay).deger;
+  let kojen = 0;
+  for (const n of durum.olcum_noktalari) {
+    if (n.rol !== "tesis_ici_uretim" || n.enerji_turu !== "ELK" || n.birim !== "kWh") continue;
+    if (n.veri_tipi !== "olculen") continue;          // türetilmiş "Üretilen Elektrik" iki kez saymasın
+    const d = noktaDeger(n.kod, yil, ay);
+    if (Number.isFinite(d.deger)) kojen += d.deger;
+  }
+  if (!Number.isFinite(sebeke)) return { toplam: null };
+  let olculen = 0, sayac = 0;
+  for (const n of elektrikAltSayaclari()) {
+    const d = noktaDeger(n.kod, yil, ay);
+    if (Number.isFinite(d.deger)) { olculen += d.deger; sayac++; }
+  }
+  const toplam = sebeke + kojen;
+  return { toplam, sebeke, kojen, olculen, sayac,
+           olcumeyen: toplam - olculen,
+           oran: toplam ? olculen / toplam : null };
+}
+
 /* ------------------------------------------------------------ EnPI (8.2) */
 function enpiTerimi(ifade, yil, ay, birim = "kWh") {
   if (ifade === "@TOPLAM_ENERJI_KWH") return toplamEnerji(yil, ay, birim);
@@ -3284,6 +4017,8 @@ function cusum(sapmalar) {
   __x.birimFiyat = birimFiyat;
   __x.varlikToplami = varlikToplami;
   __x.olcumKapsami = olcumKapsami;
+  __x.elektrikAltSayaclari = elektrikAltSayaclari;
+  __x.elektrikKapsami = elektrikKapsami;
   __x.enpi = enpi;
   __x.donusumVerimi = donusumVerimi;
   __x.fiyatHacim = fiyatHacim;
@@ -3579,14 +4314,22 @@ async function zipYaz(dosyalar) {
 };
 __f["js/grafik.js"] = function(__x) {
 /* grafik.js — saf SVG grafik motoru (K-17, El Kitabı 5.7)
-   Faz 2'de yalnız mini grafik (sparkline) var; Faz 3'te sütun, çizgi,
-   yığılmış, ısı haritası, dağılım, Pareto, CUSUM ve Sankey eklenecek.
+   SIFIR DIŞ KÜTÜPHANE.
 
-   Bağlayıcı kurallar (5.7.2): çift eksen YOK · ince işaretler ·
-   saç teli kılavuz · her veri noktasına sayı yazılmaz. */
-
+   BAĞLAYICI KURALLAR (5.7.2):
+     · ÇİFT EKSENLİ GRAFİK YOK — iki ölçeğin hizası keyfîdir
+     · kategorik renkler SABİT SIRAYLA, 8'den fazlası "Diğer"e katlanır
+     · büyüklük tek hue, kutupluluk iki hue + nötr gri orta nokta
+     · ince işaretler, saç teli kılavuz, KESİKLİ ÇİZGİ YOK
+     · her veri noktasına sayı yazılmaz — seçici etiketleme
+     · ≥2 seride açıklama HER ZAMAN var
+     · her grafiğin "tablo olarak göster" seçeneği var (E-3)
+     · her grafiğin fare üstü katmanı var (5.7.3) */
+const { el, say, kisa } = __req("js/ortak.js");
 const NS = "http://www.w3.org/2000/svg";
-function svgOge(ad, ozellik = {}, ...cocuk) {
+const SLOT = ["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
+const renk = i => `var(${SLOT[i % SLOT.length]})`;
+function s(ad, ozellik = {}, ...cocuk) {
   const d = document.createElementNS(NS, ad);
   for (const [k, v] of Object.entries(ozellik))
     if (v !== null && v !== undefined) d.setAttribute(k, v);
@@ -3594,51 +4337,459 @@ function svgOge(ad, ozellik = {}, ...cocuk) {
   return d;
 }
 
+/* ---------------------------------------------------------- ölçek */
+/** İnsan dostu eksen adımı: 1, 2, 2.5, 5, 10 × 10^n */
+function guzelAdim(kaba) {
+  if (kaba <= 0) return 1;
+  const us = Math.pow(10, Math.floor(Math.log10(kaba)));
+  const b = kaba / us;
+  return (b <= 1 ? 1 : b <= 2 ? 2 : b <= 2.5 ? 2.5 : b <= 5 ? 5 : 10) * us;
+}
+function eksen(enk, enb, adet = 5) {
+  if (enk === enb) { enb = enk + 1; }
+  const adim = guzelAdim((enb - enk) / adet);
+  const alt = Math.floor(enk / adim) * adim;
+  const ust = Math.ceil(enb / adim) * adim;
+  const ticks = [];
+  for (let v = alt; v <= ust + adim / 1000; v += adim) ticks.push(+v.toFixed(10));
+  return { alt, ust, ticks };
+}
+
+/* ------------------------------------------------- ortak iskelet */
+const KENAR = { ust:14, sag:16, alt:34, sol:66 };
+
+function iskelet(kap, { boy = 260, baslik = null } = {}) {
+  const en = Math.max(320, (kap.clientWidth || 720) - 4);
+  const svg = s("svg", { width:en, height:boy, viewBox:`0 0 ${en} ${boy}`,
+    style:"display:block;max-width:100%;overflow:visible", role:"img" });
+  if (baslik) svg.append(s("title", {}, document.createTextNode(baslik)));
+  return { svg, en, boy,
+    ic: { x:KENAR.sol, y:KENAR.ust, en:en - KENAR.sol - KENAR.sag, boy:boy - KENAR.ust - KENAR.alt } };
+}
+
+function ykilavuz(svg, ic, olcek, birim, ondalik = 0) {
+  for (const t of olcek.ticks) {
+    const y = ic.y + ic.boy - ((t - olcek.alt) / (olcek.ust - olcek.alt)) * ic.boy;
+    svg.append(s("line", { x1:ic.x, y1:y, x2:ic.x + ic.en, y2:y,
+      stroke:"var(--kilavuz)", "stroke-width":1 }));           // saç teli, KESİKSİZ
+    svg.append(s("text", { x:ic.x - 8, y:y + 4, "text-anchor":"end",
+      fill:"var(--ink-mut)", "font-size":10, "font-variant-numeric":"tabular-nums" },
+      document.createTextNode(kisa(t, ondalik))));
+  }
+  svg.append(s("line", { x1:ic.x, y1:ic.y + ic.boy, x2:ic.x + ic.en, y2:ic.y + ic.boy,
+    stroke:"var(--taban)", "stroke-width":1 }));
+  if (birim) svg.append(s("text", { x:ic.x - 8, y:ic.y - 3, "text-anchor":"end",
+    fill:"var(--ink-mut)", "font-size":9 }, document.createTextNode(birim)));
+}
+
+function xetiket(svg, ic, etiketler) {
+  const adim = Math.max(1, Math.ceil(etiketler.length / Math.floor(ic.en / 52)));
+  etiketler.forEach((e, i) => {
+    if (i % adim) return;
+    const x = ic.x + (i + 0.5) * (ic.en / etiketler.length);
+    svg.append(s("text", { x, y:ic.y + ic.boy + 15, "text-anchor":"middle",
+      fill:"var(--ink-mut)", "font-size":10 }, document.createTextNode(e)));
+  });
+}
+
+/* ------------------------------------------------------- açıklama */
+function aciklama(seriler) {
+  if (seriler.length < 2) return null;              // tek seri → başlık adlandırır
+  return el("div", { stil:{ display:"flex", flexWrap:"wrap", gap:"14px",
+    margin:"8px 0 0", fontSize:"12px" } },
+    seriler.map((d, i) => el("span", { stil:{ display:"inline-flex", alignItems:"center", gap:"6px" } },
+      el("span", { stil:{ width:"10px", height:"10px", borderRadius:"2px",
+        background:d.renk || renk(i), display:"inline-block" } }),
+      el("span.sessiz", { metin:d.ad }))));
+}
+
+/* ------------------------------------------------- fare üstü katmanı */
+function kutucuk() {
+  const d = el("div", { stil:{ position:"fixed", pointerEvents:"none", zIndex:"40",
+    background:"var(--yuzey)", border:"1px solid var(--cerceve)", borderRadius:"6px",
+    padding:"7px 10px", fontSize:"12px", boxShadow:"0 4px 16px rgba(0,0,0,.18)",
+    display:"none", maxWidth:"280px" } });
+  document.body.append(d);
+  return {
+    goster(olay, icerik) {
+      d.innerHTML = ""; d.append(icerik); d.style.display = "block";
+      const k = d.getBoundingClientRect();
+      d.style.left = Math.min(olay.clientX + 14, innerWidth - k.width - 8) + "px";
+      d.style.top  = Math.max(8, olay.clientY - k.height - 12) + "px";
+    },
+    gizle() { d.style.display = "none"; },
+    yok() { d.remove(); },
+  };
+}
+
+/* ------------------------------------------- tablo olarak göster (E-3) */
+function sarmala(kap, svg, ek, tabloVeri) {
+  const govde = el("div", {}, svg, ek);
+  const tbl = el("div", { stil:{ display:"none", marginTop:"8px" } });
+  let acik = false;
+  const dugme = el("button.dugme.kucuk", { metin:"Tablo olarak göster",
+    stil:{ marginTop:"8px" }, onclick:() => {
+      acik = !acik;
+      tbl.style.display = acik ? "block" : "none";
+      govde.style.display = acik ? "none" : "block";
+      dugme.textContent = acik ? "Grafiğe dön" : "Tablo olarak göster";
+      if (acik && !tbl.firstChild) tbl.append(tabloVeri());
+    } });
+  kap.append(govde, dugme, tbl);
+  return kap;
+}
+
+const basitTablo = (basliklar, satirlar) => {
+  const t = el("table");
+  t.append(el("thead", {}, el("tr", {}, basliklar.map((b, i) =>
+    el(i ? "th.s" : "th", { metin:b })))));
+  const gv = el("tbody");
+  for (const r of satirlar)
+    gv.append(el("tr", {}, r.map((c, i) => el(i ? "td.s" : "td",
+      { metin: c === null || c === undefined ? "—" : typeof c === "number" ? say(c, 0) : String(c) }))));
+  t.append(gv);
+  return el("div.tablo-sar", {}, t);
+};
+
+/* =============================================================== SÜTUN */
 /**
- * Satır içi mini grafik. Sayı yazmaz, eksen çizmez — yalnız biçim gösterir.
- * @param degerler [number|null]  null = veri yok, çizgi kopar
+ * @param seriler [{ad, degerler:[], renk?}]  · yigili:true → yığılmış sütun
+ * Tek seri → açıklama yok, başlık seriyi adlandırır (5.7.3).
  */
-function miniGrafik(degerler, { en = 84, boy = 20, renk = "var(--s1)" } = {}) {
+function sutun(kap, { seriler, etiketler, birim = "", yigili = false,
+                             boy = 260, ondalik = 0, baslik = "" } = {}) {
+  kap = kap || el("div");
+  const { svg, ic } = iskelet(kap, { boy, baslik });
+  const n = etiketler.length;
+
+  const toplamlar = etiketler.map((_, i) =>
+    yigili ? seriler.reduce((t, d) => t + (d.degerler[i] || 0), 0)
+           : Math.max(...seriler.map(d => d.degerler[i] || 0)));
+  const enb = Math.max(0, ...toplamlar);
+  const enk = Math.min(0, ...seriler.flatMap(d => d.degerler.filter(Number.isFinite)));
+  const ol = eksen(enk, enb);
+  ykilavuz(svg, ic, ol, birim, ondalik);
+  xetiket(svg, ic, etiketler);
+
+  const adim = ic.en / n;
+  const y0 = v => ic.y + ic.boy - ((v - ol.alt) / (ol.ust - ol.alt)) * ic.boy;
+  const kt = kutucuk();
+  const grup = s("g");
+
+  for (let i = 0; i < n; i++) {
+    let taban = 0;
+    const seriSay = yigili ? 1 : seriler.length;
+    const cw = Math.max(2, (adim * 0.68) / seriSay);
+    seriler.forEach((d, j) => {
+      const v = d.degerler[i];
+      if (!Number.isFinite(v)) return;
+      const x = yigili ? ic.x + i * adim + (adim - cw) / 2
+                       : ic.x + i * adim + (adim - cw * seriSay) / 2 + j * cw;
+      const yUst = yigili ? y0(taban + v) : y0(v);
+      const yTab = yigili ? y0(taban) : y0(0);
+      const h = Math.max(0, yTab - yUst);
+      grup.append(s("rect", { x:x.toFixed(1), y:yUst.toFixed(1),
+        width:(cw - (yigili ? 0 : 1)).toFixed(1),
+        height:Math.max(0, h - (yigili && j < seriler.length - 1 ? 2 : 0)).toFixed(1),
+        rx:Math.min(4, cw / 3), fill:d.renk || renk(j) }));   // 4px yuvarlak uç
+      taban += v;
+    });
+    // fare üstü: bütün sütunu kaplayan saydam hedef
+    const hedef = s("rect", { x:(ic.x + i * adim).toFixed(1), y:ic.y,
+      width:adim.toFixed(1), height:ic.boy, fill:"transparent" });
+    hedef.addEventListener("mousemove", ev => kt.goster(ev,
+      el("div", {}, el("b", { metin:etiketler[i] }),
+        seriler.map((d, j) => el("div", {},
+          el("span", { stil:{ display:"inline-block", width:"8px", height:"8px",
+            borderRadius:"2px", background:d.renk || renk(j), marginRight:"6px" } }),
+          `${d.ad}: ${say(d.degerler[i], ondalik)} ${birim}`)))));
+    hedef.addEventListener("mouseleave", kt.gizle);
+    grup.append(hedef);
+  }
+  svg.append(grup);
+
+  return sarmala(kap, svg, aciklama(seriler),
+    () => basitTablo(["Dönem", ...seriler.map(d => d.ad)],
+      etiketler.map((e, i) => [e, ...seriler.map(d => d.degerler[i])])));
+}
+
+/* =============================================================== ÇİZGİ */
+/** @param referans {deger, ad} → yatay referans hattı (baz çizgi vb.) */
+function cizgi(kap, { seriler, etiketler, birim = "", boy = 260,
+                             ondalik = 0, referans = null, baslik = "" } = {}) {
+  kap = kap || el("div");
+  const { svg, ic } = iskelet(kap, { boy, baslik });
+  const hepsi = seriler.flatMap(d => d.degerler).filter(Number.isFinite);
+  if (referans) hepsi.push(referans.deger);
+  const ol = eksen(Math.min(...hepsi), Math.max(...hepsi));
+  ykilavuz(svg, ic, ol, birim, ondalik);
+  xetiket(svg, ic, etiketler);
+
+  const n = etiketler.length;
+  const dx = n > 1 ? ic.en / (n - 1) : 0;
+  const px = i => ic.x + i * dx;
+  const py = v => ic.y + ic.boy - ((v - ol.alt) / (ol.ust - ol.alt)) * ic.boy;
+
+  if (referans) {
+    svg.append(s("line", { x1:ic.x, y1:py(referans.deger), x2:ic.x + ic.en, y2:py(referans.deger),
+      stroke:"var(--ink-mut)", "stroke-width":1 }));
+    svg.append(s("text", { x:ic.x + ic.en, y:py(referans.deger) - 5, "text-anchor":"end",
+      fill:"var(--ink-mut)", "font-size":10 }, document.createTextNode(referans.ad)));
+  }
+
+  seriler.forEach((d, j) => {
+    let yol = "", kalem = false;
+    d.degerler.forEach((v, i) => {
+      if (!Number.isFinite(v)) { kalem = false; return; }
+      yol += (kalem ? "L" : "M") + px(i).toFixed(1) + "," + py(v).toFixed(1) + " ";
+      kalem = true;
+    });
+    svg.append(s("path", { d:yol, fill:"none", stroke:d.renk || renk(j),
+      "stroke-width":2, "stroke-linejoin":"round", "stroke-linecap":"round" }));
+    // Seçici etiketleme: yalnız uç nokta (5.7.2)
+    const son = d.degerler.map((v, i) => [v, i]).filter(([v]) => Number.isFinite(v)).pop();
+    if (son) {
+      svg.append(s("circle", { cx:px(son[1]), cy:py(son[0]), r:3.5,
+        fill:d.renk || renk(j), stroke:"var(--yuzey)", "stroke-width":2 }));
+      if (seriler.length <= 4)
+        svg.append(s("text", { x:px(son[1]) - 8, y:py(son[0]) - 9, "text-anchor":"end",
+          fill:"var(--ink-2)", "font-size":11, "font-weight":600 },
+          document.createTextNode(say(son[0], ondalik))));
+    }
+  });
+
+  // dikey nişangâh + kutucuk
+  const kt = kutucuk();
+  const nisan = s("line", { y1:ic.y, y2:ic.y + ic.boy, stroke:"var(--taban)",
+    "stroke-width":1, opacity:0 });
+  svg.append(nisan);
+  const kapak = s("rect", { x:ic.x, y:ic.y, width:ic.en, height:ic.boy, fill:"transparent" });
+  kapak.addEventListener("mousemove", ev => {
+    const kutu = svg.getBoundingClientRect();
+    const i = Math.max(0, Math.min(n - 1, Math.round((ev.clientX - kutu.left - ic.x) / (dx || 1))));
+    nisan.setAttribute("x1", px(i)); nisan.setAttribute("x2", px(i));
+    nisan.setAttribute("opacity", .6);
+    kt.goster(ev, el("div", {}, el("b", { metin:etiketler[i] }),
+      seriler.map((d, j) => el("div", {},
+        el("span", { stil:{ display:"inline-block", width:"8px", height:"8px",
+          borderRadius:"2px", background:d.renk || renk(j), marginRight:"6px" } }),
+        `${d.ad}: ${Number.isFinite(d.degerler[i]) ? say(d.degerler[i], ondalik) + " " + birim : "—"}`))));
+  });
+  kapak.addEventListener("mouseleave", () => { nisan.setAttribute("opacity", 0); kt.gizle(); });
+  svg.append(kapak);
+
+  return sarmala(kap, svg, aciklama(seriler),
+    () => basitTablo(["Dönem", ...seriler.map(d => d.ad)],
+      etiketler.map((e, i) => [e, ...seriler.map(d => d.degerler[i])])));
+}
+
+/* ========================================================= ISI HARİTASI */
+/** Sıralı tek hue (5.7.1). Ölçek açıklaması ZORUNLU. */
+function isiHaritasi(kap, { satirAd, sutunAd, degerler, birim = "", ondalik = 0 } = {}) {
+  kap = kap || el("div");
+  const duz = degerler.flat().filter(Number.isFinite);
+  const enk = Math.min(...duz), enb = Math.max(...duz);
+  const RAMP = ["--r100","--r250","--r400","--r550","--r700"];
+  const kova = v => {
+    if (!Number.isFinite(v)) return null;
+    const o = (v - enk) / ((enb - enk) || 1);
+    return RAMP[Math.min(RAMP.length - 1, Math.floor(o * RAMP.length))];
+  };
+  const kt = kutucuk();
+  const t = el("table", { stil:{ fontSize:"11px" } });
+  t.append(el("thead", {}, el("tr", {}, el("th", { metin:"" }),
+    sutunAd.map(a => el("th.s", { stil:{ padding:"2px 4px" }, metin:a })))));
+  const gv = el("tbody");
+  satirAd.forEach((sa, i) => {
+    const tr = el("tr", {}, el("td", { stil:{ whiteSpace:"nowrap", fontWeight:"600" }, metin:sa }));
+    sutunAd.forEach((su, j) => {
+      const v = degerler[i]?.[j];
+      const k = kova(v);
+      const h = el("td", { stil:{ padding:"1px" } },
+        el("div", { stil:{ height:"22px", borderRadius:"3px",
+          background:k ? `var(${k})` : "var(--yuzey-2)",
+          border:k ? "none" : "1px dashed var(--kilavuz)" } }));
+      if (k) {
+        h.addEventListener("mousemove", ev => kt.goster(ev,
+          el("div", {}, el("b", { metin:`${sa} ${su}` }),
+            el("div", { metin:`${say(v, ondalik)} ${birim}` }))));
+        h.addEventListener("mouseleave", kt.gizle);
+      }
+      tr.append(h);
+    });
+    gv.append(tr);
+  });
+  t.append(gv);
+
+  const olcek = el("div", { stil:{ display:"flex", alignItems:"center", gap:"7px",
+    marginTop:"10px", fontSize:"11px" } },
+    el("span.sessiz", { metin:`${kisa(enk, ondalik)} ${birim}` }),
+    ...RAMP.map(r => el("span", { stil:{ width:"26px", height:"11px",
+      background:`var(${r})`, display:"inline-block", borderRadius:"2px" } })),
+    el("span.sessiz", { metin:`${kisa(enb, ondalik)} ${birim}` }));
+
+  return sarmala(kap, el("div.tablo-sar", { stil:{ maxHeight:"none" } }, t), olcek,
+    () => basitTablo(["", ...sutunAd], satirAd.map((sa, i) => [sa, ...degerler[i]])));
+}
+
+/* =============================================================== PARETO */
+/**
+ * Klasik Pareto ÇİFT EKSENLİDİR — yasak (5.7.2).
+ * Kümülatif yüzde tablo sütununda gösterilir, %80 eşiği satır ayracıyla.
+ */
+function pareto(kap, { kalemler, birim = "", ondalik = 0 } = {}) {
+  kap = kap || el("div");
+  const sirali = [...kalemler].filter(k => Number.isFinite(k.deger) && k.deger > 0)
+    .sort((a, b) => b.deger - a.deger);
+  const toplam = sirali.reduce((t, k) => t + k.deger, 0);
+  let birikim = 0;
+  const satirlar = sirali.map(k => {
+    birikim += k.deger;
+    return { ...k, oran:k.deger / toplam, kumulatif:birikim / toplam };
+  });
+  const esikIndeks = satirlar.findIndex(s2 => s2.kumulatif >= 0.8);
+  const enb = satirlar[0]?.deger || 1;
+
+  const t = el("table");
+  t.append(el("thead", {}, el("tr", {},
+    el("th", { metin:"Kalem" }), el("th.s", { metin:`Değer (${birim})` }),
+    el("th", { metin:"" }), el("th.s", { metin:"Pay" }), el("th.s", { metin:"Kümülatif" }))));
+  const gv = el("tbody");
+  satirlar.forEach((r, i) => {
+    const tr = el("tr", {},
+      el("td", { metin:r.ad }),
+      el("td.s", { metin:say(r.deger, ondalik) }),
+      el("td", { stil:{ width:"46%" } },
+        el("div", { stil:{ height:"13px", borderRadius:"3px", background:"var(--s1)",
+          width:(r.deger / enb * 100).toFixed(1) + "%" } })),
+      el("td.s", { metin:"%" + say(r.oran * 100, 1) }),
+      el("td.s", { metin:"%" + say(r.kumulatif * 100, 1) }));
+    gv.append(tr);
+    if (i === esikIndeks)
+      gv.append(el("tr", {}, el("td", { colspan:5, stil:{ padding:"3px 10px",
+        borderTop:"2px solid var(--ciddi)", background:"var(--yuzey-2)",
+        fontSize:"11px", color:"var(--ink-2)" },
+        metin:`▲ Buraya kadar olan ${i + 1} kalem toplamın %80'ini oluşturuyor` })));
+  });
+  t.append(gv);
+  kap.append(el("div.tablo-sar", { stil:{ maxHeight:"none" } }, t));
+  return kap;
+}
+
+/* =============================================================== SANKEY */
+/** @param dugumler [{kod, ad, katman}] · akislar [{kaynak, hedef, deger}] */
+function sankey(kap, { dugumler, akislar, birim = "", boy = 380 } = {}) {
+  kap = kap || el("div");
+  const en = Math.max(360, (kap.clientWidth || 860) - 4);
+  const svg = s("svg", { width:en, height:boy, viewBox:`0 0 ${en} ${boy}`,
+    style:"display:block;max-width:100%" });
+  const kt = kutucuk();
+
+  const katmanlar = [...new Set(dugumler.map(d => d.katman))].sort((a, b) => a - b);
+  const kx = new Map(katmanlar.map((k, i) =>
+    [k, 130 + i * ((en - 260) / Math.max(1, katmanlar.length - 1))]));
+
+  const buyukluk = new Map();
+  for (const d of dugumler) {
+    const giren = akislar.filter(a => a.hedef === d.kod).reduce((t, a) => t + a.deger, 0);
+    const cikan = akislar.filter(a => a.kaynak === d.kod).reduce((t, a) => t + a.deger, 0);
+    buyukluk.set(d.kod, Math.max(giren, cikan));
+  }
+  const enbKatman = Math.max(...katmanlar.map(k =>
+    dugumler.filter(d => d.katman === k).reduce((t, d) => t + buyukluk.get(d.kod), 0)));
+  const olcek = (boy - 60) / (enbKatman || 1);
+
+  const kutu = new Map();
+  for (const k of katmanlar) {
+    const grup = dugumler.filter(d => d.katman === k);
+    const toplamBoy = grup.reduce((t, d) => t + buyukluk.get(d.kod) * olcek, 0);
+    let y = (boy - toplamBoy - (grup.length - 1) * 10) / 2;
+    for (const d of grup) {
+      const h = Math.max(3, buyukluk.get(d.kod) * olcek);
+      kutu.set(d.kod, { x:kx.get(k), y, h, d });
+      y += h + 10;
+    }
+  }
+
+  // akışlar (önce, düğümlerin altında kalsın)
+  const kaynakOfset = new Map(), hedefOfset = new Map();
+  for (const a of [...akislar].sort((x, y2) => y2.deger - x.deger)) {
+    const k = kutu.get(a.kaynak), h = kutu.get(a.hedef);
+    if (!k || !h || !(a.deger > 0)) continue;
+    const kh = a.deger * olcek;
+    const ko = kaynakOfset.get(a.kaynak) || 0, ho = hedefOfset.get(a.hedef) || 0;
+    const x1 = k.x + 96, x2 = h.x;
+    const y1 = k.y + ko, y2 = h.y + ho;
+    const om = (x1 + x2) / 2;
+    const yol = `M${x1},${y1} C${om},${y1} ${om},${y2} ${x2},${y2} ` +
+                `L${x2},${y2 + kh} C${om},${y2 + kh} ${om},${y1 + kh} ${x1},${y1 + kh} Z`;
+    const p = s("path", { d:yol, fill:a.renk || renk(a.slot ?? 0), opacity:.32 });
+    p.addEventListener("mousemove", ev => { p.setAttribute("opacity", .55);
+      kt.goster(ev, el("div", {}, el("b", { metin:`${k.d.ad} → ${h.d.ad}` }),
+        el("div", { metin:`${say(a.deger, 0)} ${birim}` }))); });
+    p.addEventListener("mouseleave", () => { p.setAttribute("opacity", .32); kt.gizle(); });
+    svg.append(p);
+    kaynakOfset.set(a.kaynak, ko + kh); hedefOfset.set(a.hedef, ho + kh);
+  }
+
+  for (const [kod, k] of kutu) {
+    svg.append(s("rect", { x:k.x, y:k.y, width:96, height:k.h, rx:3,
+      fill:k.d.renk || "var(--ink-mut)", opacity:.9 }));
+    svg.append(s("text", { x:k.x + 48, y:k.y + k.h / 2 + 4, "text-anchor":"middle",
+      fill:"var(--yuzey)", "font-size":10, "font-weight":600,
+      style:"paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:2px" },
+      document.createTextNode(k.d.ad.length > 15 ? k.d.ad.slice(0, 14) + "…" : k.d.ad)));
+    svg.append(s("text", { x:k.x + 48, y:k.y - 4, "text-anchor":"middle",
+      fill:"var(--ink-mut)", "font-size":9 },
+      document.createTextNode(kisa(buyukluk.get(kod), 1))));
+  }
+
+  return sarmala(kap, svg, null,
+    () => basitTablo(["Kaynak","Hedef",`Değer (${birim})`],
+      akislar.map(a => [kutu.get(a.kaynak)?.d.ad || a.kaynak,
+                        kutu.get(a.hedef)?.d.ad || a.hedef, a.deger])));
+}
+
+/* ------------------------------------------------------ mini grafik */
+function miniGrafik(degerler, { en = 84, boy = 20, cizgiRenk = "var(--s1)" } = {}) {
   const g = degerler.filter(v => v !== null && Number.isFinite(v));
-  const svg = svgOge("svg", { width:en, height:boy, viewBox:`0 0 ${en} ${boy}`,
-                              role:"img", "aria-hidden":"true",
-                              style:"display:block;overflow:visible" });
+  const svg = s("svg", { width:en, height:boy, viewBox:`0 0 ${en} ${boy}`,
+    "aria-hidden":"true", style:"display:block;overflow:visible" });
   if (g.length < 2) return svg;
-
-  const enk = Math.min(...g), enb = Math.max(...g);
-  const aralik = enb - enk || 1;
+  const enk = Math.min(...g), enb = Math.max(...g), ar = enb - enk || 1;
   const dx = en / Math.max(1, degerler.length - 1);
-  const y = v => boy - 2 - ((v - enk) / aralik) * (boy - 4);
-
+  const y = v => boy - 2 - ((v - enk) / ar) * (boy - 4);
   let d = "", kalem = false;
   degerler.forEach((v, i) => {
     if (v === null || !Number.isFinite(v)) { kalem = false; return; }
     d += (kalem ? "L" : "M") + (i * dx).toFixed(1) + "," + y(v).toFixed(1) + " ";
     kalem = true;
   });
-  svg.append(svgOge("path", { d, fill:"none", stroke:renk, "stroke-width":1.5,
-                              "stroke-linejoin":"round", "stroke-linecap":"round",
-                              opacity:.85 }));
-  // Son nokta işaretlenir — seçici etiketleme kuralı (5.7.2)
-  const sonIndeks = degerler.map((v, i) => [v, i]).filter(([v]) => v !== null && Number.isFinite(v)).pop();
-  if (sonIndeks)
-    svg.append(svgOge("circle", { cx:(sonIndeks[1] * dx).toFixed(1), cy:y(sonIndeks[0]).toFixed(1),
-                                  r:2, fill:renk }));
+  svg.append(s("path", { d, fill:"none", stroke:cizgiRenk, "stroke-width":1.5,
+    "stroke-linejoin":"round", "stroke-linecap":"round", opacity:.85 }));
+  const son = degerler.map((v, i) => [v, i]).filter(([v]) => v !== null && Number.isFinite(v)).pop();
+  if (son) svg.append(s("circle", { cx:(son[1] * dx).toFixed(1), cy:y(son[0]).toFixed(1),
+    r:2, fill:cizgiRenk }));
   return svg;
 }
-
-/** Yatay oran çubuğu (ölçüm kapsamı gibi). Tek hue, ince. */
-function oranCubugu(oran, { en = 120, boy = 8, renk = "var(--s1)" } = {}) {
-  const svg = svgOge("svg", { width:en, height:boy, viewBox:`0 0 ${en} ${boy}`,
-                              role:"img", "aria-hidden":"true", style:"display:block" });
-  svg.append(svgOge("rect", { x:0, y:0, width:en, height:boy, rx:boy/2, fill:"var(--kilavuz)" }));
+function oranCubugu(oran, { en = 120, boy = 8, cizgiRenk = "var(--s1)" } = {}) {
+  const svg = s("svg", { width:en, height:boy, viewBox:`0 0 ${en} ${boy}`,
+    "aria-hidden":"true", style:"display:block" });
+  svg.append(s("rect", { x:0, y:0, width:en, height:boy, rx:boy / 2, fill:"var(--kilavuz)" }));
   const g = Math.max(0, Math.min(1, oran || 0));
-  if (g > 0) svg.append(svgOge("rect", { x:0, y:0, width:(en*g).toFixed(1), height:boy,
-                                         rx:boy/2, fill:renk }));
+  if (g > 0) svg.append(s("rect", { x:0, y:0, width:(en * g).toFixed(1), height:boy,
+    rx:boy / 2, fill:cizgiRenk }));
   return svg;
 }
 
-  __x.svgOge = svgOge;
+  __x.SLOT = SLOT;
+  __x.renk = renk;
+  __x.s = s;
+  __x.sutun = sutun;
+  __x.cizgi = cizgi;
+  __x.isiHaritasi = isiHaritasi;
+  __x.pareto = pareto;
+  __x.sankey = sankey;
   __x.miniGrafik = miniGrafik;
   __x.oranCubugu = oranCubugu;
 };

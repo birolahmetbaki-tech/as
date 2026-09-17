@@ -12,6 +12,9 @@ import { ekranAktarma }  from "./ekranlar/aktarma.js";
 import { ekranGiris }    from "./ekranlar/giris.js";
 import { ekranDenetim }  from "./ekranlar/denetim.js";
 import { ekranHesaplanan } from "./ekranlar/hesaplanan.js";
+import { ekranPanel }    from "./ekranlar/panel.js";
+import { ekranTuketim }  from "./ekranlar/tuketim.js";
+import { ekranDenge }    from "./ekranlar/denge.js";
 
 /* ------------------------------------------------ ekran kayıtları (9.1) */
 const YAKINDA = (no, ad, faz, aciklama) => ({
@@ -22,15 +25,15 @@ const YAKINDA = (no, ad, faz, aciklama) => ({
 
 export const EKRANLAR = [
   { grup:"ÖZET" },
-  YAKINDA(1,"Gösterge Paneli",3,"Durumunuzu tek ekranda özetler: KPI kartları, 24 aylık enerji ve EnPI trendi, CUSUM, yıllık özet ve açık aksiyonlar."),
+  { no:1, ad:"Gösterge Paneli", hazir:true, ciz:ekranPanel },
   { grup:"VERİ" },
   { no:2, ad:"Veri Girişi", hazir:true, ciz:ekranGiris },
   { no:3, ad:"Veri Aktarma", hazir:true, ciz:ekranAktarma },
   { no:4, ad:"Veri Denetimi", hazir:true, ciz:ekranDenetim },
   { no:5, ad:"Hesaplanan Değerler", hazir:true, ciz:ekranHesaplanan },
   { grup:"ANALİZ" },
-  YAKINDA(6,"Enerji Dengesi",3,"Enerji nereye gidiyor? Sankey akış diyagramı ve ölçüm kapsamı ağacı."),
-  YAKINDA(7,"Tüketim Analizi",3,"Trend, ısı haritası, Pareto ve dönem karşılaştırması."),
+  { no:6, ad:"Enerji Dengesi", hazir:true, ciz:ekranDenge },
+  { no:7, ad:"Tüketim Analizi", hazir:true, ciz:ekranTuketim },
   YAKINDA(8,"Performans (EnPI)",4,"Platformun kalbi: baz çizgi, normalize EnPI ve CUSUM. İyileştik mi, ne zaman, ne kadar?"),
   YAKINDA(9,"Dönüşüm Verimliliği",4,"Kojenerasyon ve kazanların yakıtı ne verimle faydalı enerjiye çevirdiği."),
   YAKINDA(10,"Maliyet",4,"Maliyet artışının ne kadarı fiyattan, ne kadarı tüketimden? Fiyat/hacim ayrıştırması."),
@@ -50,7 +53,7 @@ function menuCiz() {
   const m = bosalt($("#menu"));
   m.append(el("div.marka", {},
     el("b", { metin:"Enerji Yönetim" }),
-    el("span", { metin:"Faz 2 · Veri" })));
+    el("span", { metin:"Faz 3 · Görme" })));
   for (const e of EKRANLAR) {
     if (e.grup) { m.append(el("div.menu-grup", { metin:e.grup })); continue; }
     m.append(el("button.menu-og", {
@@ -131,8 +134,8 @@ export async function baslat() {
   katmanDinle(() => seritCiz());
 
   const h = /^#e(\d+)$/.exec(location.hash);
-  durumu.ekran = h ? +h[1] : 14;
-  if (!EKRANLAR.some(e => e.no === durumu.ekran)) durumu.ekran = 14;
+  durumu.ekran = h ? +h[1] : 1;
+  if (!EKRANLAR.some(e => e.no === durumu.ekran)) durumu.ekran = 1;
 
   menuCiz(); seritCiz(); ciz();
 

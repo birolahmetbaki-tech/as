@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 0.8 — Faz 1–2 kodlandı |
+| **Sürüm** | 0.9 — Faz 1–3 kodlandı |
 | **Durum** | Kodlama **başlamadı**. Tasarım görüşmesi sürüyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -2256,6 +2256,7 @@ gözden geçirilir.
 | Sürüm | Tarih | Değişiklik |
 |---|---|---|
 | 0.1 | 2026-09-17 | İlk taslak. Excel analizi, temel ilkeler, K-01…K-08 kararları, veri modeli çerçevesi, enerji/mali denge ayrımı. |
+| 0.9 | 2026-09-17 | **Faz 3 kodlandı.** SVG grafik motoru (kütüphanesiz), Gösterge Paneli, Tüketim Analizi, Enerji Dengesi. Ölçüm kapsamının iki ekranda farklı hesaplandığı fark edildi ve tek tanıma indirildi (İ-2): `hesap.js › elektrikKapsami()`; payda şebeke + kojenerasyon elektriğidir. Varsayılan dönem aralıkları veri aralığının sonuna değil, enerji verisinin bulunduğu son döneme göre seçiliyor (GES kayıtları 2026-03'e uzandığı için). |
 | 0.8 | 2026-09-17 | **Faz 2 kodlandı.** Gerçek Excel aktarımında kaynak veride iki hata bulundu ve belgeye işlendi: **S10** (2024 Ağustos çikolata hücresi metin — Excel sessizce atlamış, 2024 EnPI'si yanlış) ve **S11** (6 negatif doğalgaz değeri). Yeni bölüm 2.5. Kabul kriterlerindeki 2024 üretim beklentisi, programın doğru davranışına göre düzeltildi (13.1, 13.2). |
 | 0.7 | 2026-09-17 | **Bölüm bölüm gözden geçirme tamamlandı.** D-01: 2.4'teki Bölüm 7 atfı Bölüm 8 olarak düzeltildi. **D-02 (K-24): motorin toplam enerjiye ve toplam maliyete dahil edildi** ve kural sabit listeden **rol filtresine** genelleştirildi; eksik değer/katsayı kenar durum kuralı yazıldı; A-07 kapandı, A-12 açıldı. D-03: 6.5'te tablo dışına düşmüş satır tabloya alındı. D-04: geçersiz `(S-2.3)` atfı düzeltildi. |
 | 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |

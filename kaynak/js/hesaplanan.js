@@ -153,6 +153,18 @@ export function uret() {
   return katman;
 }
 
+/** Enerji verisinin ÜRETİLEBİLDİĞİ son dönem.
+    Veri aralığının sonu GES gibi yan kayıtlardan gelebilir; ekranlar
+    varsayılan aralığı buna göre değil, gerçek enerji verisine göre seçer. */
+export function sonEnerjiDonemi() {
+  for (let i = katman.satirlar.length - 1; i >= 0; i--) {
+    const r = katman.satirlar[i];
+    if (Number.isFinite(r.TOPLAM_ENERJI)) return { yil: r.yil, ay: r.ay };
+  }
+  const s = katman.satirlar[katman.satirlar.length - 1];
+  return s ? { yil: s.yil, ay: s.ay } : null;
+}
+
 /** Tek dönem satırı */
 export const satir = (yil, ay) =>
   katman.satirlar.find(s => s.yil === yil && s.ay === ay) || null;

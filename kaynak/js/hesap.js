@@ -150,6 +150,39 @@ export function olcumKapsami(ustNoktaKod, altNoktaKodlari, yil, ay, birim = "kWh
   };
 }
 
+/* --------------------------------------------- elektrik ölçüm kapsamı (6.7) */
+/**
+ * TEK TANIM (İ-2). Panel ve Enerji Dengesi aynı sayıyı göstermek ZORUNDA.
+ *   toplam elektrik = şebekeden çekilen + tesis içi üretim (kojen)
+ *   ölçülen         = alt sayaçlar (toplama dahil OLMAYAN elektrik noktaları)
+ */
+export function elektrikAltSayaclari() {
+  return durum.olcum_noktalari.filter(n =>
+    n.aktif !== false && n.rol === "satin_alinan" && !n.toplama_dahil &&
+    n.birim === "kWh" && n.enerji_turu === "ELK" && n.veri_tipi === "olculen");
+}
+
+export function elektrikKapsami(yil, ay) {
+  const sebeke = noktaDeger("SEBEKE_ELK", yil, ay).deger;
+  let kojen = 0;
+  for (const n of durum.olcum_noktalari) {
+    if (n.rol !== "tesis_ici_uretim" || n.enerji_turu !== "ELK" || n.birim !== "kWh") continue;
+    if (n.veri_tipi !== "olculen") continue;          // türetilmiş "Üretilen Elektrik" iki kez saymasın
+    const d = noktaDeger(n.kod, yil, ay);
+    if (Number.isFinite(d.deger)) kojen += d.deger;
+  }
+  if (!Number.isFinite(sebeke)) return { toplam: null };
+  let olculen = 0, sayac = 0;
+  for (const n of elektrikAltSayaclari()) {
+    const d = noktaDeger(n.kod, yil, ay);
+    if (Number.isFinite(d.deger)) { olculen += d.deger; sayac++; }
+  }
+  const toplam = sebeke + kojen;
+  return { toplam, sebeke, kojen, olculen, sayac,
+           olcumeyen: toplam - olculen,
+           oran: toplam ? olculen / toplam : null };
+}
+
 /* ------------------------------------------------------------ EnPI (8.2) */
 function enpiTerimi(ifade, yil, ay, birim = "kWh") {
   if (ifade === "@TOPLAM_ENERJI_KWH") return toplamEnerji(yil, ay, birim);
