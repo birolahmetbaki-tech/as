@@ -110,6 +110,7 @@ export function cevir(v, kaynakBirim, hedefBirim, turKod, yil, ay) {
     return { deger: kwh * GJ_KARSILIGI.kWh / GJ_KARSILIGI[hedefBirim], katsayi: ara };
   }
   const t = enerjiTuru(turKod);
+  // Değer VAR ama çevrilemiyor — bu gerçek bir sorundur (6.6 kenar durumu)
   return { eksik: `${t ? t.ad : turKod} için ${kaynakBirim} → ${hedefBirim} dönüşüm katsayısı tanımlı değil` };
 }
 
@@ -209,28 +210,51 @@ function esBirimNoktasi(n) {
  */
 export function formulCoz(formul, yil, ay, cozucu = null) {
   if (!formul) return { eksik: "Formül tanımlı değil" };
-  const eksikler = [];
+
+  // İKİ AYRI DURUM (İ-3 gürültü yapmasın diye):
+  //   veriYok  → o dönemde ham veri hiç girilmemiş. NORMALDİR, sessizce null döner.
+  //   eksikler → veri VAR ama hesaplanamıyor (katsayı yok vb.). Bu bir SORUNDUR.
+  const veriYok = [], eksikler = [];
   let ifade = String(formul);
 
-  ifade = ifade.replace(/KATSAYI\(\s*([A-Z_]+)\s*,\s*([^,)]+)\s*,\s*([^)]+)\s*\)/g,
+  // 1) KATSAYI(...) çağrılarını yer tutucuya al.
+  //    Aksi halde argümanlarındaki büyük harfli tür kodu (BUH gibi) bir sonraki
+  //    adımda ölçüm noktası sanılır.
+  const katsayiCagrilari = [];
+  ifade = ifade.replace(/KATSAYI\(\s*([A-Za-z_]+)\s*,\s*([^,)]+)\s*,\s*([^)]+)\s*\)/g,
     (_, tur, kay, hed) => {
-      const k = katsayi(tur.trim(), kay.trim(), hed.trim(), yil, ay);
-      if (!k) { eksikler.push(`${tur} için ${kay.trim()} → ${hed.trim()} katsayısı tanımlı değil`); return "NaN"; }
-      return String(k.katsayi);
+      katsayiCagrilari.push({ tur: tur.trim(), kay: kay.trim(), hed: hed.trim() });
+      return `\u0001k${katsayiCagrilari.length - 1}\u0001`;   // küçük harf: tanımlayıcı taramasına yakalanmasın
     });
 
+  // 2) Ölçüm noktası kodlarını değerleriyle değiştir
   ifade = ifade.replace(/\b([A-Z][A-Z0-9_]*)\b/g, (tam) => {
-    if (/^(NaN|KATSAYI)$/.test(tam)) return tam;
+    if (tam === "NaN") return tam;
     const r = cozucu ? cozucu(tam, yil, ay)
                      : (v => v === null ? { deger: null } : { deger: v })(deger(tam, yil, ay));
-    if (r.eksik)        { eksikler.push(`${tam}: ${r.eksik}`); return "NaN"; }
-    if (r.deger === null){ eksikler.push(`${tam} değeri yok`); return "NaN"; }
+    if (r.veriYok)        { veriYok.push(r.sebep || `${tam} değeri yok`); return "NaN"; }
+    if (r.eksik)          { eksikler.push(`${tam}: ${r.eksik}`); return "NaN"; }
+    if (r.deger === null) { veriYok.push(`${tam} değeri yok`); return "NaN"; }
     return String(r.deger);
   });
 
-  if (!/^[\d+\-*/().\sNa]+$/.test(ifade)) return { eksik: "Formül çözümlenemedi" };
+  // 3) Ham veri hiç yoksa katsayı aramanın anlamı yok — sessizce çık
+  if (veriYok.length) return { deger: null, veriYok: true, sebep: veriYok[0] };
+
+  // 4) Katsayıları çöz
+  ifade = ifade.replace(/\u0001k(\d+)\u0001/g, (_, i) => {
+    const c = katsayiCagrilari[+i];
+    const k = katsayi(c.tur, c.kay, c.hed, yil, ay);
+    if (!k) { eksikler.push(`${c.tur} için ${c.kay} → ${c.hed} katsayısı tanımlı değil`); return "NaN"; }
+    return String(k.katsayi);
+  });
+
+  if (!/^[\d+\-*/().\sNa]+$/.test(ifade))
+    return { eksik: eksikler[0] || "Formül çözümlenemedi" };
   let s;
-  try { s = Function(`"use strict";return (${ifade});`)(); } catch { return { eksik: "Formül hesaplanamadı" }; }
+  try { s = Function(`"use strict";return (${ifade});`)(); }
+  catch { return { eksik: "Formül hesaplanamadı" }; }
   if (!Number.isFinite(s)) return { eksik: eksikler[0] || "Sonuç üretilemedi", eksikler };
   return { deger: s };
 }
+

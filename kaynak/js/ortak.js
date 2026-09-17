@@ -121,7 +121,10 @@ export function el(tanim, ozellik = {}, ...cocuklar) {
     else if (k === "metin") d.textContent = v;
     else if (k === "html") d.innerHTML = v;
     else if (k.startsWith("on") && typeof v === "function") d.addEventListener(k.slice(2), v);
-    else if (k === "stil") Object.assign(d.style, v);
+    else if (k === "stil") {
+      if (typeof v === "string") d.style.cssText += v;      // "color:red" biçimi
+      else Object.assign(d.style, v);
+    }
     else d.setAttribute(k, v === true ? "" : v);
   }
   for (const c of cocuklar.flat()) {

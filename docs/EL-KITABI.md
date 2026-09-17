@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 0.7 — tasarım tamamlandı, gözden geçirme tamamlandı |
+| **Sürüm** | 0.8 — Faz 1–2 kodlandı |
 | **Durum** | Kodlama **başlamadı**. Tasarım görüşmesi sürüyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -102,6 +102,8 @@ Formüllerden çıkarılan, **korunacak** kurallar:
 | S7 | F sütunu başlığı "Hat-3" olarak tekrar ediyor | Aktarımda **Hat-4** olarak düzeltilir |
 | S8 | Motorin tanımlı ama 8 yıldır boş; üstelik Excel'in toplam enerji ve toplam maliyet formüllerine **hiç dahil edilmemiş** | Enerji türü olarak tanımlanır ve **toplamlara dahil edilir** (K-24). Bugün değeri yok; tüketim başladığında giriş açıktır ve toplamlar kendiliğinden kapsar |
 | S9 | Doğalgaz m³ ve kWh **çift elle giriş** | Kullanıcı kararı (K-04); sistem tutarlılığı denetler |
+| **S10** | **Sessiz veri kaybı.** 2024 Ağustos çikolata üretimi hücresi **metin**: `286609,,4` (çift virgül). Excel'in `SUM` işlevi metni sessizce atlamış; o ayın **Toplam Üretim** değeri yalnız kakaodan oluşmuş (3.986.345 kg) ve çikolata hiç sayılmamış. Bu hata **2024 yıllık üretim toplamına ve dolayısıyla 2024 EnPI'sine** taşınmıştır | Program bu hücreyi **okumaz** ve o ayın toplam üretimini **üretmez**; nedenini yazar (İ-3). Hatayı gizlemek yerine görünür kılar. Hücre düzeltilince toplam kendiliğinden oluşur |
+| **S11** | **6 negatif değer.** Kazan-1 ve Kazan-2 doğalgaz tüketiminde: 2018 Ekim (−188.616 kWh), 2022 Nisan (−204.137 kWh), 2022 Eylül (−323.794 kWh) ve bunların m³ karşılıkları. Negatif yakıt tüketimi fiziksel olarak imkânsızdır | Aktarma bu değerleri **reddeder** ve dışarıda bırakır; hangi satır ve neden olduğunu yazar (6.8, engel kuralı) |
 
 ### 2.4 Verinin bize söylediği: EnPI zaten bir soru soruyor
 
@@ -121,6 +123,34 @@ Formüllerden çıkarılan, **korunacak** kurallar:
 > **Bu gerçek bir verimsizlik mi, yoksa sabit yükün düşük üretime bölünmesi mi?**
 > Ham EnPI bu iki sebebi ayıramaz. Platformun en önemli işlevi bu soruyu
 > cevaplamak olacak (bkz. Bölüm 8 — regresyonlu baz çizgi ve normalize EnPI).
+
+### 2.5 Kaynak verideki hatalar — programın ilk bulduğu şey
+
+Excel'in 96 aylık verisi ilk kez programa aktarıldığında **7 değer reddedildi**
+ve **1 dönem eksik kaldı**. Hepsi kaynak verideki gerçek hatalardır; hiçbiri
+program hatası değildir.
+
+| Bulgu | Etki | Programın davranışı |
+|---|---|---|
+| **S10** · 2024 Ağustos çikolata `"286609,,4"` | Excel bu ayın üretimini eksik topladı → **2024 yıllık üretim ve EnPI yanlış** | Toplam üretimi üretmez, nedenini yazar |
+| **S11** · 6 negatif doğalgaz değeri | Fiziksel olarak imkânsız; kazan verimini bozar | Aktarmada reddeder |
+
+**S10'un büyüklüğü:**
+
+| | Üretim (kg) | EnPI 2024 |
+|---|---:|---:|
+| Excel'in söylediği | 111.897.453 | 1,1728 |
+| Program (Ağustos hariç) | 107.911.108 | — |
+| Hücre `286.609,4` okunursa | 112.184.062 | 1,1698 |
+| Hücre `2.866.094` okunursa | 114.763.547 | **1,1435** |
+
+Komşu ayların çikolata üretimi 2,8–3,7 milyon kg aralığındadır; ikinci okuma
+bu aralığa oturur. Doğrusu **kullanıcı tarafından teyit edilmelidir** — sistem
+tahmin yürütmez (İ-3).
+
+> **Bu neden önemli:** 8.8'deki 2025 vakası 2024'ü referans alıyor. 2024 EnPI'si
+> 1,1728 yerine 1,1435 ise, 2025'teki bozulma %16,5 değil **%19,5**'tir.
+> Tek bir hücre, yıllık performans değerlendirmesini kaydırıyor.
 
 ---
 
@@ -2142,6 +2172,8 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 | Aktarılmayan sütunlar | BX–DD (K-02) |
 | Hat-4 başlığı | "Hat-3" değil **"Hat-4"** (S7) |
 | Motorin noktaları | **Tanımlı ve toplamlara dahil** (K-24); veri boş, yıllık toplamlar **değişmiyor** |
+| Reddedilen değer | **7** — 6 negatif doğalgaz (S11) + 1 metin hücre (S10) |
+| Aktarılan ham değer | **4.534** · 99 dönem (GES verisi 2026-03'e uzanır) |
 
 ### 13.2 Altın sayılar — yıllık toplamlar
 
@@ -2156,11 +2188,17 @@ Program içe aktarma sonrası bu tabloyu **hesaplayarak** üretmelidir
 | 2021 | 12.425.346 | 127.572.551 | **139.997.897** | 98.148.940 | **1,4264** | 41.002.718 |
 | 2022 | 24.482.137 | 99.649.227 | **124.131.364** | 107.258.078 | **1,1573** | 185.374.960 |
 | 2023 | 18.097.125 | 111.279.600 | **129.376.725** | 111.976.787 | **1,1554** | 167.503.412 |
-| 2024 | 19.248.726 | 111.987.169 | **131.235.894** | 111.897.453 | **1,1728** | 180.794.462 |
+| 2024 | 19.248.726 | 111.987.169 | **131.235.894** | 111.897.453 ⚠ | **1,1728** ⚠ | 180.794.462 |
 | 2025 | 17.199.431 | 120.168.406 | **137.367.837** | 100.503.911 | **1,3668** | 220.905.805 |
 
 **8 yıl toplamı:** enerji **1.116.013.044 kWh** · üretim **838.363.559 kg** ·
 maliyet **863.964.489 TL**
+
+> ⚠ **2024 üretim ve EnPI değerleri kaynak veri hatası içerir (S10, bkz. 2.5).**
+> Program bu iki sayıyı **kasten üretmez**: 2024 Ağustos'un toplam üretimi
+> hesaplanamaz olduğu için yıllık toplam **107.911.108 kg** çıkar. Bu bir sapma
+> değil, **doğru davranıştır** — kabul testi bu değeri bekler. Kaynak hücre
+> düzeltildiğinde beklenen değer de güncellenmelidir.
 
 ### 13.3 Nokta kontrolü — tek ay
 
@@ -2218,6 +2256,7 @@ gözden geçirilir.
 | Sürüm | Tarih | Değişiklik |
 |---|---|---|
 | 0.1 | 2026-09-17 | İlk taslak. Excel analizi, temel ilkeler, K-01…K-08 kararları, veri modeli çerçevesi, enerji/mali denge ayrımı. |
+| 0.8 | 2026-09-17 | **Faz 2 kodlandı.** Gerçek Excel aktarımında kaynak veride iki hata bulundu ve belgeye işlendi: **S10** (2024 Ağustos çikolata hücresi metin — Excel sessizce atlamış, 2024 EnPI'si yanlış) ve **S11** (6 negatif doğalgaz değeri). Yeni bölüm 2.5. Kabul kriterlerindeki 2024 üretim beklentisi, programın doğru davranışına göre düzeltildi (13.1, 13.2). |
 | 0.7 | 2026-09-17 | **Bölüm bölüm gözden geçirme tamamlandı.** D-01: 2.4'teki Bölüm 7 atfı Bölüm 8 olarak düzeltildi. **D-02 (K-24): motorin toplam enerjiye ve toplam maliyete dahil edildi** ve kural sabit listeden **rol filtresine** genelleştirildi; eksik değer/katsayı kenar durum kuralı yazıldı; A-07 kapandı, A-12 açıldı. D-03: 6.5'te tablo dışına düşmüş satır tabloya alındı. D-04: geçersiz `(S-2.3)` atfı düzeltildi. |
 | 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
 | 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |

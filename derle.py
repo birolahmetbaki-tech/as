@@ -76,6 +76,24 @@ def topla(giris: str):
         bekleyen += [b for b in bag if b not in moduller]
     return sira, moduller
 
+def denetle(govde: str) -> None:
+    """Paketi node ile ayristirir. Node yoksa sessizce atlanir."""
+    import subprocess, tempfile, shutil
+    if not shutil.which("node"):
+        print("  ! node yok — sozdizimi denetimi atlandi")
+        return
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
+        f.write(govde); yol = f.name
+    r = subprocess.run(["node", "--check", yol], capture_output=True, text=True)
+    pathlib.Path(yol).unlink(missing_ok=True)
+    if r.returncode:
+        satirlar = govde.split("\n")
+        print("SOZDIZIMI HATASI — cikti YAZILMADI:\n")
+        for c in r.stderr.split("\n")[:8]:
+            print("  " + c.replace(yol, "paket.js"))
+        sys.exit(1)
+
+
 def main():
     html = (KAYNAK / "index.html").read_text(encoding="utf-8")
     css  = (KAYNAK / "css" / "stil.css").read_text(encoding="utf-8")
@@ -116,6 +134,9 @@ __req("js/uygulama.js").baslat().catch(function (e) {
                   lambda _: "<script>\n" + govde + "\n</" + "script>", html, flags=re.S)
     damga = datetime.date.today().isoformat()
     html = html.replace("</head>", f"<!-- Derleme: {damga} · Faz 1 · Çekirdek -->\n</head>")
+
+    # Sozdizimi denetimi — bozuk paketi ASLA teslim etme
+    denetle(govde)
 
     CIKTI.mkdir(exist_ok=True)
     hedef = CIKTI / "enerji-yonetim.html"

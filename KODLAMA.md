@@ -5,7 +5,7 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 
 ## Durum
 
-**Faz 1 — Çekirdek · tamamlandı.** (El Kitabı Bölüm 12)
+**Faz 1 — Çekirdek · tamamlandı.**  **Faz 2 — Veri · tamamlandı.** (El Kitabı Bölüm 12)
 
 | Adım | İçerik | Durum |
 |---|---|---|
@@ -16,8 +16,24 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 | 1.5 | Hesap çekirdeği | ✅ |
 | 1.6 | Hesaplanan değerler katmanı (K-23) | ✅ |
 
-Sıradaki: **Faz 2 — Veri** (Ekran 2 Veri Girişi, 3 Aktarma, 4 Denetim, 5 Hesaplanan Değerler).
-Faz 2 bittiğinde Excel'e ihtiyaç kalmaz.
+| Adım | İçerik | Durum |
+|---|---|---|
+| 2.1 | Ekran 2 — Veri Girişi (dört yöntem) | ✅ |
+| 2.2 | Doğrulama kuralları | ✅ |
+| 2.3 | Ekran 3 — Veri Aktarma (.xlsx) | ✅ |
+| 2.4 | Ekran 4 — Veri Denetimi | ✅ |
+| 2.5 | Ekran 5 — Hesaplanan Değerler + Excel çıktısı | ✅ |
+
+**Excel'e ihtiyaç kalmadı.** Sıradaki: **Faz 3 — Görme** (SVG grafik motoru,
+Ekran 1 Panel, 7 Tüketim Analizi, 6 Enerji Dengesi).
+
+## .xlsx okuma/yazma — kütüphanesiz
+
+K-15 ~400 KB'lık bir kütüphane gömmeyi öngörüyordu. Bunun yerine `js/xlsx.js`
+yazıldı (~280 satır, sıfır bağımlılık): bir .xlsx zaten XML içeren bir ZIP'tir;
+tarayıcının `DecompressionStream` / `CompressionStream` ve `DOMParser`
+arayüzleri işi görür (K-11: Chrome/Edge). Gerçek 108 sütunluk dosya **63 ms**'de
+okunuyor; yazma gidiş-dönüş yapıyor.
 
 ## Kullanım
 
@@ -71,6 +87,14 @@ python3 betikler/kabul.py    # El Kitabı Bölüm 13 kabul kriterleri
 Ayrıca: hesap katmanının her değişimde yeniden üretilmesi (K-23), doğrulama
 kuralları (6.8), motorin kenar durumu (K-24) ve yedek gidiş-dönüşü (K-10).
 **16 kontrol, hepsi geçiyor.**
+
+`faz2.py` uçtan uca çalışır: gerçek Excel'i içe aktarır, **8 yılın bütün yıllık
+altın sayılarını** doğrular, kaynak veri hatalarının yakalandığını sınar ve iki
+sayfalı Excel çıktısının gidiş-dönüşünü kontrol eder. **36 kontrol, hepsi
+geçiyor.**
+
+> `derle.py` artık çıktıyı `node --check` ile ayrıştırır; sözdizimi hatası
+> varsa dosya **yazılmaz**. Bozuk bir paket teslim edilemez.
 
 ## Başlangıç tanımlarını yeniden üretmek
 

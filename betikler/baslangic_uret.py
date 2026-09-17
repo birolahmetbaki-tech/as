@@ -6,7 +6,7 @@ Cikti: kaynak/baslangic.json  -- programa gomulur.
 
 El kitabi atiflari: K-02, K-05, K-07, K-16, K-24, 6.2, 6.4, 6.6
 """
-import json, pathlib
+import json, pathlib, re
 
 # ---------------------------------------------------------------- varlik agaci
 # K-05: serbest derinlik. Bu yalnizca BASLANGIC onerisidir; kullanici degistirir.
@@ -179,8 +179,14 @@ def main():
         if v["kod"] in ("GM1","GM2","GM3"):
             v["devreden_cikis"]="2024-12"
             v["not"]="S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli."
+    def sutun(n):
+        """Not alanindaki 'Excel AB' bilgisinden sutun harfini cikarir.
+        Ilk ice aktarmada otomatik eslestirme icin kullanilir (K-15, 9.4)."""
+        m = re.search(r"Excel ([A-Z]{1,2})\b", n or "")
+        return m.group(1) if m else None
     noktalar=[{"kod":k,"varlik":v,"ad":ad,"enerji_turu":et,"birim":b,"rol":r,
-               "toplama_dahil":td,"veri_tipi":vt,"formul":f,"aktif":True,"not":n}
+               "toplama_dahil":td,"veri_tipi":vt,"formul":f,"aktif":True,
+               "excel_sutun":sutun(n),"not":n}
               for (k,v,ad,et,b,r,td,vt,f,n) in N]
     kodlar=[x["kod"] for x in noktalar]
     assert len(kodlar)==len(set(kodlar)), "tekrar eden olcum noktasi kodu"
@@ -203,6 +209,8 @@ def main():
     print(f"    hesaplanan  : {sum(1 for x in noktalar if x['veri_tipi']!='olculen')}")
     print(f"    toplama dahil: {sum(1 for x in noktalar if x['toplama_dahil'])}")
     print(f"  katsayı       : {len(KATSAYILAR)}   EnPI: {len(ENPI)}")
+    es = sum(1 for x in noktalar if x["excel_sutun"])
+    print(f"  Excel eşlemesi: {es} nokta otomatik eşleşecek")
 
 if __name__=="__main__":
     main()

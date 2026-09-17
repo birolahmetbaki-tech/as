@@ -472,6 +472,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "N",
    "not": "Excel N"
   },
   {
@@ -485,6 +486,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "V",
    "not": "Excel V"
   },
   {
@@ -498,6 +500,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "X",
    "not": "Excel X"
   },
   {
@@ -511,6 +514,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "Z",
    "not": "Excel Z"
   },
   {
@@ -524,6 +528,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AE",
    "not": "Excel AE - K-24: toplama dahil"
   },
   {
@@ -537,6 +542,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "W",
    "not": "Excel W - kWh ile tutarlilik denetlenir"
   },
   {
@@ -550,6 +556,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "Y",
    "not": "Excel Y"
   },
   {
@@ -563,6 +570,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AA",
    "not": "Excel AA"
   },
   {
@@ -576,6 +584,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "O",
    "not": "Excel O - K-13 mahsup oncesi brut"
   },
   {
@@ -589,6 +598,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AD",
    "not": "Excel AD"
   },
   {
@@ -602,6 +612,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AF",
    "not": "Excel AF - K-24"
   },
   {
@@ -615,6 +626,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "R",
    "not": "Excel R"
   },
   {
@@ -628,6 +640,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "S",
    "not": "Excel S - A-11: mahsup/satis ayrismamis"
   },
   {
@@ -641,6 +654,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "T",
    "not": "Excel T"
   },
   {
@@ -654,6 +668,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "U",
    "not": "Excel U"
   },
   {
@@ -667,6 +682,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "G",
    "not": "Excel G"
   },
   {
@@ -680,6 +696,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "H",
    "not": "Excel H"
   },
   {
@@ -693,6 +710,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "I",
    "not": "Excel I"
   },
   {
@@ -706,6 +724,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "J",
    "not": "Excel J"
   },
   {
@@ -719,6 +738,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "L",
    "not": "Excel L"
   },
   {
@@ -732,6 +752,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AI",
    "not": "Excel AI - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -745,6 +766,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AJ",
    "not": "Excel AJ"
   },
   {
@@ -758,6 +780,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AK",
    "not": "Excel AK"
   },
   {
@@ -771,6 +794,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AL",
    "not": "Excel AL"
   },
   {
@@ -784,6 +808,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "TURBIN_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -797,6 +822,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AN",
    "not": "Excel AN - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -810,6 +836,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AO",
    "not": "Excel AO"
   },
   {
@@ -823,6 +850,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AP",
    "not": "Excel AP"
   },
   {
@@ -836,6 +864,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AQ",
    "not": "Excel AQ"
   },
   {
@@ -849,6 +878,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "GM1_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -862,6 +892,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AS",
    "not": "Excel AS"
   },
   {
@@ -875,6 +906,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AT",
    "not": "Excel AT - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -888,6 +920,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AU",
    "not": "Excel AU"
   },
   {
@@ -901,6 +934,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AV",
    "not": "Excel AV"
   },
   {
@@ -914,6 +948,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AW",
    "not": "Excel AW"
   },
   {
@@ -927,6 +962,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "GM2_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -940,6 +976,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AY",
    "not": "Excel AY"
   },
   {
@@ -953,6 +990,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "AZ",
    "not": "Excel AZ - istasyon olcumunun alt kirilimi, toplama girmez"
   },
   {
@@ -966,6 +1004,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BA",
    "not": "Excel BA"
   },
   {
@@ -979,6 +1018,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BB",
    "not": "Excel BB"
   },
   {
@@ -992,6 +1032,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BC",
    "not": "Excel BC"
   },
   {
@@ -1005,6 +1046,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "GM3_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6 - tarihli katsayi"
   },
   {
@@ -1018,6 +1060,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BE",
    "not": "Excel BE"
   },
   {
@@ -1031,6 +1074,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BF",
    "not": "Excel BF - alt kirilim"
   },
   {
@@ -1044,6 +1088,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BG",
    "not": "Excel BG"
   },
   {
@@ -1057,6 +1102,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BH",
    "not": "Excel BH"
   },
   {
@@ -1070,6 +1116,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "KAZAN1_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6"
   },
   {
@@ -1083,6 +1130,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BJ",
    "not": "Excel BJ - alt kirilim"
   },
   {
@@ -1096,6 +1144,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BK",
    "not": "Excel BK"
   },
   {
@@ -1109,6 +1158,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BL",
    "not": "Excel BL"
   },
   {
@@ -1122,6 +1172,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "KAZAN2_BUH_KG * KATSAYI(BUH,kg,kWh)",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6"
   },
   {
@@ -1135,6 +1186,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BN",
    "not": "Excel BN - alt sayac, kapsama girer"
   },
   {
@@ -1148,6 +1200,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BO",
    "not": "Excel BO - alt sayac, kapsama girer"
   },
   {
@@ -1161,6 +1214,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BP",
    "not": "Excel BP - alt sayac, kapsama girer"
   },
   {
@@ -1174,6 +1228,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BQ",
    "not": "Excel BQ - alt sayac, kapsama girer"
   },
   {
@@ -1187,6 +1242,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BR",
    "not": "Excel BR - alt sayac, kapsama girer"
   },
   {
@@ -1200,6 +1256,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BS",
    "not": "Excel BS - alt sayac, kapsama girer"
   },
   {
@@ -1213,6 +1270,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BT",
    "not": "Excel BT - alt sayac, kapsama girer"
   },
   {
@@ -1226,6 +1284,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BU",
    "not": "Excel BU - alt sayac, kapsama girer"
   },
   {
@@ -1239,6 +1298,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BV",
    "not": "Excel BV - alt sayac, kapsama girer"
   },
   {
@@ -1252,6 +1312,7 @@
    "veri_tipi": "olculen",
    "formul": null,
    "aktif": true,
+   "excel_sutun": "BW",
    "not": "Excel BW - alt sayac, kapsama girer"
   },
   {
@@ -1265,6 +1326,7 @@
    "veri_tipi": "dagitilmis",
    "formul": "CEKIRDEK_KG * 0.34",
    "aktif": true,
+   "excel_sutun": null,
    "not": "2.2 - olcum degil, sabit oranla dagitim"
   },
   {
@@ -1278,6 +1340,7 @@
    "veri_tipi": "dagitilmis",
    "formul": "CEKIRDEK_KG * 0.12",
    "aktif": true,
+   "excel_sutun": null,
    "not": "2.2"
   },
   {
@@ -1291,6 +1354,7 @@
    "veri_tipi": "dagitilmis",
    "formul": "CEKIRDEK_KG * 0.32",
    "aktif": true,
+   "excel_sutun": null,
    "not": "2.2"
   },
   {
@@ -1304,6 +1368,7 @@
    "veri_tipi": "dagitilmis",
    "formul": "CEKIRDEK_KG * 0.22",
    "aktif": true,
+   "excel_sutun": null,
    "not": "2.2 - S7: Excel'de basligi yanlis"
   },
   {
@@ -1317,6 +1382,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "KAKAO_YAG + KAKAO_TOZ + KAKAO_LIKOR",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6"
   },
   {
@@ -1330,6 +1396,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "TOPLAM_KAKAO + CIKOLATA_KG",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6"
   },
   {
@@ -1343,6 +1410,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "TURBIN_EL + GM1_EL + GM2_EL + GM3_EL",
    "aktif": true,
+   "excel_sutun": null,
    "not": "6.6"
   },
   {
@@ -1356,6 +1424,7 @@
    "veri_tipi": "hesaplanan",
    "formul": "MOTORIN_KG * KATSAYI(MOT,kg,kWh)",
    "aktif": true,
+   "excel_sutun": null,
    "not": "K-24, A-12 - katsayi tanimsiz"
   }
  ],

@@ -8,6 +8,10 @@ import BASLANGIC from "./baslangic.js";
 
 import { ekranTanimlar } from "./ekranlar/tanimlar.js";
 import { ekranAyarlar }  from "./ekranlar/ayarlar.js";
+import { ekranAktarma }  from "./ekranlar/aktarma.js";
+import { ekranGiris }    from "./ekranlar/giris.js";
+import { ekranDenetim }  from "./ekranlar/denetim.js";
+import { ekranHesaplanan } from "./ekranlar/hesaplanan.js";
 
 /* ------------------------------------------------ ekran kayıtları (9.1) */
 const YAKINDA = (no, ad, faz, aciklama) => ({
@@ -20,10 +24,10 @@ export const EKRANLAR = [
   { grup:"ÖZET" },
   YAKINDA(1,"Gösterge Paneli",3,"Durumunuzu tek ekranda özetler: KPI kartları, 24 aylık enerji ve EnPI trendi, CUSUM, yıllık özet ve açık aksiyonlar."),
   { grup:"VERİ" },
-  YAKINDA(2,"Veri Girişi",2,"Aylık verilerin girildiği ana ekran. Dört giriş yöntemi, geçen ay ve geçen yıl karşılaştırması, canlı özet şeridi."),
-  YAKINDA(3,"Veri Aktarma",2,"Excel dosyanızı sürükleyip bırakarak içe aktarma; önizleme, ya hep ya hiç kuralı ve güvenlik yedeği."),
-  YAKINDA(4,"Veri Denetimi",2,"Bütün veri setinin sağlığı: eksik veri haritası, şüpheli değerler, tutarsızlıklar."),
-  YAKINDA(5,"Hesaplanan Değerler",2,"Hesap motorunun camdan kutusu: dönem × hesaplanan değer tablosu, her sütunun formülü ve iki sayfalı Excel çıktısı."),
+  { no:2, ad:"Veri Girişi", hazir:true, ciz:ekranGiris },
+  { no:3, ad:"Veri Aktarma", hazir:true, ciz:ekranAktarma },
+  { no:4, ad:"Veri Denetimi", hazir:true, ciz:ekranDenetim },
+  { no:5, ad:"Hesaplanan Değerler", hazir:true, ciz:ekranHesaplanan },
   { grup:"ANALİZ" },
   YAKINDA(6,"Enerji Dengesi",3,"Enerji nereye gidiyor? Sankey akış diyagramı ve ölçüm kapsamı ağacı."),
   YAKINDA(7,"Tüketim Analizi",3,"Trend, ısı haritası, Pareto ve dönem karşılaştırması."),
@@ -46,7 +50,7 @@ function menuCiz() {
   const m = bosalt($("#menu"));
   m.append(el("div.marka", {},
     el("b", { metin:"Enerji Yönetim" }),
-    el("span", { metin:"Faz 1 · Çekirdek" })));
+    el("span", { metin:"Faz 2 · Veri" })));
   for (const e of EKRANLAR) {
     if (e.grup) { m.append(el("div.menu-grup", { metin:e.grup })); continue; }
     m.append(el("button.menu-og", {

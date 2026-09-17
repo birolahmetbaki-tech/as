@@ -15,7 +15,8 @@ export const katman = {
   uretim: null,        // ISO zaman damgası
   sure: 0,             // ms
   hucre: 0,
-  eksikler: [],        // üretilemeyen değerler ve nedenleri (İ-3)
+  eksikler: [],        // HESAPLANAMAYAN: veri var ama katsayı/formül eksik (İ-3) — sorundur
+  bosluklar: [],       // VERİ BOŞLUĞU: ham veri girilmemiş — normaldir ama görünür olmalı (İ-4)
 };
 
 const dinleyiciler = new Set();
@@ -116,7 +117,7 @@ export function uret() {
   const sutunlar = sutunlariKur();
   const ar = veriAraligi();
   const satirlar = [];
-  const eksikler = [];
+  const eksikler = [], bosluklar = [];
 
   if (ar) {
     for (const { yil, ay } of donemAraligi(ar.ilk.yil, ar.ilk.ay, ar.son.yil, ar.son.ay)) {
@@ -128,6 +129,10 @@ export function uret() {
           satir[s.kod] = null;
           satir["_eksik_" + s.kod] = r.eksik;
           eksikler.push({ donem: satir.kod, sutun: s.kod, ad: s.ad, sebep: r.eksik });
+        } else if (r?.veriYok) {
+          satir[s.kod] = null;
+          satir["_bosluk_" + s.kod] = r.sebep;
+          bosluklar.push({ donem: satir.kod, sutun: s.kod, ad: s.ad, sebep: r.sebep });
         } else {
           satir[s.kod] = r?.deger ?? null;
         }
@@ -142,6 +147,7 @@ export function uret() {
   katman.sure     = Math.round(performance.now() - t0);
   katman.hucre    = satirlar.length * sutunlar.length;
   katman.eksikler = eksikler;
+  katman.bosluklar = bosluklar;
 
   for (const fn of dinleyiciler) { try { fn(katman); } catch (e) { console.error(e); } }
   return katman;

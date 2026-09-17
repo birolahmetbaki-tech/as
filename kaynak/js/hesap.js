@@ -31,7 +31,7 @@ export function noktaDeger(kod, yil, ay, ziyaret = null) {
   z.add(kod);
   const r = formulCoz(n.formul, yil, ay, (k, y, a) => noktaDeger(k, y, a, z));
   z.delete(kod);
-  return r;
+  return r;   // {deger} | {deger:null, veriYok, sebep} | {eksik}
 }
 
 /* ------------------------------------------------- toplam enerji (K-24) */
@@ -164,6 +164,8 @@ export function enpi(tanimKod, yil, ay) {
   const p = enpiTerimi(t.pay, yil, ay), q = enpiTerimi(t.payda, yil, ay);
   if (p.eksik) return { eksik: `Pay: ${p.eksik}` };
   if (q.eksik) return { eksik: `Payda: ${q.eksik}` };
+  if (p.veriYok) return { deger: null, veriYok: true, sebep: `Pay: ${p.sebep}` };
+  if (q.veriYok) return { deger: null, veriYok: true, sebep: `Payda: ${q.sebep}` };
   if (p.deger === null || q.deger === null) return { deger: null };
   if (!q.deger) return { eksik: "Payda sıfır" };
   return { deger: p.deger / q.deger, pay: p.deger, payda: q.deger, tanim: t };
