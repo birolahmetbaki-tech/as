@@ -57,7 +57,7 @@
       <td class="muted">{{ item.record.note or "" }}</td>
       <td class="right">
         <form method="post" action="/dogrudan-tuketim/{{ item.record.id }}/sil"
-              onsubmit="return confirm('{{ item.label }} · {{ item.record.energy_type.name }} doğrudan tüketim kaydı silinecek. Bu aydan sonra o ay için sayaç tüketimi kullanılacaktır. Onaylıyor musunuz?')">
+              data-onay="{{ item.label }} · {{ item.record.energy_type.name }} doğrudan tüketim kaydı silinecek. Bu aydan sonra o ay için sayaç tüketimi kullanılacaktır. Onaylıyor musunuz?">
           <button class="link danger" type="submit">Sil</button>
         </form>
       </td>

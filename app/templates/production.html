@@ -36,7 +36,7 @@
       <td>{{ record.unit }}</td>
       <td class="right">
         <form method="post" action="/uretim/{{ record.id }}/sil"
-              onsubmit="return confirm('{{ record.production_date.strftime('%d.%m.%Y') }} tarihli üretim kaydı silinecek. Onaylıyor musunuz?')">
+              data-onay="{{ record.production_date.strftime('%d.%m.%Y') }} tarihli üretim kaydı silinecek. Onaylıyor musunuz?">
           <button class="link danger" type="submit">Sil</button>
         </form>
       </td>

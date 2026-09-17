@@ -73,7 +73,7 @@
       <td class="muted">{{ reading.note or "" }}</td>
       <td class="right">
         <form method="post" action="/okumalar/{{ reading.id }}/sil"
-              onsubmit="return confirm('{{ reading.meter.name }} sayacının {{ reading.reading_date.strftime('%d.%m.%Y') }} tarihli okuması silinecek. Bu okuma silinirse ilgili dönem tüketimleri değişir: silinen okumanın iki yanındaki okumalar eşleşeceği için gösterge paneli, raporlar, maliyet ve EnPI değerleri de değişebilir. Onaylıyor musunuz?')">
+              data-onay="{{ reading.meter.name }} sayacının {{ reading.reading_date.strftime('%d.%m.%Y') }} tarihli okuması silinecek. Bu okuma silinirse ilgili dönem tüketimleri değişir: silinen okumanın iki yanındaki okumalar eşleşeceği için gösterge paneli, raporlar, maliyet ve EnPI değerleri de değişebilir. Onaylıyor musunuz?">
           <button class="link danger" type="submit">Sil</button>
         </form>
       </td>

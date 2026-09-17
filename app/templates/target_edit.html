@@ -36,7 +36,7 @@
 </form>
 
 <form class="card-form" method="post" action="/hedefler/{{ target.id }}/sil"
-      onsubmit="return confirm('{{ ay_adi(target.year_month) }} hedefi silinecek. Onaylıyor musunuz?')">
+      data-onay="{{ ay_adi(target.year_month) }} hedefi silinecek. Onaylıyor musunuz?">
   <p class="muted small">Bu hedefin hiç olmaması gerekiyorsa kaydı silebilirsiniz.</p>
   <div class="actions"><button class="link danger" type="submit">Hedefi sil</button></div>
 </form>

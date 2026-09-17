@@ -75,7 +75,7 @@
       <td class="muted">{{ item.record.note or "" }}</td>
       <td class="right">
         <form method="post" action="/tanimlar/donusum-katsayilari/{{ item.record.id }}/sil"
-              onsubmit="return confirm('{{ item.record.energy_type.name }} · {{ item.record.valid_from.strftime('%d.%m.%Y') }} tarihli katsayı silinecek. Bu dönem için toplam enerji hesaplanamayabilir. Onaylıyor musunuz?')">
+              data-onay="{{ item.record.energy_type.name }} · {{ item.record.valid_from.strftime('%d.%m.%Y') }} tarihli katsayı silinecek. Bu dönem için toplam enerji hesaplanamayabilir. Onaylıyor musunuz?">
           <button class="link danger" type="submit">Sil</button>
         </form>
       </td>

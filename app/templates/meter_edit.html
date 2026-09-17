@@ -50,6 +50,14 @@
     <input id="multiplier" name="multiplier" inputmode="decimal"
            value="{{ form.multiplier if form else meter.multiplier }}" required>
   </div>
+  <p class="muted small">
+    <strong>Çarpan:</strong> iki okuma arasındaki endeks farkı bu katsayıyla
+    çarpılarak tüketime çevrilir. Sayaç ile gerçek devre arasında ölçü
+    trafosu (örn. 200/5) veya benzeri bir dönüştürme varsa o katsayıyı girin.
+    Endeksi doğrudan okunan sayaçlarda bu değer çoğunlukla 1'dir; emin
+    değilseniz sayacın etiketini veya montaj belgesini kontrol edin. Yanlış
+    çarpan tüketimi sessizce yanlış hesaplar.
+  </p>
   <label class="check">
     <input type="checkbox" name="is_main"
            {{ "checked" if (form.is_main if form else meter.is_main) }}>

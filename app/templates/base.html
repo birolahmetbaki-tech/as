@@ -29,6 +29,19 @@
     {% if error %}<p class="error">{{ error }}</p>{% endif %}
     {% block content %}{% endblock %}
   </main>
+
+  {# Silme onayi. Onay metni data-onay ozniteliginde durur ve DOM uzerinden
+     okunur; kullanici metni (sayac adi, enerji turu adi) hicbir zaman bir
+     JavaScript dizesinin icine gomulmez. Boylece ad icinde ' " & < >
+     gecmesi onayi bozamaz. #}
+  <script>
+    document.addEventListener("submit", function (olay) {
+      var mesaj = olay.target.dataset ? olay.target.dataset.onay : null;
+      if (mesaj && !window.confirm(mesaj)) {
+        olay.preventDefault();
+      }
+    });
+  </script>
   {% endblock %}
 </body>
 </html>
