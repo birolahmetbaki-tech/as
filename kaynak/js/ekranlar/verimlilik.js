@@ -418,8 +418,9 @@ function katsayiUyarisi(k, ekipman) {
         etki.slice(0, 3).map(x => `${x.ad} ${x.puan > 0 ? "−" : "+"}${say(Math.abs(x.puan), 1)} puan`).join(", ") +
         ". Verim düşüşünün bu kadarı fizik değil, VARSAYIM değişimidir. "
       : "") +
-    "Hangi entalpinin doğru olduğu ve değişimin gerekçesi teyit bekliyor (A-08). " +
-    "Katsayının hangi dönemde ne olduğu Tanımlar › Katsayılar ekranında görülür (6.6, İ-5)."));
+    "Her dönem kendi katsayısıyla hesaplanır; ikisi de kendi döneminde geçerlidir " +
+    "(A-08, kullanıcı teyidi). Katsayının hangi dönemde ne olduğu " +
+    "Tanımlar › Katsayılar ekranında görülür (6.6, İ-5)."));
 }
 
 /* ------------------------- imkânsız verim: veri sorunu, performans değil */
@@ -454,8 +455,14 @@ function atanmamisUyarisi(k) {
       `İstasyon sayaçları ${say(a.satinAlinan, 0)} kWh, ekipman sayaçları ` +
       `${say(a.ekipman, 0)} kWh gösteriyor; fark ${say(Math.abs(a.atanmamis), 0)} kWh. ` +
       (a.atanmamis > 0
-        ? "Bu gaz bir yerde yakılıyor ama hangi ekipmanda olduğu bilinmiyor; " +
-          "ekipman verimleri bu yüzden olduğundan yüksek görünebilir."
+        ? (a.olcumsuz?.length
+            ? "Bu gazın bilinen tüketicileri var ama sayaçları yok: " +
+              a.olcumsuz.map(x => `${x.ad} (${x.besleyenAd})`).join(", ") +
+              ". Tükettikleri gaz istasyon ölçümünün içindedir, ekipman " +
+              "ölçümlerinde görünmez — bu yüzden ölçülen ekipmanların verimi " +
+              "olduğundan yüksek çıkabilir."
+            : "Bu gaz bir yerde yakılıyor ama hangi ekipmanda olduğu bilinmiyor; " +
+              "ekipman verimleri bu yüzden olduğundan yüksek görünebilir.")
         : "Ekipman ölçümlerinin toplamı istasyon ölçümünü aşıyor — biri hatalı.") +
       " Bu fark, alt sayaç yatırımının nereye yapılacağını söyleyen sayıdır (6.7, A-05)."));
   }

@@ -50,7 +50,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "GIRIS",
@@ -61,7 +62,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "SEBEKE",
@@ -72,7 +74,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "IST1",
@@ -83,7 +86,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "IST2",
@@ -94,7 +98,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "IST3",
@@ -105,7 +110,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "MOTORIN",
@@ -116,7 +122,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "DONUSUM",
@@ -127,7 +134,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "TURBIN",
@@ -138,7 +146,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "GM1",
@@ -149,7 +158,8 @@
    "devreye_giris": null,
    "devreden_cikis": "2024-12",
    "aktif": true,
-   "not": "S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli."
+   "not": "S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli.",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "GM2",
@@ -160,7 +170,8 @@
    "devreye_giris": null,
    "devreden_cikis": "2024-12",
    "aktif": true,
-   "not": "S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli."
+   "not": "S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli.",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "GM3",
@@ -171,7 +182,8 @@
    "devreye_giris": null,
    "devreden_cikis": "2024-12",
    "aktif": true,
-   "not": "S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli."
+   "not": "S6: 2025 boyunca veri yok, devreden çıkarılmış görünüyor. Teyit edilmeli.",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KAZAN1",
@@ -182,7 +194,8 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KAZAN2",
@@ -193,271 +206,332 @@
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
+  },
+  {
+   "kod": "SSU_KAZAN",
+   "ust": "DONUSUM",
+   "ad": "Sıcak Su Kazanı",
+   "tip": "ekipman",
+   "sira": 140,
+   "devreye_giris": null,
+   "devreden_cikis": null,
+   "aktif": true,
+   "not": "A-05 cevabi: bu tuketici IST1 istasyonundan besleniyor ama SAYACI YOK. Tukettigi gaz istasyon olcumunun icindedir, ekipman olcumlerinde gorunmez.",
+   "olcumsuz_besleyen": "IST1"
+  },
+  {
+   "kod": "URETIM_GAZ",
+   "ust": "DONUSUM",
+   "ad": "Üretimde Doğrudan Gaz",
+   "tip": "ekipman",
+   "sira": 150,
+   "devreye_giris": null,
+   "devreden_cikis": null,
+   "aktif": true,
+   "not": "A-05 cevabi: bu tuketici IST1 istasyonundan besleniyor ama SAYACI YOK. Tukettigi gaz istasyon olcumunun icindedir, ekipman olcumlerinde gorunmez.",
+   "olcumsuz_besleyen": "IST1"
+  },
+  {
+   "kod": "BACA",
+   "ust": "DONUSUM",
+   "ad": "Baca Yakıcıları",
+   "tip": "ekipman",
+   "sira": 160,
+   "devreye_giris": null,
+   "devreden_cikis": null,
+   "aktif": true,
+   "not": "A-05 cevabi: bu tuketici IST2 istasyonundan besleniyor ama SAYACI YOK. Tukettigi gaz istasyon olcumunun icindedir, ekipman olcumlerinde gorunmez.",
+   "olcumsuz_besleyen": "IST2"
   },
   {
    "kod": "YARDIMCI",
    "ust": "FAB",
    "ad": "Yardımcı Tesisler",
    "tip": "grup",
-   "sira": 140,
+   "sira": 170,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KOMP",
    "ust": "YARDIMCI",
    "ad": "Kompresörler",
    "tip": "grup",
-   "sira": 150,
+   "sira": 180,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KOMP1",
    "ust": "KOMP",
    "ad": "Kompresör 1",
    "tip": "ekipman",
-   "sira": 160,
+   "sira": 190,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KOMP2",
    "ust": "KOMP",
    "ad": "Kompresör 2",
    "tip": "ekipman",
-   "sira": 170,
+   "sira": 200,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KOMP3",
    "ust": "KOMP",
    "ad": "Kompresör 3",
    "tip": "ekipman",
-   "sira": 180,
+   "sira": 210,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KOMP4",
    "ust": "KOMP",
    "ad": "Kompresör 4",
    "tip": "ekipman",
-   "sira": 190,
+   "sira": 220,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CHILLER",
    "ust": "YARDIMCI",
    "ad": "Chiller'lar",
    "tip": "grup",
-   "sira": 200,
+   "sira": 230,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CH_KAKAO",
    "ust": "CHILLER",
    "ad": "Kakao Chiller",
    "tip": "ekipman",
-   "sira": 210,
+   "sira": 240,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CH_PULV",
    "ust": "CHILLER",
    "ad": "Pulvarizatör Chiller",
    "tip": "ekipman",
-   "sira": 220,
+   "sira": 250,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CH_BLOK",
    "ust": "CHILLER",
    "ad": "Blok Paketleme Chiller",
    "tip": "ekipman",
-   "sira": 230,
+   "sira": 260,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CH_FINER1",
    "ust": "CHILLER",
    "ad": "Finer-1 Chiller",
    "tip": "ekipman",
-   "sira": 240,
+   "sira": 270,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CH_FINER2",
    "ust": "CHILLER",
    "ad": "Finer-2 Chiller",
    "tip": "ekipman",
-   "sira": 250,
+   "sira": 280,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CH_TREN",
    "ust": "CHILLER",
    "ad": "Tren Chiller",
    "tip": "ekipman",
-   "sira": 260,
+   "sira": 290,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "URETIM",
    "ust": "FAB",
    "ad": "Üretim",
    "tip": "grup",
-   "sira": 270,
+   "sira": 300,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "KAKAO",
    "ust": "URETIM",
    "ad": "Kakao Prosesi",
    "tip": "proses",
-   "sira": 280,
+   "sira": 310,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "CIKOLATA",
    "ust": "URETIM",
    "ad": "Çikolata Prosesi",
    "tip": "proses",
-   "sira": 290,
+   "sira": 320,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "HATLAR",
    "ust": "URETIM",
    "ad": "Çekirdek Hatları",
    "tip": "grup",
-   "sira": 300,
+   "sira": 330,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "HAT1",
    "ust": "HATLAR",
    "ad": "Hat-1",
    "tip": "hat",
-   "sira": 310,
+   "sira": 340,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "HAT2",
    "ust": "HATLAR",
    "ad": "Hat-2",
    "tip": "hat",
-   "sira": 320,
+   "sira": 350,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "HAT3",
    "ust": "HATLAR",
    "ad": "Hat-3",
    "tip": "hat",
-   "sira": 330,
+   "sira": 360,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "HAT4",
    "ust": "HATLAR",
    "ad": "Hat-4",
    "tip": "hat",
-   "sira": 340,
+   "sira": 370,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "GES",
    "ust": null,
    "ad": "Güneş Santralleri",
    "tip": "tesis",
-   "sira": 350,
+   "sira": 380,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "GES_YOZGAT",
    "ust": "GES",
    "ad": "Yozgat GES",
    "tip": "santral",
-   "sira": 360,
+   "sira": 390,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   },
   {
    "kod": "GES_ADANA",
    "ust": "GES",
    "ad": "Adana GES",
    "tip": "santral",
-   "sira": 370,
+   "sira": 400,
    "devreye_giris": null,
    "devreden_cikis": null,
    "aktif": true,
-   "not": ""
+   "not": "",
+   "olcumsuz_besleyen": null
   }
  ],
  "olcum_noktalari": [
@@ -652,7 +726,7 @@
   {
    "kod": "GES_YOZ_TL",
    "varlik": "GES_YOZGAT",
-   "ad": "Yozgat GES Geliri",
+   "ad": "Yozgat GES Mahsubu",
    "enerji_turu": null,
    "birim": "TL",
    "rol": "gelir",
@@ -662,7 +736,22 @@
    "aktif": true,
    "excel_sutun": "S",
    "fatura_tuketim": [],
-   "not": "Excel S - A-11: mahsup/satis ayrismamis"
+   "not": "Excel S - 2026-03'e kadarki degerler mahsup ve satisin TOPLAMIDIR (A-11)"
+  },
+  {
+   "kod": "GES_YOZ_SATIS",
+   "varlik": "GES_YOZGAT",
+   "ad": "Yozgat GES Şebekeye Satışı",
+   "enerji_turu": null,
+   "birim": "TL",
+   "rol": "gelir",
+   "toplama_dahil": false,
+   "veri_tipi": "olculen",
+   "formul": null,
+   "aktif": true,
+   "excel_sutun": null,
+   "fatura_tuketim": [],
+   "not": "A-11: mahsup sonrasi fazla uretimin satisi - ayri girilir"
   },
   {
    "kod": "GES_ADA_KWH",
@@ -682,7 +771,7 @@
   {
    "kod": "GES_ADA_TL",
    "varlik": "GES_ADANA",
-   "ad": "Adana GES Geliri",
+   "ad": "Adana GES Mahsubu",
    "enerji_turu": null,
    "birim": "TL",
    "rol": "gelir",
@@ -692,7 +781,22 @@
    "aktif": true,
    "excel_sutun": "U",
    "fatura_tuketim": [],
-   "not": "Excel U"
+   "not": "Excel U - 2026-03'e kadarki degerler mahsup ve satisin TOPLAMIDIR (A-11)"
+  },
+  {
+   "kod": "GES_ADA_SATIS",
+   "varlik": "GES_ADANA",
+   "ad": "Adana GES Şebekeye Satışı",
+   "enerji_turu": null,
+   "birim": "TL",
+   "rol": "gelir",
+   "toplama_dahil": false,
+   "veri_tipi": "olculen",
+   "formul": null,
+   "aktif": true,
+   "excel_sutun": null,
+   "fatura_tuketim": [],
+   "not": "A-11: mahsup sonrasi fazla uretimin satisi - ayri girilir"
   },
   {
    "kod": "CEKIRDEK_KG",
@@ -1523,6 +1627,15 @@
    "gecerli_baslangic": "2018-01",
    "kaynak": "Excel formülü: kg × 600 / 860",
    "not": "600 kcal/kg entalpi ÷ 860 kcal/kWh = 0,697674 kWh/kg. A-08: basınca göre değişken mi, teyit bekliyor."
+  },
+  {
+   "enerji_turu": "MOT",
+   "kaynak_birim": "kg",
+   "hedef_birim": "kWh",
+   "katsayi": 11.9,
+   "gecerli_baslangic": "2018-01",
+   "kaynak": "Kullanici teyidi (A-12 kapandi)",
+   "not": "Dizel icin yaygin kullanilan alt isil deger. Tedarikci analiz belgesine gore tarihli olarak degistirilebilir; degisiklik gecmis donemlerin anlamini degistirir (I-5)."
   },
   {
    "enerji_turu": "BUH",

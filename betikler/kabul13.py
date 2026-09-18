@@ -26,7 +26,7 @@ ALTIN = {
  2021:(12425346,127572551,139997897, 98148940,1.4264,41002718),
  2022:(24482137, 99649227,124131364,107258078,1.1573,185374960),
  2023:(18097125,111279600,129376725,111976787,1.1554,167503412),
- 2024:(19248726,111987169,131235894,       None,  None,180794462),
+ 2024:(19248726,111987169,131235894,       None,  None,180794462),   # duzeltme yapilmadan
  2025:(17199431,120168406,137367837,100503911,1.3668,220905805),
 }
 
@@ -145,7 +145,7 @@ def main():
         ok("Fark tam olarak GES mahsubudur",
            yakin(y["2025"]["brut"]-y["2025"]["maliyet"],25723469,2),
            f'{y["2025"]["brut"]-y["2025"]["maliyet"]:,.0f}')
-        ok("8 yıl toplam üretim (S10 düzeltmesiyle 834.377.214 kg)",
+        ok("8 yıl üretim, düzeltme yapılmadan 834.377.214 kg",
            yakin(toplamU,834377214,10), f"{toplamU:,.0f}")
 
         print("\n=== 13.3 · NOKTA KONTROLÜ — 2024 HAZİRAN ===")
@@ -162,7 +162,58 @@ def main():
         ok("Toplam üretim 8.868.323 kg",     yakin(h["uretim"],8868323), f'{h["uretim"]:,.0f}')
         ok("EnPI 1,2178 kWh/kg",             yakin(h["enpi"],1.2178,0.0001), f'{h["enpi"]:.4f}')
 
-        print("\n=== 13.4 · HESAP MOTORU ===")
+        print("\n=== K-29 · REDDEDİLEN HÜCRENİN ELLE DÜZELTİLMESİ (S10) ===")
+        # Yeniden aktarma: onizlemedeki metin hucresi elle duzeltilir
+        s.evaluate('__req("js/uygulama.js").git(3)'); s.wait_for_timeout(500)
+        s.evaluate("""async (b)=>{const h=Uint8Array.from(atob(b),c=>c.charCodeAt(0));
+          const dt=new DataTransfer(); dt.items.add(new File([h],"veri.xlsx"));
+          const g=document.querySelector('#icerik input[type=file][accept=".xlsx"]');
+          g.files=dt.files; g.dispatchEvent(new Event("change",{bubbles:true}));}""",
+          base64.b64encode(XLSX.read_bytes()).decode())
+        s.wait_for_timeout(2600); s.get_by_role("button",name="Önizle →").click(); s.wait_for_timeout(2600)
+        var=s.evaluate("""()=>[...document.querySelectorAll("#icerik li button")]
+          .filter(x=>x.textContent==="Düzelt").length""")
+        ok("Reddedilen her hücrede 'Düzelt' düğmesi var (K-29)", var>=7, f"{var} düğme")
+        s.evaluate("""()=>{const b=[...document.querySelectorAll("#icerik li button")]
+          .find(x=>x.textContent==="Düzelt" && x.parentElement.textContent.includes("sayı değil"));
+          b.click();}""")
+        s.wait_for_timeout(500)
+        mm=s.evaluate('document.querySelector(".modal").innerText')
+        ok("Düzeltme penceresi kaynak metni gösteriyor", "286609,,4" in mm, mm.split("\n")[2][:60])
+        s.evaluate("""()=>{const i=document.querySelector(".modal input[type=text]");
+          i.value="2.866.094"; i.dispatchEvent(new Event("input",{bubbles:true}));
+          [...document.querySelectorAll(".modal button")]
+            .find(x=>x.textContent.trim()==="Kaydet").click();}""")
+        s.wait_for_timeout(900)
+        s.evaluate("""()=>{[...document.querySelectorAll("#icerik button.dugme.ana")]
+          .find(b=>b.textContent.includes("geçerli değeri aktar")).click();}""")
+        s.wait_for_timeout(900)
+        s.evaluate("""()=>{const b=[...document.querySelectorAll(".modal button.dugme.ana")].pop();
+          b && b.click();}""")
+        s.wait_for_timeout(5000)
+        d10=s.evaluate("""()=>{const H=__req("js/hesap.js"), O=__req("js/ortak.js"),
+            HL=__req("js/hesaplanan.js"), V=__req("js/veri.js");
+          const k=V.degerKayit("CIKOLATA_KG",2024,8);
+          const d=O.donemAraligi(2024,1,2024,12);
+          const T=x=>d.reduce((a,b)=>{const v=HL.hucre(x,b.yil,b.ay); return Number.isFinite(v)?a+v:a;},0);
+          const u=H.donemToplami("TOPLAM_URETIM",d), e=T("TOPLAM_ENERJI");
+          let tu=0; for(let y=2018;y<=2025;y++)
+            tu+=H.donemToplami("TOPLAM_URETIM",O.donemAraligi(y,1,y,12))||0;
+          return {toplam:V.durum.degerler.length, kalite:k?.k, not:k?.not,
+                  agustos:H.noktaDeger("TOPLAM_URETIM",2024,8).deger,
+                  uretim:u, enpi:u?e/u:null, toplamUretim:tu,
+                  enpi2025:HL.yillik?null:null};}""")
+        ok("Düzeltilen değer aktarıldı (4.542)", d10["toplam"]==4542, str(d10["toplam"]))
+        ok("Kalite 'düzeltildi' olarak işaretlendi (İ-4)", d10["kalite"]=="duzeltildi", str(d10["kalite"]))
+        ok("Kaynak metin notta duruyor (E-4)", "286609,,4" in (d10["not"] or ""), str(d10["not"])[:60])
+        ok("2024 Ağustos toplam üretimi 6.852.439 kg", yakin(d10["agustos"],6852439,2),
+           f'{d10["agustos"]:,.0f}')
+        ok("2024 yıllık üretim 114.763.547 kg", yakin(d10["uretim"],114763547,2), f'{d10["uretim"]:,.0f}')
+        ok("2024 EnPI 1,1435", yakin(d10["enpi"],1.1435,0.0001), f'{d10["enpi"]:.4f}')
+        ok("8 yıl üretim 841.229.653 kg", yakin(d10["toplamUretim"],841229653,10),
+           f'{d10["toplamUretim"]:,.0f}')
+
+        print("\n=== 13.4 · HESAP MOTORU (S10 düzeltildikten sonra) ===")
         m=s.evaluate("""()=>{const H=__req("js/hesap.js"), O=__req("js/ortak.js"), V=__req("js/veri.js");
           const tanim={kod:"BZ13",ad:"2022-2024 referans",enerji:"@TOPLAM_ENERJI_KWH",
             baglam:"TOPLAM_URETIM",bas:{yil:2022,ay:1},son:{yil:2024,ay:12},model_tipi:"regresyon"};
@@ -183,12 +234,12 @@ def main():
                   v24:t24.toplamVerim, v25:t25.toplamVerim,
                   elk:fh("ELK_FATURA_TL"), dg:fh("DG_FATURA_TL")};}""")
         s.wait_for_timeout(1500)
-        ok("Baz çizgi a = 0,5025", yakin(m["a"],0.5025,0.0005), f'{m["a"]:.4f}')
-        ok("Baz çizgi b = 6.021.966", yakin(m["b"],6021966,3), f'{m["b"]:,.0f}')
-        ok("Baz çizgi R² = 0,43", yakin(m["r2"],0.426,0.005), f'{m["r2"]:.3f}')
-        ok("Baz çizgi 35 nokta (2024 Ağustos düşer — S10)", m["n"]==35, str(m["n"]))
-        ok("Normalize EnPI 2025 = 1,119", yakin(m["norm"],1.119,0.001), f'{m["norm"]:.4f}')
-        ok("CUSUM 2025 yıl sonu = +14.605.848 kWh", yakin(m["cusum"],14605848,3), f'{m["cusum"]:,.0f}')
+        ok("Baz çizgi a = 0,4986", yakin(m["a"],0.4986,0.0005), f'{m["a"]:.4f}')
+        ok("Baz çizgi b = 6.061.618", yakin(m["b"],6061618,3), f'{m["b"]:,.0f}')
+        ok("Baz çizgi R² = 0,44", yakin(m["r2"],0.441,0.005), f'{m["r2"]:.3f}')
+        ok("Baz çizgi 36 nokta (2024 Ağustos düzeltilince geri gelir)", m["n"]==36, str(m["n"]))
+        ok("Normalize EnPI 2025 = 1,118", yakin(m["norm"],1.1182,0.001), f'{m["norm"]:.4f}')
+        ok("CUSUM 2025 yıl sonu = +14.518.939 kWh", yakin(m["cusum"],14518939,3), f'{m["cusum"]:,.0f}')
         ok("CUSUM Şubat 2025'te işaret değiştiriyor", m["ilkPozitif"]==2, str(m["ilkPozitif"]))
         ok("Türbin toplam verimi 2024 = %57,2", yakin(m["v24"]*100,57.2,0.15), f'%{m["v24"]*100:.1f}')
         ok("Türbin toplam verimi 2025 = %50,3", yakin(m["v25"]*100,50.3,0.15), f'%{m["v25"]*100:.1f}')
@@ -199,11 +250,35 @@ def main():
         ok("Doğalgaz hacim etkisi +13.475.761 TL", yakin(m["dg"]["hacimEtkisi"],13475761,50),
            f'{m["dg"]["hacimEtkisi"]:,.0f}')
 
+        print("\n=== 11.2 · CEVAPLANAN AÇIK SORULAR ===")
+        c=s.evaluate("""()=>{const H=__req("js/hesap.js"), M=__req("js/model.js"),
+            V=__req("js/veri.js"), O=__req("js/ortak.js");
+          const ol=H.olcumsuzTuketiciler();
+          const mot=M.katsayi("MOT","kg","kWh",2025,6);
+          const ges=V.durum.olcum_noktalari.filter(n=>n.rol==="gelir").map(n=>n.kod);
+          const hat=V.durum.olcum_noktalari.filter(n=>n.veri_tipi==="dagitilmis")
+            .map(n=>n.formul);
+          const buh24=M.katsayi("BUH","kg","kWh",2024,6).katsayi;
+          const buh25=M.katsayi("BUH","kg","kWh",2025,6).katsayi;
+          return {ol, mot:mot?mot.katsayi:null, ges, hat, buh24, buh25};}""")
+        ok("A-05 · üç ölçümsüz tüketici tanımlı ve istasyonuna bağlı",
+           len(c["ol"])==3 and {x["besleyen"] for x in c["ol"]}=={"IST1","IST2"},
+           ", ".join(f'{x["ad"]}→{x["besleyen"]}' for x in c["ol"]))
+        ok("A-06 · hat dağıtım oranları korundu (0,34/0,12/0,32/0,22)",
+           sum(1 for f in c["hat"] if "0.34" in f or "0.12" in f or "0.32" in f or "0.22" in f)==4,
+           str(len(c["hat"]))+" dağıtılmış nokta")
+        ok("A-08 · iki buhar katsayısı da dönemsel olarak yerinde",
+           yakin(c["buh24"],600/860,1e-9) and yakin(c["buh25"],560/860,1e-9),
+           f'{c["buh24"]:.6f} / {c["buh25"]:.6f}')
+        ok("A-11 · GES geliri mahsup ve satış olarak ayrıldı", len(c["ges"])==4,
+           ", ".join(c["ges"]))
+        ok("A-12 · motorin katsayısı 11,9 kWh/kg", yakin(c["mot"],11.9,1e-9), str(c["mot"]))
+
         print("\n=== 13.5 · DAVRANIŞ KONTROLLERİ ===")
         d=s.evaluate("""()=>{const M=__req("js/model.js"), H=__req("js/hesap.js"), V=__req("js/veri.js");
           const r={};
           // katsayisi olmayan tur icin ortak birim
-          r.katsayisiz=M.cevir(100,"kg","kWh","MOT",2025,6);
+          r.katsayisiz=M.cevir(100,"kg","kWh","BUH",2017,6);   // ilk katsayidan onceki donem
           // negatif deger
           r.negatif=M.dogrula("SEBEKE_ELK",2025,6,-5).map(x=>x.seviye);
           // alt toplam ust toplami asiyor
@@ -213,7 +288,7 @@ def main():
           // 12'den az nokta ile regresyon
           r.azNokta=H.regresyon([{x:1,y:1},{x:2,y:2},{x:3,y:3}]);
           return r;}""")
-        ok("Katsayısı olmayan tür → sonuç üretilmez, nedeni yazılır (İ-3)",
+        ok("Katsayısı olmayan dönem → sonuç üretilmez, nedeni yazılır (İ-3)",
            bool(d["katsayisiz"].get("eksik")), str(d["katsayisiz"].get("eksik"))[:70])
         ok("Negatif değer engellenir (6.8)", "engel" in d["negatif"], str(d["negatif"]))
         ok("Alt toplam üstü aşınca kaydedilir ama uyarılır (S3)",

@@ -149,7 +149,7 @@ python3 betikler/faz2.py     # uçtan uca: Excel aktarımı + 8 yılın altın s
 python3 betikler/faz3.py     # grafik ekranları
 python3 betikler/faz4.py     # Faz 4 ekranları + 8.8 vakasının altın sayıları
 python3 betikler/faz5.py     # Faz 5 ekranları + izlenebilirlik + hedef motoru
-python3 betikler/kabul13.py  # El Kitabı Bölüm 13'ün HER satırı
+python3 betikler/kabul13.py  # El Kitabı Bölüm 13'ün HER satırı + cevaplanan sorular
 ```
 
 `kabul.py`, gerçek 2024 Haziran verisiyle programın **altın sayıları** üretip
@@ -194,6 +194,31 @@ değişimi Şubat 2025. **72 kontrol, hepsi geçiyor.**
 altın sayıları, 2024 Haziran nokta kontrolü, hesap motorunun sekiz çıktısı ve
 on iki davranış kuralı (negatif engeli, kWh/m³ sapma uyarısı, 12 nokta kuralı,
 katman yeniden üretimi, yedek gidiş-dönüşü). **96 kontrol, hepsi geçiyor.**
+
+### Cevaplanan açık sorular (2026-09-18)
+
+Kullanıcı sekiz sorunun hepsini cevapladı; beşi kapandı, ikisi koda dönüştü:
+
+- **S10** — 2024 Ağustos çikolata hücresi **2.866.094 kg**. Kaynak dosya bozuk
+  kalıyor; program onu her aktarımda reddediyor ama önizlemede **tek tıkla
+  düzeltilebiliyor** (yeni **K-29**): kalite `düzeltildi`, kaynak metin notta.
+  Düzeltince 2024 EnPI 1,1435, 2025'teki ham bozulma %19,5 — el kitabının
+  kendi tahmini birebir çıktı. Baz çizgi 36 noktaya döndü:
+  `a = 0,4986 · b = 6.061.618 · R² = 0,44`.
+- **A-05** — İstasyon 1'i gaz motorlarının yanında **sıcak su kazanı** ve
+  **üretimde doğrudan gaz**, İstasyon 2'yi ise **baca yakıcıları** besliyor;
+  üçünde de sayaç yok. Üçü varlık olarak tanımlandı (`olcumsuz_besleyen`) ve
+  Ekran 9 artık "bilinmiyor" demek yerine **adlarını sayıyor**.
+- **A-11** — GES geliri santral başına `Mahsubu` ve `Şebekeye Satışı` olarak
+  ikiye ayrıldı; geçmiş tek kalem veriler mahsup noktasında, notunda "ikisinin
+  toplamıdır" yazılı.
+- **A-12** — motorin 11,9 kWh/kg, 2018-01'den geçerli.
+- **A-06, A-08, A-10** — mevcut davranış onaylandı; değişiklik gerekmedi.
+
+Kalan tek açık nokta S13'ün kazan ayağı: baca yakıcıları da İstasyon 2'den
+beslendiğine göre kazanlara giden gaz sayaçtan daha azdır — yani buhar
+fazlalığı açıklanmış olmuyor, büyüyor. Program o verimleri üretmeye devam
+ediyor ama performans saymıyor (K-25).
 
 Bu doğrulama üç belge hatası buldu: aktarılan değer sayısı 4.534 değil 4.541
 (beklenen sayı 7 reddedilen hücreyi iki kez düşmüş), 13.2'nin maliyet sütunu

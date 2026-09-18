@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 1.1 — Faz 1–5 kodlandı |
+| **Sürüm** | 1.3 — Faz 1–5 kodlandı · sekiz açık soru cevaplandı |
 | **Durum** | **Yol haritasının beş fazı da bitti.** 15 ekranın hepsi çalışıyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -132,7 +132,7 @@ program hatası değildir.
 
 | Bulgu | Etki | Programın davranışı |
 |---|---|---|
-| **S10** · 2024 Ağustos çikolata `"286609,,4"` | Excel bu ayın üretimini eksik topladı → **2024 yıllık üretim ve EnPI yanlış** | Toplam üretimi üretmez, nedenini yazar |
+| **S10** · 2024 Ağustos çikolata `"286609,,4"` | Excel bu ayın üretimini eksik topladı → **2024 yıllık üretim ve EnPI yanlış** | Reddeder; doğru değer **aktarma ekranında elle düzeltilebilir** (K-29). ✔ **Kapandı:** 2.866.094 kg |
 | **S11** · 6 negatif doğalgaz değeri | Fiziksel olarak imkânsız; kazan verimini bozar | Aktarmada reddeder |
 | **S12** · Buhar kg → kWh katsayısı 2025'te değişti | 2024 ile 2025 verimleri farklı varsayımla hesaplanmış → verim düşüşü olduğundan büyük görünür | Tarihli katsayı olarak tanımlanır; ekranda etkisi puan olarak ayrıştırılır |
 | **S13** · 2025'te kazan verimleri %100'ü aşıyor | Kazan-1 %137, Kazan-2 %145 — fiziksel olarak imkânsız | Sayıyı gizlemez ama performans saymaz; karşılaştırmadan çıkarır, nedenini yazar |
@@ -147,12 +147,26 @@ program hatası değildir.
 | Hücre `2.866.094` okunursa | 114.763.547 | **1,1435** |
 
 Komşu ayların çikolata üretimi 2,8–3,7 milyon kg aralığındadır; ikinci okuma
-bu aralığa oturur. Doğrusu **kullanıcı tarafından teyit edilmelidir** — sistem
-tahmin yürütmez (İ-3).
+bu aralığa oturur.
 
-> **Bu neden önemli:** 8.8'deki 2025 vakası 2024'ü referans alıyor. 2024 EnPI'si
-> 1,1728 yerine 1,1435 ise, 2025'teki bozulma %16,5 değil **%19,5**'tir.
-> Tek bir hücre, yıllık performans değerlendirmesini kaydırıyor.
+> ✔ **Kapandı (2026-09-18).** Kullanıcı doğru değerin **2.866.094 kg** olduğunu
+> teyit etti. Kaynak dosyadaki hücre bozuk kalmaya devam eder; program onu her
+> aktarımda reddeder ama **önizleme ekranında tek tıkla düzeltilebilir** ve
+> düzeltilen değer `düzeltildi` kalitesiyle, kaynak metni notuna yazılarak
+> kaydedilir (K-29, İ-4). Sistem hiçbir aşamada tahmin yürütmedi (İ-3).
+>
+> **Düzeltmenin etkisi — el kitabının kendi tahmini birebir doğrulandı:**
+>
+> | | Düzeltmeden önce | Düzeltmeden sonra |
+> |---|---:|---:|
+> | 2024 Ağustos toplam üretim | üretilemiyordu | **6.852.439 kg** |
+> | 2024 yıllık üretim | 107.911.108 kg (Ağustos hariç) | **114.763.547 kg** |
+> | 2024 EnPI | üretilemiyordu | **1,1435** |
+> | 2025'teki ham bozulma | — | **%+19,5** (Excel'in dediği %16,5 değil) |
+> | 8 yıl üretim toplamı | 834.377.214 kg | **841.229.653 kg** |
+>
+> Excel'in kendi `Toplam Üretim` sütununun 8 yıllık toplamı 838.363.559 kg'dır;
+> aradaki fark **tam olarak 2.866.094 kg**, yani sessizce atlanan o tek hücre.
 
 **S12 · Buhar entalpi varsayımı 2025'te değişti**
 
@@ -280,6 +294,7 @@ numaralara atıf yapar.
 | **K-26** | Yıllar arası verim karşılaştırması | Karşılaştırma **tek bir birleşik verim yüzdesiyle yapılmaz**. Yalnız iki dönemde de çalışan ve verisi tutarlı ekipmanlar, **ekipman ekipman** karşılaştırılır; toplanan büyüklük yüzde değil **kaçınılabilir yakıttır (kWh)**. Ekipman kümesi değiştiyse bu ayrıca uyarı olarak söylenir. | Birleşik yüzde karışıma bağlıdır: 2025'te yük türbine kayınca ve gaz motorları durunca, hiçbir ekipmanın verimi değişmese bile karma toplam oynar — gerçek veride bozulma **iyileşme gibi** göründü. kWh cinsinden kaçınılabilir yakıt toplanabilir ve karışımdan bağımsızdır. |
 | **K-27** | Fatura ↔ tüketim bağı | Rolü `maliyet` olan her nokta, faturalandırdığı tüketim noktalarını `fatura_tuketim` alanında taşır. Birim fiyat ve fiyat/hacim ayrıştırması **faturanın kendi biriminde** yapılır (elektrik kWh, doğalgaz m³); karşılaştırmalı birim fiyat grafiği için TL/kWh'e çevrilir. | Ayrıştırma çevrilmiş birimde yapılırsa dönüşüm katsayısının hatası fiyat ve hacim etkilerine karışır. Alan boşsa tutar yine toplanır ama birim fiyat **üretilmez** (İ-3). |
 | **K-28** | İzlenebilirlik düğmesi | Her türetilmiş sayının yanında bir `?` durur; açılan pencere sayının **formülünü, kuralını, katkıda bulunan ölçüm noktalarını ham değerleriyle, kullanılan tarihli katsayıları ve veri kalitesi işaretlerini** gösterir. Köken ağacı hesaplanan noktalardan ham veriye kadar iner. | E-4'ün somut hâli. ISO 50001 denetiminde sorulan ilk soru "bu sayı nereden geliyor?"dur; cevabı bir ekran gezintisi değil, tek tık olmalıdır. Aynı pencere, S12 gibi katsayı değişimlerini de kendiliğinden görünür kılar. |
+| **K-29** | Reddedilen hücrenin elle düzeltilmesi | İçe aktarma önizlemesinde reddedilen her hücre **tek tıkla düzeltilebilir**. Girilen değer yine doğrulamadan geçer; kaydın kalitesi `düzeltildi` olur ve notuna **kaynak dosyadaki ham metin** yazılır. Kaynak dosya bozuk kalabilir. | Gerçek veride ortaya çıktı (S10): tek bir bozuk hücre 2024 EnPI'sini, baz çizgiyi ve 2025 kıyasını kaydırıyordu. Kullanıcıyı "Excel'i düzelt ve baştan aktar" döngüsüne sokmak, düzeltmenin hiç yapılmaması demektir. Ham metnin notta kalması, düzeltmenin denetlenebilir olmasını sağlar (E-4, İ-4). |
 
 ---
 
@@ -1035,55 +1050,58 @@ enerji yönetiminin başarısızlığı gibi görünür.
 > Bu bölüm, yukarıdaki motorun **sizin gerçek verinizde** ne bulduğudur.
 > Tasarımın işe yarayıp yaramadığının sınavıdır.
 
-**Soru:** 2025'te EnPI 1,173'ten 1,367'ye çıktı (%+16,5). Gerçek verimsizlik mi,
+**Soru:** 2025'te EnPI 1,144'ten 1,367'ye çıktı (%+19,5). Gerçek verimsizlik mi,
 yoksa üretim düştüğü için mi?
 
-**Adım 1 — Baz çizgi (2022–2024, kullanılabilir 35 ay):**
+**Adım 1 — Baz çizgi (2022–2024, 36 ay):**
 
 ```
-beklenen_enerji = 0,5025 × üretim_kg + 6.021.966        R² = 0,43
+beklenen_enerji = 0,4986 × üretim_kg + 6.061.618        R² = 0,44
 ```
 
-- Değişken enerji: **0,5025 kWh/kg**
-- **Sabit / baz yük: 6.021.966 kWh/ay → yılda 72,3 milyon kWh**
-- Baz yükün ortalama aylık tüketimdeki payı: **%56,3**
+- Değişken enerji: **0,4986 kWh/kg**
+- **Sabit / baz yük: 6.061.618 kWh/ay → yılda 72,7 milyon kWh**
+- Baz yükün ortalama aylık tüketimdeki payı: **%56,7**
 
-> ⚠ **R² = 0,43 < 0,50.** Kural gereği (8.3) açık uyarı: bu model tüketimin
-> yalnızca %43'ünü üretimle açıklıyor. Yani tüketimin çoğunu belirleyen şey
+> ⚠ **R² = 0,44 < 0,50.** Kural gereği (8.3) açık uyarı: bu model tüketimin
+> yalnızca %44'ünü üretimle açıklıyor. Yani tüketimin çoğunu belirleyen şey
 > üretim miktarı **değil**. Bu bulgunun kendisi değerlidir: başka bir sürükleyici
 > (mevsim, ürün karması, ekipman durumu) baskındır. Aşağıdaki sayı bu nedenle
 > **işaret**tir, kanıt değildir.
 >
 > Aynı belirsizlik **sabit yük (`b`) tahminini de kapsar**: düşük R²'de kesişim
-> noktasının güven aralığı geniştir. "%56,3" bir büyüklük mertebesidir —
-> *"tüketimin yarısından fazlası üretimden bağımsız"* denebilir, "%56,3'tür"
+> noktasının güven aralığı geniştir. "%56,7" bir büyüklük mertebesidir —
+> *"tüketimin yarısından fazlası üretimden bağımsız"* denebilir, "%56,7'dir"
 > denemez. Kesinleştirmenin yolu modele ikinci bir değişken eklemektir
 > (dış sıcaklık / derece-gün, ürün karması) — bkz. 9.9 "ileride eklenebilecekler".
 
-> **Neden 36 değil 35 ay?** 2024 Ağustos'un toplam üretimi bozuk hücre yüzünden
-> **üretilemiyor** (S10, bkz. 2.5); o ay regresyona giremez. Aynı regresyon
-> Excel'in kendi `Toplam Üretim` sütunuyla kurulsaydı 36 nokta olur ve
-> `a = 0,4254 · b = 6.774.643 · R² = 0,40` çıkardı — çünkü Excel'in `SUM`'ı
-> bozuk hücreyi sessizce atlayıp o aya **eksik bir üretim** yazıyor. Program
-> eksik üretimi doğru sayı gibi kullanmaz (İ-3); **bu farkın kendisi, tek bir
-> bozuk hücrenin baz çizgiyi nasıl kaydırdığının ölçüsüdür.** Hücre
-> düzeltildiğinde model yeniden kurulmalıdır.
+> **Bu model, S10 düzeltildikten sonrasıdır (36 ay).** Aynı regresyonun üç hâli,
+> tek bir hücrenin baz çizgiyi nasıl kaydırdığını gösterir:
+>
+> | Kaynak | a | b | R² | n |
+> |---|---:|---:|---:|---:|
+> | Excel'in `Toplam Üretim` sütunu (bozuk hücre sessizce atlanmış) | 0,4254 | 6.774.643 | 0,40 | 36 |
+> | Program, düzeltme yapılmadan (2024 Ağustos düşer) | 0,5025 | 6.021.966 | 0,43 | 35 |
+> | **Program, S10 düzeltildikten sonra** | **0,4986** | **6.061.618** | **0,44** | **36** |
+>
+> Üçü de aynı veriden çıkıyor; fark yalnızca **eksik üretimin ne sayıldığıdır.**
+> Excel onu düşük bir üretim gibi kullanınca eğim yapay olarak düşüyor.
 
 **Adım 2 — Sonuç:**
 
 | | Değer |
 |---|---|
-| Ham EnPI kötüleşmesi | **%+16,5** |
-| Normalize EnPI (2025) | **1,119** → gerçek kötüleşme **%+11,9** |
-| Üretim hacminden gelen kısım | ≈ %4,6 |
+| Ham EnPI kötüleşmesi | **%+19,5** (2024: 1,1435 → 2025: 1,3668) |
+| Normalize EnPI (2025) | **1,118** → gerçek kötüleşme **%+11,8** |
+| Üretim hacminden gelen kısım | ≈ %7,7 |
 
-Yani bozulmanın **büyük kısmı gerçek**, küçük bir kısmı üretim düşüşünün
-yarattığı görüntü. Ham EnPI tek başına bakılsaydı sorun %16,5 sanılırdı;
-normalize edilince %11,9'a iniyor ama **kaybolmuyor**.
+Yani bozulmanın **yaklaşık üçte ikisi gerçek**, üçte biri üretim düşüşünün
+yarattığı görüntü. Ham EnPI tek başına bakılsaydı sorun %19,5 sanılırdı;
+normalize edilince %11,8'e iniyor ama **kaybolmuyor**.
 
 **Adım 3 — CUSUM tarihi verdi:** Ocak 2025 hâlâ baz çizginin altında
-(−334.342 kWh); **Şubat 2025**'te işaret değişiyor ve birikim yıl boyu düzenli
-yukarı eğimle sürüyor (yıl sonu birikimi **+14.605.848 kWh**). Tek bir kötü ay
+(−338.590 kWh); **Şubat 2025**'te işaret değişiyor ve birikim yıl boyu düzenli
+yukarı eğimle sürüyor (yıl sonu birikimi **+14.518.939 kWh**). Tek bir kötü ay
 değil, **kalıcı bir değişiklik**.
 
 **Adım 4 — Dönüşüm verimliliği nedeni buldu:**
@@ -1099,7 +1117,7 @@ değil, **kalıcı bir değişiklik**.
 
 **Bulgu:** Gaz motorları durdu, yük türbine kaydı ve **türbin daha düşük verimle
 çalışıyor**. 80,6 milyon kWh gaz üzerinden 6,9 puanlık verim kaybı ≈
-**yılda 5,6 milyon kWh**. Bu, baz çizgiye göre 14,6 milyon kWh'lik toplam
+**yılda 5,6 milyon kWh**. Bu, baz çizgiye göre 14,5 milyon kWh'lik toplam
 sapmanın **yaklaşık %38'idir**.
 
 > Verim düşüşü bir **model tahmini değil, doğrudan ölçümdür** — R² uyarısı bu
@@ -1661,9 +1679,9 @@ Dört bölüm hâlinde:
 
 **Bölüm 1 — Baz çizgi modeli**
 ```
-Beklenen enerji = 0,5025 × üretim (kg) + 6.021.966        R² = 0,43
-Değişken enerji: 0,5025 kWh/kg    Sabit/baz yük: 6.021.966 kWh/ay (%56,3)
-⚠ Bu model tüketimin yalnızca %43'ünü açıklıyor. Tek başına karar vermeyin.
+Beklenen enerji = 0,4986 × üretim (kg) + 6.061.618        R² = 0,44
+Değişken enerji: 0,4986 kWh/kg    Sabit/baz yük: 6.061.618 kWh/ay (%56,7)
+⚠ Bu model tüketimin yalnızca %44'ünü açıklıyor. Tek başına karar vermeyin.
 ```
 R² uyarısı **gizlenmez, sonucun yanında durur** (İ-4, 8.3).
 
@@ -2178,17 +2196,30 @@ bunlara **veri ve kanıt** üretir.
 
 ### 11.2 Açık kalanlar
 
-Bunlar **kodlamayı engellemez**; ilk sürüm makul varsayımlarla çalışır,
-cevap gelince tanım ekranından değiştirilir.
+2026-09-18'de kullanıcı **sekiz sorunun hepsini cevapladı**. Aşağıdaki tablo,
+hangi cevabın neye dönüştüğünü kayda geçirir; kalan tek açık nokta S13'ün
+kazan ayağıdır.
 
-| # | Soru | Şimdilik varsayım | Neden önemli |
+| # | Soru | **Cevap** | Programa yansıması |
 |---|---|---|---|
-| **A-05** | İstasyon–makine tutarsızlığı (S3, **S13**) neden kaynaklanıyor? 2025'te İstasyon 1'deki 14,4 GWh gaz hangi ekipmanda yakıldı? | Fark "ölçülmeyen / atanmamış" olarak gösterilir; ekipman verimi %100'ü aşarsa karşılaştırmadan çıkarılır | Ölçüm kapsamı yorumu ve **bütün kazan verimleri** buna bağlı |
-| **A-06** | Hat çekirdek dağıtım oranları (0,34/0,12/0,32/0,22) sabit mi, dönemsel mi? | Sabit; `veri_tipi = dagitilmis` olarak işaretli | Hat bazlı EnPI hesaplanacaksa kritik |
-| **A-08** | Buhar entalpi varsayımı **2025'te 600'den 560 kcal/kg'a düşürülmüş (S12)** — bu bilinçli bir düzeltme mi, hata mı? Hangisi doğru? | İkisi de tarihli katsayı olarak tanımlı: 2018-01'den 0,697674 · 2025-01'den 0,651163 kWh/kg | Kazan ve kojen verimini doğrudan etkiler — türbinin 6,9 puanlık düşüşünün **1,7 puanı** bu varsayımdan gelir |
-| **A-12** | Motorin kg → kWh dönüşüm katsayısı ne olacak? | Tanımsız bırakılır; ilk motorin verisi girildiğinde sistem ister (K-24, 6.6) | Sistem katsayı varsaymaz (İ-3). Dizel için tipik değer ~11,9 kWh/kg'dır ama ölçüm bazına ve yakıt özelliğine göre değişir; kullanıcı kendi kaynağıyla tanımlar |
-| **A-10** | Ekran 14'teki başlangıç varlık ağacı nasıl kurulsun? | Excel'in istasyon–makine yapısı temel alınır | K-16 gömülü tanımların içeriği |
-| **A-11** | GES'in TL değeri mahsup ve satış olarak ayrıştırılabiliyor mu? Excel'de tek sütun var. | Tek kalem (`GES_TOPLAM_TL`); ayrıştırma isteğe bağlı | Mahsubun faturaya etkisi ile satış gelirinin ayrı izlenip izlenemeyeceğini belirler (6.5) |
+| **A-05** | İstasyon–makine tutarsızlığı (S3, S13) neden kaynaklanıyor? | ✔ **İstasyon 1**: gaz motorları + **sıcak su kazanı** + **üretimde doğrudan gaz** — son ikisinde **sayaç yok**. **İstasyon 2**: buhar kazanları + **baca yakıcıları** — baca yakıcılarında **sayaç yok**. | Üç tüketici varlık olarak tanımlandı (`Sıcak Su Kazanı`, `Üretimde Doğrudan Gaz`, `Baca Yakıcıları`) ve `olcumsuz_besleyen` alanıyla istasyonlarına bağlandı. Ekran 9 artık "bilinmiyor" demiyor, **adlarını sayıyor**. |
+| **A-06** | Hat çekirdek dağıtım oranları sabit mi? | ✔ **Sabit, doğru.** | Oranlar korundu; `veri_tipi = dagitilmis` kalır, ekranlarda "ölçüm değil" rozetiyle görünür. **Kapandı.** |
+| **A-08** | 2025'teki entalpi değişimi (600 → 560) hangisi doğru? | ✔ **İkisi de kendi döneminde doğru.** | Tarihli katsayı yapısı korunur; her ay kendi katsayısıyla hesaplanır ve Ekran 9 farkı puan puan ayrıştırır (S12). **Kapandı.** |
+| **A-10** | Başlangıç varlık ağacı nasıl kurulsun? | ✔ **Kullanıcı elle düzenleyecek.** | Ağaca dokunulmadı. Tanımlar ekranından serbestçe değiştirilir; geçmiş veri yerinde kalır (İ-7). **Kapandı.** |
+| **A-11** | GES'in TL değeri mahsup ve satış olarak ayrışabilir mi? | ✔ **Ayrı girilebilir.** | Her santral için **iki gelir noktası**: `… Mahsubu` ve `… Şebekeye Satışı`. Geçmiş tek kalem veriler mahsup noktasında durur ve o noktanın notunda "ikisinin toplamıdır" yazar. **Kapandı.** |
+| **A-12** | Motorin kg → kWh katsayısı ne olacak? | ✔ **11,9 kWh/kg.** | 2018-01'den geçerli tarihli katsayı olarak tanımlandı. Motorin verisi girildiği anda toplam enerjiye ve maliyete girer (K-24). **Kapandı.** |
+
+**Kalan tek açık nokta — S13'ün kazan ayağı.** A-05 cevabı İstasyon 1'deki
+14,4 GWh'yi açıklıyor. Ama İstasyon 2'de şu duruyor: 2025'te istasyon sayacı
+24.060.796 kWh gaz gösteriyor, kazan sayaçlarının toplamı **tam olarak aynı
+rakam**, üretilen buhar ise 33.942.000 kWh. Baca yakıcıları da aynı istasyondan
+besleniyorsa kazanlara giden gaz bu rakamdan **daha azdır** — yani buhar
+fazlalığı açıklanmış olmuyor, **büyüyor**.
+
+Üç olasılık kalıyor: (a) 2025 buhar kilogram kayıtları fazla yazılmış,
+(b) kazanlara yazılan buharın bir kısmı aslında türbinden geliyor,
+(c) İstasyon 2 sayacı eksik ölçüyor. Program bu ekipmanların verimini
+üretmeye devam ediyor ama **performans saymıyor** (K-25) ve nedenini yazıyor.
 
 ---
 
@@ -2274,7 +2305,8 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 | Motorin noktaları | **Tanımlı ve toplamlara dahil** (K-24); veri boş, yıllık toplamlar **değişmiyor** |
 | Reddedilen değer | **7** — 6 negatif doğalgaz (S11) + 1 metin hücre (S10) |
 | Otomatik eşleşen sütun | **55** (K-15) |
-| Aktarılan ham değer | **4.541** |
+| Aktarılan ham değer | **4.541** (düzeltme yapılmadan) |
+| S10 hücresi düzeltilirse | **4.542** · o değerin kalitesi `düzeltildi` (K-29) |
 
 ### 13.2 Altın sayılar — yıllık toplamlar
 
@@ -2289,10 +2321,10 @@ Program içe aktarma sonrası bu tabloyu **hesaplayarak** üretmelidir
 | 2021 | 12.425.346 | 127.572.551 | **139.997.897** | 98.148.940 | **1,4264** | 41.002.718 |
 | 2022 | 24.482.137 | 99.649.227 | **124.131.364** | 107.258.078 | **1,1573** | 185.374.960 |
 | 2023 | 18.097.125 | 111.279.600 | **129.376.725** | 111.976.787 | **1,1554** | 167.503.412 |
-| 2024 | 19.248.726 | 111.987.169 | **131.235.894** | 111.897.453 ⚠ | **1,1728** ⚠ | 180.794.462 |
+| 2024 | 19.248.726 | 111.987.169 | **131.235.894** | 114.763.547 | **1,1435** | 180.794.462 |
 | 2025 | 17.199.431 | 120.168.406 | **137.367.837** | 100.503.911 | **1,3668** | 220.905.805 |
 
-**8 yıl toplamı:** enerji **1.116.013.044 kWh** · üretim **834.377.214 kg** ⚠ ·
+**8 yıl toplamı:** enerji **1.116.013.044 kWh** · üretim **841.229.653 kg** ·
 brüt maliyet **863.964.489 TL** · **net maliyet 838.241.020 TL**
 
 > **Maliyet sütunu brüttür.** Programın ürettiği `Toplam Maliyet`, tanım gereği
@@ -2308,11 +2340,15 @@ brüt maliyet **863.964.489 TL** · **net maliyet 838.241.020 TL**
 >
 > Kabul testi her iki sayıyı da ayrı ayrı doğrular.
 
-> ⚠ **2024 üretim ve EnPI değerleri kaynak veri hatası içerir (S10, bkz. 2.5).**
-> Program bu iki sayıyı **kasten üretmez**: 2024 Ağustos'un toplam üretimi
-> hesaplanamaz olduğu için yıllık toplam **107.911.108 kg** çıkar. Bu bir sapma
-> değil, **doğru davranıştır** — kabul testi bu değeri bekler. Kaynak hücre
-> düzeltildiğinde beklenen değer de güncellenmelidir.
+> **2024 satırı S10 düzeltmesinden sonrasıdır.** Excel'in kendi sütunu bu yıl
+> için 111.897.453 kg ve 1,1728 diyor; ikisi de yanlıştır, çünkü bozuk hücre
+> sessizce atlanmıştır (2.5). Program iki davranışı da üretebilmelidir ve kabul
+> testi **ikisini de ayrı ayrı doğrular**:
+>
+> | Durum | 2024 üretim | 2024 EnPI |
+> |---|---:|---:|
+> | Düzeltme yapılmadan (hücre reddedilmiş) | **üretilmez** · yıllık toplam 107.911.108 kg (Ağustos hariç) | **üretilmez** |
+> | S10 düzeltildikten sonra (K-29) | **114.763.547 kg** | **1,1435** |
 
 ### 13.3 Nokta kontrolü — tek ay
 
@@ -2330,21 +2366,20 @@ brüt maliyet **863.964.489 TL** · **net maliyet 838.241.020 TL**
 
 | Hesap | Beklenen sonuç |
 |---|---|
-| Baz çizgi 2022–2024 regresyonu (8.3) | `a = 0,5025` · `b = 6.021.966` · `R² = 0,43` · **35 nokta** ⚠ |
-| Normalize EnPI 2025 (8.4) | **1,119** |
-| CUSUM 2025 yıl sonu (8.5) | **+14.605.848 kWh** |
+| Baz çizgi 2022–2024, düzeltme yapılmadan | `a = 0,5025` · `b = 6.021.966` · `R² = 0,43` · **35 nokta** |
+| Baz çizgi 2022–2024, S10 düzeltildikten sonra (8.3) | `a = 0,4986` · `b = 6.061.618` · `R² = 0,44` · **36 nokta** |
+| Normalize EnPI 2025 (8.4) | **1,118** |
+| CUSUM 2025 yıl sonu (8.5) | **+14.518.939 kWh** |
 | CUSUM işaret değiştirdiği ay | **Şubat 2025** |
 | Türbin toplam verimi 2024 / 2025 (8.6) | **%57,2 / %50,3** |
 | Elektrik fiyat etkisi 2024→2025 (8.7) | **+10.682.663 TL** |
 | Elektrik hacim etkisi 2024→2025 | **−5.500.767 TL** |
 | Doğalgaz hacim etkisi 2024→2025 | **+13.475.761 TL** |
 
-> ⚠ **Baz çizgi satırı 2024 Ağustos'suz kurulur.** O ayın toplam üretimi bozuk
-> hücre yüzünden üretilemediği için (S10, bkz. 2.5) regresyon 36 değil **35**
-> nokta kullanır. Excel'in kendi `Toplam Üretim` sütunuyla aynı regresyon
-> `a = 0,4254 · b = 6.774.643 · R² = 0,40` verir; aradaki fark, tek bir bozuk
-> hücrenin baz çizgiyi ne kadar kaydırdığıdır. Hücre düzeltildiğinde bu satırın
-> beklenen değerleri de güncellenmelidir.
+> **Baz çizginin üç hâli 8.8'de tablo olarak durur.** Excel'in kendi sütunuyla
+> kurulsaydı `a = 0,4254 · b = 6.774.643 · R² = 0,40` çıkardı — eksik üretimi
+> düşük bir üretim gibi kullandığı için. Kabul testi hem düzeltmesiz hem
+> düzeltmeli hâli doğrular.
 
 ### 13.5 Davranış kontrolleri
 
@@ -2402,6 +2437,7 @@ bulunmadan hiçbiri düzeltilmez ve bulunan cevap buraya yazılır.
 | 1.0 | 2026-09-17 | **Faz 4 kodlandı.** Ekran 9 (Dönüşüm Verimliliği), Ekran 10 (Maliyet, fiyat/hacim ayrıştırması) ve Ekran 11 (GES) yazıldı. Gerçek veride iki yeni bulgu: **S12** (buhar entalpi varsayımı 2025'te 600 → 560 kcal/kg) ve **S13** (2025 kazan verimleri %100'ü aşıyor, gazın %12,9'u ekipmana atanmamış). Bunlara karşılık **K-25** (imkânsız verim performans sayılmaz), **K-26** (yıllar arası karşılaştırma birleşik yüzdeyle değil, ekipman bazında kaçınılabilir yakıtla) ve **K-27** (fatura ↔ tüketim bağı) kararları eklendi. A-05 ve A-08 somutlaştırıldı. 8.8 vakası S12/S13 çekinceleriyle güncellendi. 80 kabul sınaması geçiyor.
 | 1.1 | 2026-09-17 | **Faz 5 kodlandı — yol haritası tamamlandı.** Ekran 12 (Hedefler ve Aksiyonlar), Ekran 13 (Raporlar: aylık · yönetim gözden geçirme · serbest) ve izlenebilirlik (E-4) yazıldı; **K-28** eklendi, `hedef` ve `aksiyon` şemaları 6.3'e girdi. **Düzeltme:** 8.8 ve 13.4'teki baz çizgi sayıları, Excel'in kendi `Toplam Üretim` sütunuyla kurulmuş 36 noktalı bir regresyondan geliyordu; program S10 yüzünden 2024 Ağustos'u kullanamadığı için doğru model **35 nokta** üzerinden `a = 0,5025 · b = 6.021.966 · R² = 0,43`tür. Buna bağlı normalize EnPI (1,107 → **1,119**), CUSUM yıl sonu (13,3 → **14,6 milyon kWh**) ve türbin payı (%42 → **%38**) güncellendi. Bulgunun yönü değişmedi. 218 kabul sınaması geçiyor.
 | 1.2 | 2026-09-18 | **Bölüm 13'ün tamamı makineyle doğrulandı** (`betikler/kabul13.py`, 96 kontrol; toplam 314 kontrol geçiyor). Doğrulama üç belge hatası buldu: (1) **13.1** aktarılan ham değer 4.534 değil **4.541** — beklenen sayı reddedilen 7 hücreyi iki kez düşmüş; bağımsız bir XLSX sayımıyla teyit edildi. (2) **13.2**'nin maliyet sütunu **brüttür**; programın `Toplam Maliyet`'i tanım gereği GES mahsubu düşülmüş **nettir** (K-13, K-24) — sütun etiketlendi, 2025 için net 195.182.336 TL ve 8 yıl net toplamı 838.241.020 TL eklendi, 8 yıl üretim toplamı S10'a göre 834.377.214 kg olarak düzeltildi. (3) **13.5**'teki "1 satır hatalıysa hiçbiri yazılmaz" satırı 9.4'ün "ya bütün geçerli satırlar ya hiçbiri" kuralıyla çelişiyordu; 9.4 esas alınarak düzeltildi. 13.1'e otomatik eşleşen sütun sayısı ve dönem ayrımı (96 enerji / 99 kayıt) eklendi. **13.6 yeniden yazıldı:** tutmayan sayı bir hata değil, bir sorudur.
+| 1.3 | 2026-09-18 | **Sekiz açık sorunun hepsi cevaplandı; A-06, A-08, A-10, A-11, A-12 kapandı.** **S10 kapandı:** 2024 Ağustos çikolata üretimi **2.866.094 kg**; buna karşılık **K-29** eklendi — reddedilen hücre içe aktarma önizlemesinde tek tıkla düzeltilebiliyor, kalite `düzeltildi` ve kaynak metin notta kalıyor. Düzeltme el kitabının kendi tahminini birebir doğruladı: 2024 EnPI **1,1435**, 2025'teki ham bozulma **%+19,5**. Baz çizgi 36 noktaya çıktı (`a = 0,4986 · b = 6.061.618 · R² = 0,44`); normalize EnPI **1,118**, CUSUM yıl sonu **+14.518.939 kWh**, türbinin payı %38. **A-05:** İstasyon 1'i sıcak su kazanı ve üretim, İstasyon 2'yi baca yakıcıları besliyor; üçü de sayaçsız, üçü de varlık olarak tanımlandı ve Ekran 9 artık adlarını sayıyor. **A-11:** GES geliri santral başına mahsup ve satış olarak ayrıldı. **A-12:** motorin 11,9 kWh/kg. Kalan tek açık nokta S13'ün kazan ayağıdır: baca yakıcıları da hesaba katılınca kazanlardaki buhar fazlalığı açıklanmıyor, büyüyor. 329 kabul sınaması geçiyor. |
 | 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
 | 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |
 | 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |

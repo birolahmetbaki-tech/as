@@ -579,9 +579,23 @@ export function atanmamisYakit(donemler) {
   for (const [tur, s] of satin) {
     const e = ekip.get(tur) || 0;
     sonuc.push({ enerji_turu:tur, satinAlinan:s, ekipman:e,
-                 atanmamis:s - e, oran: s ? (s - e) / s : null });
+                 atanmamis:s - e, oran: s ? (s - e) / s : null,
+                 olcumsuz: olcumsuzTuketiciler() });
   }
   return sonuc;
+}
+
+/**
+ * Sayacı olmayan ama bir istasyondan beslendiği BİLİNEN tüketiciler (A-05).
+ * Atanmamış yakıtın nereye gittiği sorusunun cevabı burada adlandırılır:
+ * "bilinmiyor" demekle "sayacı yok" demek aynı şey değildir.
+ */
+export function olcumsuzTuketiciler(istasyonKod = null) {
+  return durum.varliklar
+    .filter(v => v.aktif !== false && v.olcumsuz_besleyen &&
+                 (!istasyonKod || v.olcumsuz_besleyen === istasyonKod))
+    .map(v => ({ kod:v.kod, ad:v.ad, besleyen:v.olcumsuz_besleyen,
+                 besleyenAd: varlik(v.olcumsuz_besleyen)?.ad || v.olcumsuz_besleyen }));
 }
 
 /* ===================================================================

@@ -96,11 +96,20 @@ def main():
           o.spike   = M.dogrula("SEBEKE_ELK", 2024, 7, 999999999).some(x => x.seviye === "uyar");
           o.dusuk   = M.dogrula("SEBEKE_ELK", 2024, 7, 100).some(x => x.seviye === "uyar");
           for (let a = 1; a <= 5; a++) V.degerYaz("SEBEKE_ELK", 2024, a, null);
-          // motorin: sifirdan farkli deger + katsayi yok -> toplam URETILMEZ
+          // A-12 sonrasi: motorin katsayisi 11,9 kWh/kg tanimli.
+          // 500 kg -> 5.950 kWh olarak toplama GIRER (K-24).
+          const teBos = H.toplamEnerji(2024, 6, "kWh").deger;
           V.degerYaz("MOTORIN_KG", 2024, 6, 500);
           const te = H.toplamEnerji(2024, 6, "kWh");
-          o.motorinEngel = !!te.eksik;
-          o.motorinSebep = te.eksik || null;
+          o.motorinGirdi = !te.eksik && Math.abs((te.deger - teBos) - 5950) < 0.5;
+          o.motorinSebep = `+${Math.round(te.deger - teBos)} kWh (500 kg × 11,9)`;
+          // Katsayi KALDIRILINCA I-3 kurali geri gelir: toplam URETILMEZ
+          const kat = V.durum.donusum_katsayilari;
+          const i = kat.findIndex(x => x.enerji_turu === "MOT");
+          const yedek = kat.splice(i, 1)[0];
+          const teYok = H.toplamEnerji(2024, 6, "kWh");
+          o.motorinEngel = !!teYok.eksik;
+          kat.splice(i, 0, yedek);
           V.degerYaz("MOTORIN_KG", 2024, 6, 0);         // sifir -> toplam URETILIR
           const te0 = H.toplamEnerji(2024, 6, "kWh");
           o.motorinSifirOk = te0.deger !== null && !te0.eksik;
@@ -111,8 +120,9 @@ def main():
             ("Negatif değer engellenir", b["negatif"], True),
             ("Aşırı sıçrama uyarır (medyanın 3 katı)", b["spike"], True),
             ("Aşırı düşük uyarır (medyanın 1/3'ü)",    b["dusuk"], True),
-            ("Motorin≠0 + katsayı yok → toplam üretilmez", b["motorinEngel"], True),
-            ("Motorin=0 → toplam üretilir",               b["motorinSifirOk"], True)]:
+            ("Motorin≠0 + katsayı var → toplama girer (A-12, K-24)", b["motorinGirdi"], True),
+            ("Katsayı kaldırılınca toplam üretilmez (İ-3)",           b["motorinEngel"], True),
+            ("Motorin=0 → toplam üretilir",                           b["motorinSifirOk"], True)]:
             isaret = "✓" if deger == bek else "✗"
             print(f"  {isaret} {ad}")
             if deger == bek: gecti += 1

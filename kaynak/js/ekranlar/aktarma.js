@@ -3,7 +3,7 @@
    bütün doğrulama kuralları burada da çalışır · üzerine yazma açıkça sorulur ·
    eşleşmeyen sütun atlanmaz, sorulur ve cevap HATIRLANIR. */
 
-import { el, $, bosalt, say, uyari, bildir, onayla, tablo, bosDurum,
+import { el, $, bosalt, say, sayiOku, uyari, bildir, onayla, tablo, bosDurum,
          donemAd, tarihMetni, AYLAR } from "../ortak.js";
 import * as V from "../veri.js";
 import { nokta, dogrula, ENGEL } from "../model.js";
@@ -216,10 +216,18 @@ function onizlemeUret() {
       const ham = sat[e.sutun];
       if (ham === null || ham === undefined || ham === "") continue;
       const v = typeof ham === "number" ? ham : Number(String(ham).replace(/\./g, "").replace(",", "."));
-      if (!Number.isFinite(v)) { hatalar.push({ satir:r + 1, sebep:`${e.harf}: sayı değil (${ham})` }); continue; }
+      if (!Number.isFinite(v)) {
+        hatalar.push({ satir:r + 1, sebep:`${e.harf}: sayı değil (${ham})`,
+                       kod:e.kod, yil:d.yil, ay:d.ay, ham:String(ham) });
+        continue;
+      }
       const b = dogrula(e.kod, d.yil, d.ay, v);
       const engel = b.find(x => x.seviye === ENGEL);
-      if (engel) { hatalar.push({ satir:r + 1, sebep:`${nokta(e.kod)?.ad}: ${engel.mesaj}` }); continue; }
+      if (engel) {
+        hatalar.push({ satir:r + 1, sebep:`${nokta(e.kod)?.ad}: ${engel.mesaj}`,
+                       kod:e.kod, yil:d.yil, ay:d.ay, ham:String(ham) });
+        continue;
+      }
       for (const u of b) uyarilar.push({ donem:donemAd(d.yil, d.ay), ad:nokta(e.kod)?.ad, mesaj:u.mesaj });
       if (V.deger(e.kod, d.yil, d.ay) !== null) cakisan++;
       kayitlar.push({ kod:e.kod, yil:d.yil, ay:d.ay, v });
@@ -257,8 +265,17 @@ function onizlemeEkrani(k) {
       "Geçerli değerler tek işlemde birlikte yazılır (ya hep ya hiç); aşağıdakiler yazılmaz. " +
       "Kaynak dosyadaki bu hücreleri düzeltip yeniden aktarabilirsiniz.",
       el("ul", { stil:{ margin:"8px 0 0 18px" } },
-        o.hatalar.slice(0, 8).map(h => el("li.kucuk", { metin:`Satır ${h.satir}: ${h.sebep}` })),
-        o.hatalar.length > 8 ? el("li.kucuk.sessiz", { metin:`…ve ${o.hatalar.length - 8} tane daha` }) : null)));
+        o.hatalar.slice(0, 8).map(h => el("li.kucuk", {},
+          `Satır ${h.satir}: ${h.sebep}`,
+          h.kod ? el("button.dugme.kucuk", { stil:{ marginLeft:"8px" },
+            metin: h.duzeltme === undefined ? "Düzelt"
+                 : `düzeltildi: ${say(h.duzeltme, 0)}`,
+            onclick:() => hucreDuzelt(h) }) : null)),
+        o.hatalar.length > 8 ? el("li.kucuk.sessiz", { metin:`…ve ${o.hatalar.length - 8} tane daha` }) : null),
+      el("p.kucuk", { stil:{ marginTop:"8px" }, metin:
+        "Kaynak dosyadaki hücreyi düzeltip yeniden aktarabilir ya da doğru değeri " +
+        "burada girebilirsiniz. Burada girilen değer kalitesi TAHMİN değil " +
+        "DÜZELTİLDİ olarak işaretlenir ve kaynağı kayıtta kalır (İ-4)." })));
 
   if (o.uyarilar.length)
     k.append(uyari("dikkat", el("b", { metin:`${o.uyarilar.length} uyarı. ` }),
@@ -272,7 +289,7 @@ function onizlemeEkrani(k) {
       "Aktarma bu değerlerin ÜZERİNE YAZACAK."));
 
   k.append(el("div.satir", { stil:{ marginTop:"16px" } },
-    el("button.dugme.ana", { metin:`${say(o.kayitlar.length)} geçerli değeri aktar`,
+    el("button.dugme.ana", { metin:`${say(o.kayitlar.length + o.hatalar.filter(h => h.duzeltme !== undefined).length)} geçerli değeri aktar`,
       disabled:!o.kayitlar.length, onclick:aktar }),
     el("button.dugme", { metin:"Vazgeç", onclick:() => { oturum = null; yenile(); } })));
 
@@ -283,19 +300,52 @@ function onizlemeEkrani(k) {
       "eksik veri sıfır sayılmaz (İ-3)." }));
 }
 
+/** Reddedilmiş bir hücrenin doğru değerini elle girmek (İ-4).
+    Kaynak dosya bozuk kalabilir; düzeltme burada kayda geçer. */
+function hucreDuzelt(h) {
+  const n = nokta(h.kod);
+  const g = el("input", { type:"text",
+    value: h.duzeltme === undefined ? "" : String(h.duzeltme).replace(".", ",") });
+  const f = el("div", {},
+    el("p", {}, el("b", { metin:n?.ad || h.kod }), ` · ${donemAd(h.yil, h.ay)}`),
+    el("p.kucuk.sessiz", { metin:`Kaynak dosyadaki değer: "${h.ham}" — ${h.sebep}` }),
+    el("div.alan", {}, el("label", { metin:`Doğru değer (${n?.birim || ""})` }), g,
+      el("div.mini.sessiz", { metin:"Türkçe biçim: 2.866.094 · Boş bırakılırsa düzeltme kaldırılır." })));
+  onayla("Hücreyi düzelt", f, "Kaydet").then(ok => {
+    if (!ok) return;
+    const metin = g.value.trim();
+    if (!metin) { delete h.duzeltme; yenile(); return; }
+    const r = sayiOku(metin);
+    if (r.hata) return bildir(r.hata, "kritik");
+    const b = dogrula(h.kod, h.yil, h.ay, r.deger);
+    const engel = b.find(x => x.seviye === ENGEL);
+    if (engel) return bildir(engel.mesaj, "kritik");
+    h.duzeltme = r.deger;
+    bildir("Düzeltme kaydedildi — aktarmaya dahil edilecek");
+    yenile();
+  });
+}
+
 async function aktar() {
   const o = oturum.onizleme;
+  const duzeltilen = o.hatalar.filter(h => h.duzeltme !== undefined);
   const ok = await onayla("Aktarmayı onaylayın",
     el("div", {},
       el("p", { metin:`${say(o.kayitlar.length)} değer, ${say(o.donem)} dönem aktarılacak.` }),
       o.cakisan ? el("p", {}, el("b", { metin:`${say(o.cakisan)} mevcut değerin üzerine yazılacak.` })) : null,
-      o.hatalar.length ? el("p", {}, el("b", { metin:`${o.hatalar.length} değer dışarıda kalacak.` })) : null,
+      duzeltilen.length ? el("p", {}, el("b", { metin:`${duzeltilen.length} hücre elle düzeltildi` }),
+        " ve DÜZELTİLDİ kalitesiyle yazılacak.") : null,
+      (o.hatalar.length - duzeltilen.length)
+        ? el("p", {}, el("b", { metin:`${o.hatalar.length - duzeltilen.length} değer dışarıda kalacak.` })) : null,
       el("p.kucuk.sessiz", { metin:"Önce mevcut verinizin güvenlik yedeği indirilecek." })),
     "Aktar");
   if (!ok) return;
 
   V.guvenlikYedegi();
   for (const r of o.kayitlar) V.degerYaz(r.kod, r.yil, r.ay, r.v, { k:"girildi" });
+  for (const h of duzeltilen)
+    V.degerYaz(h.kod, h.yil, h.ay, h.duzeltme,
+      { k:"duzeltildi", not:`Kaynak dosyada "${h.ham}" yazıyordu — elle düzeltildi` });
   V.durum.ayarlar.son_aktarim = { tarih:new Date().toISOString(),
     dosya:oturum.dosyaAdi, deger:o.kayitlar.length };
   V.degisti("aktarim");

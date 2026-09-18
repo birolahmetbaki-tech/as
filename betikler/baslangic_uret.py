@@ -27,6 +27,12 @@ VARLIKLAR = [
     ("GM3",        "DONUSUM","GM-3",                       "ekipman"),
     ("KAZAN1",     "DONUSUM","Kazan-1",                    "ekipman"),
     ("KAZAN2",     "DONUSUM","Kazan-2",                    "ekipman"),
+    # A-05 cevabi: istasyonlardan beslenen ama SAYACI OLMAYAN tuketiciler.
+    # Olcum noktasi yoktur; varliklar burada yalnizca "atanmamis gaz nereye
+    # gidiyor" sorusunun cevabini ADLANDIRMAK icin bulunur (6.7).
+    ("SSU_KAZAN",  "DONUSUM","Sıcak Su Kazanı",            "ekipman"),
+    ("URETIM_GAZ", "DONUSUM","Üretimde Doğrudan Gaz",      "ekipman"),
+    ("BACA",       "DONUSUM","Baca Yakıcıları",            "ekipman"),
 
     ("YARDIMCI",   "FAB",  "Yardımcı Tesisler",            "grup"),
     ("KOMP",       "YARDIMCI","Kompresörler",              "grup"),
@@ -91,9 +97,11 @@ N = [
  ("MOT_FATURA_TL","MOTORIN","Motorin Faturası",         None, "TL", "maliyet",     True ,"olculen",None,"Excel AF - K-24"),
  # --- GES (K-03) ---
  ("GES_YOZ_KWH",  "GES_YOZGAT","Yozgat GES Üretimi",    "ELK","kWh","ayri_tesis_uretim",False,"olculen",None,"Excel R"),
- ("GES_YOZ_TL",   "GES_YOZGAT","Yozgat GES Geliri",     None, "TL", "gelir",       False,"olculen",None,"Excel S - A-11: mahsup/satis ayrismamis"),
+ ("GES_YOZ_TL",   "GES_YOZGAT","Yozgat GES Mahsubu",    None, "TL", "gelir",       False,"olculen",None,"Excel S - 2026-03'e kadarki degerler mahsup ve satisin TOPLAMIDIR (A-11)"),
+ ("GES_YOZ_SATIS","GES_YOZGAT","Yozgat GES Şebekeye Satışı",None,"TL","gelir",       False,"olculen",None,"A-11: mahsup sonrasi fazla uretimin satisi - ayri girilir"),
  ("GES_ADA_KWH",  "GES_ADANA", "Adana GES Üretimi",     "ELK","kWh","ayri_tesis_uretim",False,"olculen",None,"Excel T"),
- ("GES_ADA_TL",   "GES_ADANA", "Adana GES Geliri",      None, "TL", "gelir",       False,"olculen",None,"Excel U"),
+ ("GES_ADA_TL",   "GES_ADANA", "Adana GES Mahsubu",     None, "TL", "gelir",       False,"olculen",None,"Excel U - 2026-03'e kadarki degerler mahsup ve satisin TOPLAMIDIR (A-11)"),
+ ("GES_ADA_SATIS","GES_ADANA", "Adana GES Şebekeye Satışı",None,"TL","gelir",        False,"olculen",None,"A-11: mahsup sonrasi fazla uretimin satisi - ayri girilir"),
  # --- Uretim (bagl. degiskenler) ---
  ("CEKIRDEK_KG",  "URETIM","Toplam Çekirdek Tüketimi",  None, "kg", "girdi_miktari",False,"olculen",None,"Excel G"),
  ("KAKAO_YAG",    "KAKAO", "Kakao Yağı Üretimi",        None, "kg", "uretim_miktari",False,"olculen",None,"Excel H"),
@@ -159,6 +167,10 @@ KATSAYILAR = [
  {"enerji_turu":"BUH","kaynak_birim":"kg","hedef_birim":"kWh","katsayi":600/860,
   "gecerli_baslangic":"2018-01","kaynak":"Excel formülü: kg × 600 / 860",
   "not":"600 kcal/kg entalpi ÷ 860 kcal/kWh = 0,697674 kWh/kg. A-08: basınca göre değişken mi, teyit bekliyor."},
+ {"enerji_turu":"MOT","kaynak_birim":"kg","hedef_birim":"kWh","katsayi":11.9,
+  "gecerli_baslangic":"2018-01","kaynak":"Kullanici teyidi (A-12 kapandi)",
+  "not":"Dizel icin yaygin kullanilan alt isil deger. Tedarikci analiz belgesine gore "
+        "tarihli olarak degistirilebilir; degisiklik gecmis donemlerin anlamini degistirir (I-5)."},
  {"enerji_turu":"BUH","kaynak_birim":"kg","hedef_birim":"kWh","katsayi":560/860,
   "gecerli_baslangic":"2025-01","kaynak":"Excel'in 2025 satirlarindaki kWh/kg orani (S12)",
   "not":"560 kcal/kg ÷ 860 = 0,651163 kWh/kg. Excel 2025 Ocak'tan itibaren butun ekipmanlarda "
@@ -181,6 +193,14 @@ def main():
                 "devreye_giris":None,"devreden_cikis":None,"aktif":True,"not":""}
                for i,(k,u,a,t) in enumerate(VARLIKLAR)]
     # S6: gaz motorlari 2025'te durdu
+    # A-05: sayaci olmayan tuketiciler ve hangi istasyondan beslendikleri
+    OLCUMSUZ = {"SSU_KAZAN":"IST1", "URETIM_GAZ":"IST1", "BACA":"IST2"}
+    for v in varliklar:
+        v["olcumsuz_besleyen"] = OLCUMSUZ.get(v["kod"])
+        if v["kod"] in OLCUMSUZ:
+            v["not"] = ("A-05 cevabi: bu tuketici " + OLCUMSUZ[v["kod"]] +
+                        " istasyonundan besleniyor ama SAYACI YOK. Tukettigi gaz "
+                        "istasyon olcumunun icindedir, ekipman olcumlerinde gorunmez.")
     for v in varliklar:
         if v["kod"] in ("GM1","GM2","GM3"):
             v["devreden_cikis"]="2024-12"
