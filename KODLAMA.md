@@ -149,6 +149,7 @@ python3 betikler/faz2.py     # uçtan uca: Excel aktarımı + 8 yılın altın s
 python3 betikler/faz3.py     # grafik ekranları
 python3 betikler/faz4.py     # Faz 4 ekranları + 8.8 vakasının altın sayıları
 python3 betikler/faz5.py     # Faz 5 ekranları + izlenebilirlik + hedef motoru
+python3 betikler/kabul13.py  # El Kitabı Bölüm 13'ün HER satırı
 ```
 
 `kabul.py`, gerçek 2024 Haziran verisiyle programın **altın sayıları** üretip
@@ -187,6 +188,17 @@ ve GES üretiminin toplam enerjiye girmediği (K-03) sınanır.
 altın sayıları da burada doğrulanır: `a = 0,5025 · b = 6.021.966 · R² = 0,43`
 (35 nokta), normalize EnPI 1,119, CUSUM yıl sonu +14.605.848 kWh, işaret
 değişimi Şubat 2025. **72 kontrol, hepsi geçiyor.**
+
+`kabul13.py` el kitabının Bölüm 13'ünü satır satır doğrular: aktarım kontrolü
+(55 sütun eşlemesi, 4.541 değer, 7 ret, 96 enerji dönemi), sekiz yılın bütün
+altın sayıları, 2024 Haziran nokta kontrolü, hesap motorunun sekiz çıktısı ve
+on iki davranış kuralı (negatif engeli, kWh/m³ sapma uyarısı, 12 nokta kuralı,
+katman yeniden üretimi, yedek gidiş-dönüşü). **96 kontrol, hepsi geçiyor.**
+
+Bu doğrulama üç belge hatası buldu: aktarılan değer sayısı 4.534 değil 4.541
+(beklenen sayı 7 reddedilen hücreyi iki kez düşmüş), 13.2'nin maliyet sütunu
+brüt olduğu hâlde programın `Toplam Maliyet`'i net (K-24), ve 13.5'teki içe
+aktarma satırı 9.4'le çelişiyordu. Üçü de el kitabında düzeltildi.
 
 > **Baz çizgi sayıları neden değişti?** El Kitabı 8.8/13.4'teki eski değerler
 > (`a = 0,4254 · b = 6.774.643 · R² = 0,40`) Excel'in kendi `Toplam Üretim`

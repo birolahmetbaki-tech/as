@@ -2264,21 +2264,24 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 
 | Kontrol | Beklenen |
 |---|---|
-| Dolu dönem sayısı | **96** (2018-01 → 2025-12) |
+| Enerji verisi olan dönem | **96** (2018-01 → 2025-12) |
+| Kayıt bulunan toplam dönem | **99** (GES verisi 2026-03'e uzanır) |
 | İlk dönem | 2018 Ocak |
-| Son dönem | 2025 Aralık |
+| Son dönem (enerji) | 2025 Aralık |
+| Son dönem (herhangi bir kayıt) | 2026 Mart |
 | Aktarılmayan sütunlar | BX–DD (K-02) |
 | Hat-4 başlığı | "Hat-3" değil **"Hat-4"** (S7) |
 | Motorin noktaları | **Tanımlı ve toplamlara dahil** (K-24); veri boş, yıllık toplamlar **değişmiyor** |
 | Reddedilen değer | **7** — 6 negatif doğalgaz (S11) + 1 metin hücre (S10) |
-| Aktarılan ham değer | **4.534** · 99 dönem (GES verisi 2026-03'e uzanır) |
+| Otomatik eşleşen sütun | **55** (K-15) |
+| Aktarılan ham değer | **4.541** |
 
 ### 13.2 Altın sayılar — yıllık toplamlar
 
 Program içe aktarma sonrası bu tabloyu **hesaplayarak** üretmelidir
 (hiçbiri veri dosyasında saklı değildir — İ-1):
 
-| Yıl | Şebeke elektriği (kWh) | Doğalgaz (kWh) | **Toplam enerji (kWh)** | Üretim (kg) | **EnPI** | Maliyet (TL) |
+| Yıl | Şebeke elektriği (kWh) | Doğalgaz (kWh) | **Toplam enerji (kWh)** | Üretim (kg) | **EnPI** | Maliyet (brüt, TL) |
 |---|---:|---:|---:|---:|---:|---:|
 | 2018 | 15.919.712 | 128.362.622 | **144.282.334** | 104.980.360 | **1,3744** | 18.090.355 |
 | 2019 | 4.388.200 | 151.249.409 | **155.637.609** | 101.839.334 | **1,5283** | 24.838.813 |
@@ -2289,8 +2292,21 @@ Program içe aktarma sonrası bu tabloyu **hesaplayarak** üretmelidir
 | 2024 | 19.248.726 | 111.987.169 | **131.235.894** | 111.897.453 ⚠ | **1,1728** ⚠ | 180.794.462 |
 | 2025 | 17.199.431 | 120.168.406 | **137.367.837** | 100.503.911 | **1,3668** | 220.905.805 |
 
-**8 yıl toplamı:** enerji **1.116.013.044 kWh** · üretim **838.363.559 kg** ·
-maliyet **863.964.489 TL**
+**8 yıl toplamı:** enerji **1.116.013.044 kWh** · üretim **834.377.214 kg** ⚠ ·
+brüt maliyet **863.964.489 TL** · **net maliyet 838.241.020 TL**
+
+> **Maliyet sütunu brüttür.** Programın ürettiği `Toplam Maliyet`, tanım gereği
+> **GES mahsubu düşülmüş nettir** (K-13, K-24, 6.5) — 9.11'deki maliyet özeti de
+> bu sayıyı gösterir. GES geliri yalnızca 2025'te bulunduğu için iki sütun
+> yalnız o yılda ayrışır:
+>
+> | 2025 | TL |
+> |---|---:|
+> | Brüt (fatura toplamı) | 220.905.805 |
+> | − GES mahsubu + satışı | −25.723.469 |
+> | **= Net toplam maliyet** | **195.182.336** |
+>
+> Kabul testi her iki sayıyı da ayrı ayrı doğrular.
 
 > ⚠ **2024 üretim ve EnPI değerleri kaynak veri hatası içerir (S10, bkz. 2.5).**
 > Program bu iki sayıyı **kasten üretmez**: 2024 Ağustos'un toplam üretimi
@@ -2345,14 +2361,33 @@ maliyet **863.964.489 TL**
 | Katsayı değiştirildi | Katmanın tamamı yeniden üretilir; hiçbir ekranda eski değer kalmaz |
 | Eski bir yedek geri yüklendi | Katman **sıfırdan üretilir**; yedekteki hesaplanmış değer (varsa) yok sayılır (K-23) |
 | Yedek 7 günden eski | Üst şeritte **uyarı** (5.2) |
-| İçe aktarmada 1 satır hatalı | **Hiçbiri yazılmaz**, hata satırı gösterilir (9.4) |
+| İçe aktarmada 1 satır hatalı | **Geçerli değerlerin hepsi tek işlemde yazılır**, hatalı hücreler yazılmaz ve satır satır listelenir (9.4: "ya bütün geçerli satırlar ya hiçbiri") |
 
 ### 13.6 Bu bölümün kullanımı
 
-Her faz sonunda ilgili kontroller çalıştırılır. Bir sayı tutmuyorsa **program
-yanlıştır**, el kitabı değil — çünkü bu sayılar kaynak veriden bağımsız olarak
-hesaplanmıştır. Tutmayan sayı bulunursa önce hesabın kendisi, sonra aktarım
-gözden geçirilir.
+Her faz sonunda ilgili kontroller çalıştırılır: `betikler/kabul13.py` bu
+bölümün **her satırını** makineyle doğrular.
+
+Bir sayı tutmadığında sırayla şuna bakılır:
+
+1. **Hesabın kendisi** — formül, birim, katsayı.
+2. **Aktarım** — sütun eşlemesi, reddedilen hücreler.
+3. **Beklenen sayının hangi varsayımla üretildiği.**
+
+Üçüncü madde, bu belge yazılırken beklenenden daha sık devreye girdi. Bölüm
+13'ün sayıları tasarım aşamasında **Excel'in kendi sütunlarından** elle
+hesaplandı; program ise kendi kurallarını uyguluyor. İkisi ayrıldığında
+**hangisinin neyi ölçtüğü** sorulmalıdır:
+
+| Tutmayan sayı | Neden | Sonuç |
+|---|---|---|
+| 2024 üretim ve EnPI | Excel'in `SUM`'ı bozuk hücreyi sessizce atlıyor (S10); program eksik üretimi doğru sayı gibi kullanmıyor (İ-3) | **Program haklı**, beklenen değer düzeltildi |
+| Baz çizgi `a`, `b`, `R²` | Aynı nedenle: regresyon 36 değil 35 nokta kullanıyor | **Program haklı**, 8.8 ve 13.4 düzeltildi |
+| Aktarılan ham değer | Beklenen sayı, reddedilen 7 hücreyi iki kez düşmüş | **Program haklı**, 4.534 → **4.541** |
+| 2025 maliyeti | 13.2'nin sütunu **brüt**, programın `Toplam Maliyet`'i tanım gereği **net** (K-13, K-24) | **İkisi de doğru, farklı şeyi ölçüyor** — tablo brüt olarak etiketlendi, net ayrıca yazıldı |
+
+Yani kural şudur: **tutmayan sayı bir hata değil, bir sorudur.** Cevabı
+bulunmadan hiçbiri düzeltilmez ve bulunan cevap buraya yazılır.
 
 ---
 
@@ -2365,7 +2400,8 @@ gözden geçirilir.
 | 0.8 | 2026-09-17 | **Faz 2 kodlandı.** Gerçek Excel aktarımında kaynak veride iki hata bulundu ve belgeye işlendi: **S10** (2024 Ağustos çikolata hücresi metin — Excel sessizce atlamış, 2024 EnPI'si yanlış) ve **S11** (6 negatif doğalgaz değeri). Yeni bölüm 2.5. Kabul kriterlerindeki 2024 üretim beklentisi, programın doğru davranışına göre düzeltildi (13.1, 13.2). |
 | 0.7 | 2026-09-17 | **Bölüm bölüm gözden geçirme tamamlandı.** D-01: 2.4'teki Bölüm 7 atfı Bölüm 8 olarak düzeltildi. **D-02 (K-24): motorin toplam enerjiye ve toplam maliyete dahil edildi** ve kural sabit listeden **rol filtresine** genelleştirildi; eksik değer/katsayı kenar durum kuralı yazıldı; A-07 kapandı, A-12 açıldı. D-03: 6.5'te tablo dışına düşmüş satır tabloya alındı. D-04: geçersiz `(S-2.3)` atfı düzeltildi. |
 | 1.0 | 2026-09-17 | **Faz 4 kodlandı.** Ekran 9 (Dönüşüm Verimliliği), Ekran 10 (Maliyet, fiyat/hacim ayrıştırması) ve Ekran 11 (GES) yazıldı. Gerçek veride iki yeni bulgu: **S12** (buhar entalpi varsayımı 2025'te 600 → 560 kcal/kg) ve **S13** (2025 kazan verimleri %100'ü aşıyor, gazın %12,9'u ekipmana atanmamış). Bunlara karşılık **K-25** (imkânsız verim performans sayılmaz), **K-26** (yıllar arası karşılaştırma birleşik yüzdeyle değil, ekipman bazında kaçınılabilir yakıtla) ve **K-27** (fatura ↔ tüketim bağı) kararları eklendi. A-05 ve A-08 somutlaştırıldı. 8.8 vakası S12/S13 çekinceleriyle güncellendi. 80 kabul sınaması geçiyor.
-| 1.1 | 2026-09-17 | **Faz 5 kodlandı — yol haritası tamamlandı.** Ekran 12 (Hedefler ve Aksiyonlar), Ekran 13 (Raporlar: aylık · yönetim gözden geçirme · serbest) ve izlenebilirlik (E-4) yazıldı; **K-28** eklendi, `hedef` ve `aksiyon` şemaları 6.3'e girdi. **Düzeltme:** 8.8 ve 13.4'teki baz çizgi sayıları, Excel'in kendi `Toplam Üretim` sütunuyla kurulmuş 36 noktalı bir regresyondan geliyordu; program S10 yüzünden 2024 Ağustos'u kullanamadığı için doğru model **35 nokta** üzerinden `a = 0,5025 · b = 6.021.966 · R² = 0,43`tür. Buna bağlı normalize EnPI (1,107 → **1,119**), CUSUM yıl sonu (13,3 → **14,6 milyon kWh**) ve türbin payı (%42 → **%38**) güncellendi. Bulgunun yönü değişmedi. 218 kabul sınaması geçiyor (16 + 36 + 14 + 80 + 72).
+| 1.1 | 2026-09-17 | **Faz 5 kodlandı — yol haritası tamamlandı.** Ekran 12 (Hedefler ve Aksiyonlar), Ekran 13 (Raporlar: aylık · yönetim gözden geçirme · serbest) ve izlenebilirlik (E-4) yazıldı; **K-28** eklendi, `hedef` ve `aksiyon` şemaları 6.3'e girdi. **Düzeltme:** 8.8 ve 13.4'teki baz çizgi sayıları, Excel'in kendi `Toplam Üretim` sütunuyla kurulmuş 36 noktalı bir regresyondan geliyordu; program S10 yüzünden 2024 Ağustos'u kullanamadığı için doğru model **35 nokta** üzerinden `a = 0,5025 · b = 6.021.966 · R² = 0,43`tür. Buna bağlı normalize EnPI (1,107 → **1,119**), CUSUM yıl sonu (13,3 → **14,6 milyon kWh**) ve türbin payı (%42 → **%38**) güncellendi. Bulgunun yönü değişmedi. 218 kabul sınaması geçiyor.
+| 1.2 | 2026-09-18 | **Bölüm 13'ün tamamı makineyle doğrulandı** (`betikler/kabul13.py`, 96 kontrol; toplam 314 kontrol geçiyor). Doğrulama üç belge hatası buldu: (1) **13.1** aktarılan ham değer 4.534 değil **4.541** — beklenen sayı reddedilen 7 hücreyi iki kez düşmüş; bağımsız bir XLSX sayımıyla teyit edildi. (2) **13.2**'nin maliyet sütunu **brüttür**; programın `Toplam Maliyet`'i tanım gereği GES mahsubu düşülmüş **nettir** (K-13, K-24) — sütun etiketlendi, 2025 için net 195.182.336 TL ve 8 yıl net toplamı 838.241.020 TL eklendi, 8 yıl üretim toplamı S10'a göre 834.377.214 kg olarak düzeltildi. (3) **13.5**'teki "1 satır hatalıysa hiçbiri yazılmaz" satırı 9.4'ün "ya bütün geçerli satırlar ya hiçbiri" kuralıyla çelişiyordu; 9.4 esas alınarak düzeltildi. 13.1'e otomatik eşleşen sütun sayısı ve dönem ayrımı (96 enerji / 99 kayıt) eklendi. **13.6 yeniden yazıldı:** tutmayan sayı bir hata değil, bir sorudur.
 | 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
 | 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |
 | 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |
