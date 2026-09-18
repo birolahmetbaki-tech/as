@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 1.3 — Faz 1–5 kodlandı · sekiz açık soru cevaplandı |
+| **Sürüm** | 1.4 — Faz 1–5 kodlandı · bütün açık sorular kapandı |
 | **Durum** | **Yol haritasının beş fazı da bitti.** 15 ekranın hepsi çalışıyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -135,7 +135,7 @@ program hatası değildir.
 | **S10** · 2024 Ağustos çikolata `"286609,,4"` | Excel bu ayın üretimini eksik topladı → **2024 yıllık üretim ve EnPI yanlış** | Reddeder; doğru değer **aktarma ekranında elle düzeltilebilir** (K-29). ✔ **Kapandı:** 2.866.094 kg |
 | **S11** · 6 negatif doğalgaz değeri | Fiziksel olarak imkânsız; kazan verimini bozar | Aktarmada reddeder |
 | **S12** · Buhar kg → kWh katsayısı 2025'te değişti | 2024 ile 2025 verimleri farklı varsayımla hesaplanmış → verim düşüşü olduğundan büyük görünür | Tarihli katsayı olarak tanımlanır; ekranda etkisi puan olarak ayrıştırılır |
-| **S13** · 2025'te kazan verimleri %100'ü aşıyor | Kazan-1 %137, Kazan-2 %145 — fiziksel olarak imkânsız | Sayıyı gizlemez ama performans saymaz; karşılaştırmadan çıkarır, nedenini yazar |
+| **S13** · Dönüşüm ekipmanlarında faydalı enerji yakıttan büyük | Kazan-1 %137, Kazan-2 %145 (2025); GM-1 %129, GM-2 %144 (2023) — fiziksel olarak imkânsız | ✔ **Nedeni belli: buhar kilogramları fazla yazılmış.** Sayıyı gizlemez ama performans saymaz (K-25); giriş anında uyarır (6.8); Veri Denetimi'nde tür olarak toplar |
 
 **S10'un büyüklüğü:**
 
@@ -187,7 +187,7 @@ Program iki katsayıyı da **tarihli** tutar (6.6, İ-5), her ay kendi dönemind
 katsayıyla hesaplanır ve Ekran 9 farkı açıkça ayrıştırır. Hangi entalpinin doğru
 olduğu **A-08**'e bağlıdır ve kullanıcı teyidi bekler.
 
-**S13 · 2025 kazan enerji dengesi tutarsız**
+**S13 · Buhar kilogramları fazla yazılmış**
 
 2025'te kazanlara atanmış doğalgaz 24.060.796 kWh, ürettikleri buhar
 33.942.000 kWh. Verim %100'ü aşamaz; en az **9,9 GWh yakıt eksik ölçülmüş ya da
@@ -199,16 +199,33 @@ başka bir ekipmana yazılmıştır**.
 | Ekipman sayaçlarına göre yakılan gaz | 104.632.257 |
 | **Hiçbir ekipmana atanmamış** | **15.536.150 (%12,9)** |
 
-Gaz motorlarının durduğu 2025'te İstasyon 1'de (gaz motoru istasyonu)
-14.397.746 kWh gaz görünüyor ama bu istasyona bağlı hiçbir ekipmanda tüketim
-yok. Bu gazın kazanlara gitmiş olması, kazan verimini gerçekçi bir aralığa
-(≈%88) oturtur — ancak bu bir **çıkarımdır, veri değildir**; sistem tahmin
-yürütmez (İ-3). Bulgu **A-05**'i somutlaştırır ve alt sayaç yatırımının nereye
-yapılacağını söyler.
+> ✔ **Nedeni kullanıcı tarafından teyit edildi (2026-09-18): buhar
+> kilogramları fazla yazılmış.** Ölçülen yakıt doğru, hatalı olan buhar
+> kaydıdır.
+
+Bulgu 2025'le sınırlı değil. Enerji dengesi kuralı (6.8) bütün veri setinde
+**214 bulgu** üretiyor — **21 ölçüm noktası, Ocak 2021 – Aralık 2025**:
+
+| Ekipman | Yıl | Yıllık verim | İmkânsız ay |
+|---|---:|---:|---:|
+| GM-1 | 2023 | %129 | 12 |
+| GM-2 | 2023 | %144 | 12 |
+| GM-3 | 2021 | %94 | 2 |
+| Kazan-1 | 2021 · 2025 | %40 · %137 | 1 · 6 |
+| Kazan-2 | 2021 · 2022 · 2023 · 2025 | %67 · %92 · %127 · %145 | 3 · 4 · 8 · 6 |
+
+Türbinin hiçbir döneminde bulgu yok; sorun **buhar üreten ekipmanlarla**
+sınırlıdır ve bu, "buhar kilogramları fazla yazılmış" açıklamasıyla örtüşür.
+
+Ayrı bir konu olarak İstasyon 1'deki 14.397.746 kWh gaz **A-05 cevabıyla
+açıklanmıştır**: sıcak su kazanı ve üretimde doğrudan gaz kullanılıyor, ikisinde
+de sayaç yok.
 
 > Program bu sayıları gizlemez; **performans olarak da sunmaz.** Ekran 9
 > imkânsız verimi kırmızı uyarıyla işaretler, o ekipmanı yıllar arası
-> karşılaştırmadan çıkarır ve nedenini yazar.
+> karşılaştırmadan çıkarır, nedenini yazar ve Veri Denetimi'ndeki listeye
+> bağlantı verir. Doğru kilogramlar girildiğinde bütün verimler kendiliğinden
+> düzelir — hiçbir sayı elle güncellenmez (İ-1, K-23).
 
 ---
 
@@ -839,6 +856,17 @@ Giriş anında çalışan denetimler. **Sistem asla sessizce düzeltmez** (İ-3,
 | Doğalgaz kWh/m³ oranı beklenen aralık dışı | **Uyar** (K-04) |
 | Alt toplam > üst toplam | **Uyar**, kaydet, ekranda göster (S3) |
 | Varlık devre dışıyken veri girişi | **Uyar** (S6) |
+| **Dönüşüm ekipmanında faydalı enerji > yakıt** | **Uyar** — verim %100'ü aşamaz (S13, K-25) |
+
+> **Enerji dengesi kuralı neden `engel` değil `uyar`?** Yakıt ile üretim farklı
+> sırayla girilebilir; yarı dolu bir dönem geçici olarak dengesiz görünür.
+> Kural giriş anında da, içe aktarma sonrasında da çalışır ve Veri Denetimi
+> ekranında kendi başlığı altında toplanır. Gerçek veride **214 bulgu, 21 ölçüm
+> noktası, Ocak 2021 – Aralık 2025** aralığında tetiklendi.
+>
+> Bu kural hesap çekirdeğini gerektirdiği için `model.js` içine gömülmez;
+> `hesap.js` onu `kuralEkle()` ile kaydeder. Böylece doğrulama tek yerde kalır
+> (İ-2) ve döngüsel bağımlılık doğmaz.
 
 ### 6.9 Excel'den ilk aktarım
 
@@ -1426,6 +1454,12 @@ CSV desteği · bulut yedeği (isteğe bağlı) · seçili dönem aralığını 
 Analiz ekranlarına güvenmeden önce bakılacak yer.
 
 #### Kullanıcının göreceği bilgiler
+
+**Bulgular önce TÜRE GÖRE toplanır**, sonra tek tek listelenir. Her tür satırı
+bulgu sayısını, kaç ölçüm noktasını ve hangi dönem aralığını kapsadığını yazar;
+tıklanınca aşağıdaki liste yalnız o türü gösterir. Yüzlerce satırlık düz bir
+liste, bir **sınıf** hatayı gizler — gerçek veride "faydalı enerji yakıttan
+büyük" bulgusu 786 uyarının arasında kaybolmuştu (S13).
 
 **Üstte dört sağlık göstergesi:**
 
@@ -2209,17 +2243,24 @@ kazan ayağıdır.
 | **A-11** | GES'in TL değeri mahsup ve satış olarak ayrışabilir mi? | ✔ **Ayrı girilebilir.** | Her santral için **iki gelir noktası**: `… Mahsubu` ve `… Şebekeye Satışı`. Geçmiş tek kalem veriler mahsup noktasında durur ve o noktanın notunda "ikisinin toplamıdır" yazar. **Kapandı.** |
 | **A-12** | Motorin kg → kWh katsayısı ne olacak? | ✔ **11,9 kWh/kg.** | 2018-01'den geçerli tarihli katsayı olarak tanımlandı. Motorin verisi girildiği anda toplam enerjiye ve maliyete girer (K-24). **Kapandı.** |
 
-**Kalan tek açık nokta — S13'ün kazan ayağı.** A-05 cevabı İstasyon 1'deki
-14,4 GWh'yi açıklıyor. Ama İstasyon 2'de şu duruyor: 2025'te istasyon sayacı
-24.060.796 kWh gaz gösteriyor, kazan sayaçlarının toplamı **tam olarak aynı
-rakam**, üretilen buhar ise 33.942.000 kWh. Baca yakıcıları da aynı istasyondan
-besleniyorsa kazanlara giden gaz bu rakamdan **daha azdır** — yani buhar
-fazlalığı açıklanmış olmuyor, **büyüyor**.
+**Açık soru kalmadı.** S13'ün kazan ayağı da kapandı: kullanıcı teyidine göre
+**buhar kilogramları fazla yazılmış** (2.5). Ölçülen yakıt doğru, hatalı olan
+buhar kaydıdır.
 
-Üç olasılık kalıyor: (a) 2025 buhar kilogram kayıtları fazla yazılmış,
-(b) kazanlara yazılan buharın bir kısmı aslında türbinden geliyor,
-(c) İstasyon 2 sayacı eksik ölçüyor. Program bu ekipmanların verimini
-üretmeye devam ediyor ama **performans saymıyor** (K-25) ve nedenini yazıyor.
+Buna karşılık iki şey eklendi:
+
+1. **Enerji dengesi doğrulama kuralı (6.8).** Bir dönüşüm ekipmanının faydalı
+   enerjisi yakıtını aşarsa sistem **giriş anında** uyarır. Aynı hata bir daha
+   sessizce giremez. Kural hesap çekirdeğini gerektirdiği için `hesap.js`
+   tarafından `kuralEkle()` ile kaydedilir; doğrulama yine tek yerde kalır (İ-2).
+2. **Bulgu türü gruplaması (9.5).** Veri Denetimi ekranı bulguları türe göre
+   toplar ve süzer. Bu sınıf hata, gerçek veride **786 uyarının arasında
+   kaybolmuştu**; artık kendi satırında **214 bulgu · 21 ölçüm noktası ·
+   Ocak 2021 – Aralık 2025** olarak görünüyor.
+
+> Sorunun 2025'le sınırlı olmadığı bu sayede ortaya çıktı: aynı bulgu 2023'te
+> gaz motorlarında, 2021–2022'de Kazan-2'de de var. Doğru kilogramlar
+> girildiğinde bütün verimler kendiliğinden düzelir (İ-1, K-23).
 
 ---
 
@@ -2437,7 +2478,8 @@ bulunmadan hiçbiri düzeltilmez ve bulunan cevap buraya yazılır.
 | 1.0 | 2026-09-17 | **Faz 4 kodlandı.** Ekran 9 (Dönüşüm Verimliliği), Ekran 10 (Maliyet, fiyat/hacim ayrıştırması) ve Ekran 11 (GES) yazıldı. Gerçek veride iki yeni bulgu: **S12** (buhar entalpi varsayımı 2025'te 600 → 560 kcal/kg) ve **S13** (2025 kazan verimleri %100'ü aşıyor, gazın %12,9'u ekipmana atanmamış). Bunlara karşılık **K-25** (imkânsız verim performans sayılmaz), **K-26** (yıllar arası karşılaştırma birleşik yüzdeyle değil, ekipman bazında kaçınılabilir yakıtla) ve **K-27** (fatura ↔ tüketim bağı) kararları eklendi. A-05 ve A-08 somutlaştırıldı. 8.8 vakası S12/S13 çekinceleriyle güncellendi. 80 kabul sınaması geçiyor.
 | 1.1 | 2026-09-17 | **Faz 5 kodlandı — yol haritası tamamlandı.** Ekran 12 (Hedefler ve Aksiyonlar), Ekran 13 (Raporlar: aylık · yönetim gözden geçirme · serbest) ve izlenebilirlik (E-4) yazıldı; **K-28** eklendi, `hedef` ve `aksiyon` şemaları 6.3'e girdi. **Düzeltme:** 8.8 ve 13.4'teki baz çizgi sayıları, Excel'in kendi `Toplam Üretim` sütunuyla kurulmuş 36 noktalı bir regresyondan geliyordu; program S10 yüzünden 2024 Ağustos'u kullanamadığı için doğru model **35 nokta** üzerinden `a = 0,5025 · b = 6.021.966 · R² = 0,43`tür. Buna bağlı normalize EnPI (1,107 → **1,119**), CUSUM yıl sonu (13,3 → **14,6 milyon kWh**) ve türbin payı (%42 → **%38**) güncellendi. Bulgunun yönü değişmedi. 218 kabul sınaması geçiyor.
 | 1.2 | 2026-09-18 | **Bölüm 13'ün tamamı makineyle doğrulandı** (`betikler/kabul13.py`, 96 kontrol; toplam 314 kontrol geçiyor). Doğrulama üç belge hatası buldu: (1) **13.1** aktarılan ham değer 4.534 değil **4.541** — beklenen sayı reddedilen 7 hücreyi iki kez düşmüş; bağımsız bir XLSX sayımıyla teyit edildi. (2) **13.2**'nin maliyet sütunu **brüttür**; programın `Toplam Maliyet`'i tanım gereği GES mahsubu düşülmüş **nettir** (K-13, K-24) — sütun etiketlendi, 2025 için net 195.182.336 TL ve 8 yıl net toplamı 838.241.020 TL eklendi, 8 yıl üretim toplamı S10'a göre 834.377.214 kg olarak düzeltildi. (3) **13.5**'teki "1 satır hatalıysa hiçbiri yazılmaz" satırı 9.4'ün "ya bütün geçerli satırlar ya hiçbiri" kuralıyla çelişiyordu; 9.4 esas alınarak düzeltildi. 13.1'e otomatik eşleşen sütun sayısı ve dönem ayrımı (96 enerji / 99 kayıt) eklendi. **13.6 yeniden yazıldı:** tutmayan sayı bir hata değil, bir sorudur.
-| 1.3 | 2026-09-18 | **Sekiz açık sorunun hepsi cevaplandı; A-06, A-08, A-10, A-11, A-12 kapandı.** **S10 kapandı:** 2024 Ağustos çikolata üretimi **2.866.094 kg**; buna karşılık **K-29** eklendi — reddedilen hücre içe aktarma önizlemesinde tek tıkla düzeltilebiliyor, kalite `düzeltildi` ve kaynak metin notta kalıyor. Düzeltme el kitabının kendi tahminini birebir doğruladı: 2024 EnPI **1,1435**, 2025'teki ham bozulma **%+19,5**. Baz çizgi 36 noktaya çıktı (`a = 0,4986 · b = 6.061.618 · R² = 0,44`); normalize EnPI **1,118**, CUSUM yıl sonu **+14.518.939 kWh**, türbinin payı %38. **A-05:** İstasyon 1'i sıcak su kazanı ve üretim, İstasyon 2'yi baca yakıcıları besliyor; üçü de sayaçsız, üçü de varlık olarak tanımlandı ve Ekran 9 artık adlarını sayıyor. **A-11:** GES geliri santral başına mahsup ve satış olarak ayrıldı. **A-12:** motorin 11,9 kWh/kg. Kalan tek açık nokta S13'ün kazan ayağıdır: baca yakıcıları da hesaba katılınca kazanlardaki buhar fazlalığı açıklanmıyor, büyüyor. 329 kabul sınaması geçiyor. |
+| 1.3 | 2026-09-18 | **Sekiz açık sorunun hepsi cevaplandı; A-06, A-08, A-10, A-11, A-12 kapandı.** **S10 kapandı:** 2024 Ağustos çikolata üretimi **2.866.094 kg**; buna karşılık **K-29** eklendi — reddedilen hücre içe aktarma önizlemesinde tek tıkla düzeltilebiliyor, kalite `düzeltildi` ve kaynak metin notta kalıyor. Düzeltme el kitabının kendi tahminini birebir doğruladı: 2024 EnPI **1,1435**, 2025'teki ham bozulma **%+19,5**. Baz çizgi 36 noktaya çıktı (`a = 0,4986 · b = 6.061.618 · R² = 0,44`); normalize EnPI **1,118**, CUSUM yıl sonu **+14.518.939 kWh**, türbinin payı %38. **A-05:** İstasyon 1'i sıcak su kazanı ve üretim, İstasyon 2'yi baca yakıcıları besliyor; üçü de sayaçsız, üçü de varlık olarak tanımlandı ve Ekran 9 artık adlarını sayıyor. **A-11:** GES geliri santral başına mahsup ve satış olarak ayrıldı. **A-12:** motorin 11,9 kWh/kg. Kalan tek açık nokta S13'ün kazan ayağıdır: baca yakıcıları da hesaba katılınca kazanlardaki buhar fazlalığı açıklanmıyor, büyüyor. 333 kabul sınaması geçiyor. |
+| 1.4 | 2026-09-18 | **S13 kapandı — açık soru kalmadı.** Kullanıcı teyidi: dönüşüm ekipmanlarındaki imkânsız verimin nedeni **buhar kilogramlarının fazla yazılmasıdır**. Buna karşılık **6.8'e enerji dengesi kuralı** eklendi (faydalı enerji > yakıt ⇒ giriş anında uyarı; `hesap.js` kuralı `kuralEkle()` ile kaydeder, model.js hesap çekirdeğine bağımlı olmaz) ve **Veri Denetimi ekranı bulguları türe göre gruplayıp süzüyor** (9.5). Gruplama, sorunun 2025'le sınırlı olmadığını ortaya çıkardı: aynı bulgu 2023'te GM-1/GM-2'de, 2021–2022'de Kazan-2'de de var — toplam **214 bulgu · 21 ölçüm noktası · Ocak 2021 – Aralık 2025**. Türbinin hiçbir döneminde bulgu yok, bu da açıklamayla örtüşüyor.  333 kabul sınaması geçiyor. |
 | 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
 | 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |
 | 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |

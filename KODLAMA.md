@@ -215,10 +215,31 @@ Kullanıcı sekiz sorunun hepsini cevapladı; beşi kapandı, ikisi koda dönü�
 - **A-12** — motorin 11,9 kWh/kg, 2018-01'den geçerli.
 - **A-06, A-08, A-10** — mevcut davranış onaylandı; değişiklik gerekmedi.
 
-Kalan tek açık nokta S13'ün kazan ayağı: baca yakıcıları da İstasyon 2'den
-beslendiğine göre kazanlara giden gaz sayaçtan daha azdır — yani buhar
-fazlalığı açıklanmış olmuyor, büyüyor. Program o verimleri üretmeye devam
-ediyor ama performans saymıyor (K-25).
+**S13 de kapandı:** imkânsız verimlerin nedeni **buhar kilogramlarının fazla
+yazılmasıdır**. Ölçülen yakıt doğru. Buna karşılık iki şey eklendi:
+
+- **Enerji dengesi doğrulama kuralı (6.8).** Bir dönüşüm ekipmanının faydalı
+  enerjisi yakıtını aşarsa sistem **giriş anında** uyarır; aynı hata bir daha
+  sessizce giremez. Kural hesap çekirdeğini gerektirdiği için `model.js`'e
+  gömülmedi: `hesap.js` onu `kuralEkle()` ile kaydediyor, böylece doğrulama
+  tek yerde kalıyor (İ-2) ve döngüsel bağımlılık doğmuyor.
+- **Bulgu türü gruplaması (Ekran 4).** Doğrulama bulguları artık önce türe
+  göre toplanıyor, sonra tek tek listeleniyor; bir tür satırına tıklayınca
+  liste süzülüyor.
+
+Gruplama sorunun 2025'le sınırlı olmadığını ortaya çıkardı — bu sınıf hata
+786 uyarının arasında kaybolmuştu:
+
+| Ekipman | Yıl | Yıllık verim |
+|---|---|---|
+| GM-1 | 2023 | %129 |
+| GM-2 | 2023 | %144 |
+| Kazan-1 | 2025 | %137 |
+| Kazan-2 | 2022 · 2023 · 2025 | %92 · %127 · %145 |
+
+Toplam **214 bulgu · 21 ölçüm noktası · Ocak 2021 – Aralık 2025**. Türbinde
+hiç bulgu yok; bu da "buhar kilogramları" açıklamasıyla örtüşüyor. Doğru
+kilogramlar girildiğinde bütün verimler kendiliğinden düzelir (İ-1, K-23).
 
 Bu doğrulama üç belge hatası buldu: aktarılan değer sayısı 4.534 değil 4.541
 (beklenen sayı 7 reddedilen hücreyi iki kez düşmüş), 13.2'nin maliyet sütunu

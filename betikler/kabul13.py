@@ -294,6 +294,36 @@ def main():
         ok("Alt toplam üstü aşınca kaydedilir ama uyarılır (S3)",
            "uyar" in d["asma"] and "engel" not in d["asma"], str(d["asma"]))
         ok("Doğalgaz kWh/m³ oranı sapması uyarır (K-04)", "uyar" in d["oran"], str(d["oran"]))
+        dn=s.evaluate("""()=>{const M=__req("js/model.js"), V=__req("js/veri.js"),
+            H=__req("js/hesap.js");
+          // 6.8 enerji dengesi kurali: gercek veride tetiklenen bulgular
+          let say=0; const nokta=new Set(); let ilk=null, son=null;
+          for (const n of V.durum.olcum_noktalari){
+            if (n.veri_tipi!=="olculen") continue;
+            for (const d of V.noktaDonemleri(n.kod)){
+              const b=M.dogrula(n.kod,d.yil,d.ay,d.v).filter(x=>x.tur==="denge");
+              if (!b.length) continue;
+              say++; nokta.add(n.kod);
+              const k=d.yil*12+d.ay;
+              if (ilk===null||k<ilk) ilk=k; if (son===null||k>son) son=k;
+            }
+          }
+          // turbinde bulgu olmamali
+          let turbin=0;
+          for (const kod of ["TURBIN_BUH_KG","TURBIN_EL","TURBIN_DG_KWH"])
+            for (const d of V.noktaDonemleri(kod))
+              turbin+=M.dogrula(kod,d.yil,d.ay,d.v).filter(x=>x.tur==="denge").length;
+          return {say, nokta:nokta.size, ilk, son, turbin,
+                  turler:Object.keys(M.BULGU_TURLERI).length};}""")
+        ok("6.8 · enerji dengesi kuralı gerçek veride tetikleniyor (214 bulgu · 21 nokta)",
+           dn["say"]==214 and dn["nokta"]==21, f'{dn["say"]} bulgu · {dn["nokta"]} nokta')
+        ok("Bulgu aralığı Ocak 2021 – Aralık 2025",
+           dn["ilk"]==2021*12+1 and dn["son"]==2025*12+12,
+           f'{dn["ilk"]//12}-{dn["ilk"]%12} → {dn["son"]//12}-{dn["son"]%12}')
+        ok("Türbinde denge bulgusu YOK (S13 açıklamasıyla örtüşür)", dn["turbin"]==0,
+           str(dn["turbin"]))
+        ok("Bulgu türleri tanımlı (9.5 gruplaması)", dn["turler"]==8, str(dn["turler"]))
+
         ok("12'den az veri noktasıyla regresyon kurulmaz (8.3)",
            d["azNokta"].get("yetersiz") is True, str(d["azNokta"]))
         ok("R² < 0,5 modeli kurar ama açık uyarı taşır",

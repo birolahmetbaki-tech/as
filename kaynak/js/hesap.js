@@ -4,7 +4,7 @@
 
 import { durum, deger, degerKayit } from "./veri.js";
 import { nokta, varlik, altAgac, varlikNoktalari, cevir, katsayi, formulCoz,
-         ROLLER, enerjiBirimiMi } from "./model.js";
+         kuralEkle, UYAR, ROLLER, enerjiBirimiMi } from "./model.js";
 
 /** Özel toplam kodları — EnPI tanımlarında @ ile kullanılır */
 export const OZEL = {
@@ -793,3 +793,51 @@ export function veriKalitesi(donemler) {
   }
   return { girildi, duzeltildi, tahmin, toplam:girildi + duzeltildi + tahmin };
 }
+
+
+/* ============================================================ 6.8 kuralı
+   ENERJİ DENGESİ: bir dönüşüm ekipmanının faydalı enerjisi yakıtından
+   büyük olamaz. Bu, S13'te gerçek veride görüldü (2025 buhar kilogramları
+   fazla yazılmış). Kural giriş anında da, içe aktarmada da çalışır ki
+   aynı hata bir daha sessizce girmesin.
+   `engel` DEĞİL `uyar` seviyesindedir: yakıt ile üretim farklı sırayla
+   girilebilir, yarı dolu bir dönem geçici olarak dengesiz görünür.       */
+kuralEkle((noktaKod, yil, ay, v) => {
+  const n = nokta(noktaKod);
+  if (!n) return null;
+  const cikti = n.rol === "ara_enerji" || n.rol === "tesis_ici_uretim";
+  const yakitMi = n.rol === "satin_alinan";
+  if (!cikti && !yakitMi) return null;
+
+  const nk = donusumNoktalari(n.varlik);
+  if (!nk.yakit) return null;
+
+  const kwh = p => { if (!p) return 0;
+    const d = noktaDeger(p.kod, yil, ay);
+    return Number.isFinite(d.deger) ? d.deger : 0; };
+
+  // Doğrulanan değerin kWh karşılığı (kg girilmişse katsayıyla çevrilir)
+  const c = cevir(v, n.birim, "kWh", n.enerji_turu, yil, ay);
+  if (c.eksik || !Number.isFinite(c.deger)) return null;
+  const vKwh = c.deger;
+
+  // Bu nokta hangi kalemin kaynağı? (kg noktası, kWh noktasının formülünde geçer)
+  const kaynagiMi = p => p && (p.kod === noktaKod ||
+    formulBilesenleri(p.formul).kodlar.includes(noktaKod));
+
+  let yakit = yakitMi && (nk.yakit.kod === noktaKod) ? vKwh : kwh(nk.yakit);
+  const faydali =
+      (kaynagiMi(nk.elk)   ? vKwh : kwh(nk.elk)) +
+      (kaynagiMi(nk.buhar) ? vKwh : kwh(nk.buhar)) +
+      (kaynagiMi(nk.ssu)   ? vKwh : kwh(nk.ssu));
+
+  if (!yakit || !faydali) return null;
+  if (faydali <= yakit * 1.02) return null;
+  const va = varlik(n.varlik);
+  return { seviye: UYAR, tur: "denge",
+    mesaj: `${va?.ad || n.varlik}: faydalı enerji yakıttan büyük ` +
+      `(${Math.round(faydali).toLocaleString("tr-TR")} > ` +
+      `${Math.round(yakit).toLocaleString("tr-TR")} kWh, verim %` +
+      `${(faydali / yakit * 100).toFixed(0)}). Verim %100'ü aşamaz — ` +
+      "ölçümlerden biri hatalı (6.8, K-25)." };
+});

@@ -117,6 +117,24 @@ export function cevir(v, kaynakBirim, hedefBirim, turKod, yil, ay) {
 /* ----------------------------------------------------- doğrulama (6.8) */
 export const ENGEL = "engel", UYAR = "uyar";
 
+/** Bulgu türleri — denetim ekranı bunlara göre gruplar (6.8) */
+export const BULGU_TURLERI = {
+  negatif:       "Negatif değer",
+  gelecek:       "Gelecek dönem",
+  devrede_degil: "Varlık devrede değil",
+  sicrama:       "Ani sıçrama",
+  dusuk:         "Ani düşüş",
+  atlanan:       "Atlanmış dönem",
+  oran:          "kWh/m³ oranı sapmış",
+  denge:         "Faydalı enerji yakıttan büyük",
+};
+
+/* Ek doğrulama kuralları (6.8).
+   Hesap çekirdeğini gerektiren kurallar buraya KAYIT OLUR; model.js hesap.js'e
+   bağımlı olmaz, döngüsel içe aktarma doğmaz. */
+const ekKurallar = [];
+export function kuralEkle(fn) { ekKurallar.push(fn); }
+
 function medyan(liste) {
   if (!liste.length) return null;
   const s = [...liste].sort((a, b) => a - b), o = s.length >> 1;
@@ -144,24 +162,24 @@ export function dogrula(noktaKod, yil, ay, v) {
   if (!n) return [{ seviye: ENGEL, mesaj: "Ölçüm noktası tanımlı değil" }];
   if (v === null || v === undefined || v === "") return bulgular;
 
-  if (v < 0) bulgular.push({ seviye: ENGEL, mesaj: "Negatif değer girilemez" });
+  if (v < 0) bulgular.push({ seviye: ENGEL, mesaj: "Negatif değer girilemez" , tur: "negatif" });
 
   const bug = new Date();
   if (yil * 12 + ay > bug.getFullYear() * 12 + bug.getMonth() + 1)
-    bulgular.push({ seviye: UYAR, mesaj: "Bu dönem gelecekte" });
+    bulgular.push({ seviye: UYAR, mesaj: "Bu dönem gelecekte" , tur: "gelecek" });
 
   if (!devrede(n.varlik, yil, ay)) {
     const va = varlik(n.varlik);
-    bulgular.push({ seviye: UYAR,
+    bulgular.push({ seviye: UYAR, tur: "devrede_degil",
       mesaj: `${va?.ad || n.varlik} bu dönemde devrede görünmüyor${va?.devreden_cikis ? ` (${va.devreden_cikis} sonrası)` : ""}` });
   }
 
   const m = gecmisMedyan(noktaKod, yil, ay);
   if (m !== null && v > 0) {
     if (v > m * 3)
-      bulgular.push({ seviye: UYAR, mesaj: `Son 12 ayın medyanının 3 katından büyük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
+      bulgular.push({ seviye: UYAR, tur: "sicrama", mesaj: `Son 12 ayın medyanının 3 katından büyük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
     else if (v < m / 3)
-      bulgular.push({ seviye: UYAR, mesaj: `Son 12 ayın medyanının üçte birinden küçük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
+      bulgular.push({ seviye: UYAR, tur: "dusuk", mesaj: `Son 12 ayın medyanının üçte birinden küçük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
   }
 
   // Atlanan ay: bir önceki dönem boş ama daha öncesi dolu
@@ -169,7 +187,7 @@ export function dogrula(noktaKod, yil, ay, v) {
   if (deger(noktaKod, o.yil, o.ay) === null) {
     const oo = donemKaydir(yil, ay, -2);
     if (deger(noktaKod, oo.yil, oo.ay) !== null)
-      bulgular.push({ seviye: UYAR, mesaj: "Bir önceki dönem boş — atlanmış olabilir" });
+      bulgular.push({ seviye: UYAR, tur: "atlanan", mesaj: "Bir önceki dönem boş — atlanmış olabilir" });
   }
 
   // Doğalgaz kWh ↔ m³ tutarlılığı (K-04)
@@ -183,9 +201,15 @@ export function dogrula(noktaKod, yil, ay, v) {
       const k = katsayi(n.enerji_turu, "m³", "kWh", yil, ay);
       const bek = k ? k.katsayi : 10.92;
       if (Math.abs(oran - bek) / bek > 0.05)
-        bulgular.push({ seviye: UYAR,
+        bulgular.push({ seviye: UYAR, tur: "oran",
           mesaj: `kWh/m³ oranı ${oran.toFixed(2)} — beklenen ${bek.toFixed(2)} (%5'ten fazla sapma)` });
     }
+  }
+
+  for (const fn of ekKurallar) {
+    let b = null;
+    try { b = fn(noktaKod, yil, ay, v); } catch (e) { b = null; }
+    if (b) bulgular.push(...(Array.isArray(b) ? b : [b]));
   }
   return bulgular;
 }

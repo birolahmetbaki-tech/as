@@ -2269,10 +2269,12 @@ __f["js/ekranlar/denetim.js"] = function(__x) {
    "Verim sağlam mı?" — Analiz ekranlarına güvenmeden önce bakılacak yer. */
 const { el, $, bosalt, say, yuzde, uyari, bildir, tablo, bosDurum, donemAd, donemKisa, donemAraligi } = __req("js/ortak.js");
 const V = __req("js/veri.js");
-const { nokta, varlik, dogrula, ENGEL, devrede } = __req("js/model.js");
+const { nokta, varlik, dogrula, ENGEL, BULGU_TURLERI, devrede } = __req("js/model.js");
 const { katman } = __req("js/hesaplanan.js");
 const { oranCubugu } = __req("js/grafik.js");
 let sekme = "bulgu";
+
+let suzgec = null;        // bulgu türü süzgeci
 function ekranDenetim(k) {
   k.append(el("div.sayfa-basi", {},
     el("h1", { metin:"Veri Denetimi" }),
@@ -2321,7 +2323,7 @@ function denetle(ar) {
         if (yoksayilan[anahtar]) continue;
         bulgular.push({ anahtar, kod:n.kod, ad:n.ad, varlik:varlik(n.varlik)?.ad || "",
           yil:d.yil, ay:d.ay, donem:donemAd(d.yil, d.ay), deger:v,
-          seviye:b.seviye, mesaj:b.mesaj });
+          seviye:b.seviye, mesaj:b.mesaj, tur:b.tur || "diger" });
       }
     }
   }
@@ -2362,6 +2364,8 @@ function cizBulgular(k, r) {
   }
   if (r.bulgular.length) {
     k.append(el("h2", { metin:"Doğrulama bulguları" }));
+    turOzeti(k, r);
+    const suzulmus = suzgec ? r.bulgular.filter(b => b.tur === suzgec) : r.bulgular;
     k.append(tablo([
       { ad:"Dönem", anahtar:"donem" },
       { ad:"Ölçüm noktası", deger:b => el("span", {}, b.ad,
@@ -2377,9 +2381,9 @@ function cizBulgular(k, r) {
           el("button.dugme.kucuk", { metin:"Sorun değil",
             title:"Bilinçli — bir daha uyarma (kaydı kalır)",
             onclick:() => yoksay(b) })) },
-    ], r.bulgular.slice(0, 200)));
-    if (r.bulgular.length > 200)
-      k.append(el("p.kucuk.sessiz", { metin:`İlk 200 bulgu gösteriliyor (toplam ${say(r.bulgular.length)}).` }));
+    ], suzulmus.slice(0, 200)));
+    if (suzulmus.length > 200)
+      k.append(el("p.kucuk.sessiz", { metin:`İlk 200 bulgu gösteriliyor (toplam ${say(suzulmus.length)}).` }));
   }
 
   if (r.uretilemeyen.length) {
@@ -2398,6 +2402,47 @@ function cizBulgular(k, r) {
     `${n} bulgu "sorun değil" olarak işaretlendi. `,
     el("button.dugme.kucuk", { metin:"İşaretleri temizle",
       onclick:() => { V.durum.ayarlar.yoksayilan_bulgular = {}; V.degisti("denetim"); yenile(); } })));
+}
+
+/**
+ * Bulguları TÜRE GÖRE toplar. Yüzlerce satırlık düz bir liste, bir SINIF
+ * hatayı gizler: gerçek veride "faydalı enerji yakıttan büyük" bulgusu
+ * 786 uyarının arasında kaybolmuştu (S13).
+ */
+function turOzeti(k, r) {
+  const grup = new Map();
+  for (const b of r.bulgular) {
+    const g = grup.get(b.tur) || { tur:b.tur, say:0, nokta:new Set(), ilk:null, son:null,
+                                   seviye:b.seviye };
+    g.say++; g.nokta.add(b.kod);
+    const kod = b.yil * 12 + b.ay;
+    if (g.ilk === null || kod < g.ilk.k) g.ilk = { k:kod, ad:b.donem };
+    if (g.son === null || kod > g.son.k) g.son = { k:kod, ad:b.donem };
+    if (b.seviye === ENGEL) g.seviye = ENGEL;
+    grup.set(b.tur, g);
+  }
+  const satirlar = [...grup.values()].sort((a, b) => b.say - a.say);
+  k.append(el("p.kucuk.sessiz", { metin:
+    "Bulgular türe göre toplanır; bir satıra tıklayınca aşağıdaki liste " +
+    "yalnız o türü gösterir. Tek tek bakmadan önce buraya bakın." }));
+  k.append(tablo([
+    { ad:"Bulgu türü", deger:g => el("span", {},
+        el("span.rozet" + (g.seviye === ENGEL ? ".kritik" : ".dikkat"),
+           { metin:g.seviye === ENGEL ? "engel" : "uyarı" }),
+        " " + (BULGU_TURLERI[g.tur] || g.tur)) },
+    { ad:"Bulgu", sayi:true, anahtar:"say" },
+    { ad:"Ölçüm noktası", sayi:true, deger:g => g.nokta.size },
+    { ad:"Aralık", deger:g => g.ilk.ad === g.son.ad ? g.ilk.ad : `${g.ilk.ad} – ${g.son.ad}` },
+    { ad:"", deger:g => el("button.dugme.kucuk" + (suzgec === g.tur ? ".ana" : ""), {
+        metin: suzgec === g.tur ? "✓ seçili" : "Yalnız bunu göster",
+        onclick:() => { suzgec = suzgec === g.tur ? null : g.tur; yenile(); } }) },
+  ], satirlar, { satirOzellik:g => ({ stil: suzgec === g.tur
+      ? "background:var(--yuzey-2)" : "" }) }));
+  if (suzgec)
+    k.append(el("p.kucuk", { stil:{ marginBottom:"8px" } },
+      `Süzgeç açık: ${BULGU_TURLERI[suzgec] || suzgec}. `,
+      el("button.dugme.kucuk", { metin:"Süzgeci kaldır",
+        onclick:() => { suzgec = null; yenile(); } })));
 }
 
 function yoksay(b) {
@@ -4161,11 +4206,15 @@ function tutarsizlikUyarisi(k, imkansiz, hepsi) {
     t2 + (r.s?.imkansiz ? r.s.faydali - r.s.yakit : 0), 0);
   k.append(uyari("ciddi",
     el("b", { metin:`${imkansiz.length} ekipmanda faydalı enerji yakıttan büyük: ${ad}. ` }),
-    (eksik > 0 ? `${secilenYil} yılında en az ${say(eksik, 0)} kWh yakıt ölçülmemiş ya da ` +
-      "başka bir ekipmana yazılmış görünüyor. " : "") +
+    (eksik > 0 ? `${secilenYil} yılında en az ${say(eksik, 0)} kWh'lik bir tutarsızlık var. ` : "") +
     "Verim %100'ü aşamaz; bu sayılar performans olarak okunamaz. " +
-    "En olası neden, istasyon sayacındaki gazın ekipmanlara doğru dağıtılmamış olmasıdır " +
-    "(A-05). Veri düzeltilene kadar bu ekipmanların verim değişimi yorumlanmamalıdır."));
+    "Kullanıcı teyidine göre nedeni **buhar kilogramlarının fazla yazılmış olmasıdır** " +
+    "(S13); ölçüm düzeltilene kadar bu ekipmanların verim değişimi yorumlanmamalıdır. " +
+    "Aynı bulgunun bütün dönemlerdeki listesi Veri Denetimi ekranında " +
+    "\u201cFaydalı enerji yakıttan büyük\u201d süzgecindedir.",
+    el("div", { stil:{ marginTop:"7px" } },
+      el("button.dugme.kucuk", { metin:"→ Veri Denetimi'nde listele",
+        onclick:() => { location.hash = "e4"; } }))));
 }
 
 /* ------------------- hiçbir ekipmana atanmamış yakıt (6.7, A-05) */
@@ -5927,6 +5976,24 @@ function cevir(v, kaynakBirim, hedefBirim, turKod, yil, ay) {
 /* ----------------------------------------------------- doğrulama (6.8) */
 const ENGEL = "engel", UYAR = "uyar";
 
+/** Bulgu türleri — denetim ekranı bunlara göre gruplar (6.8) */
+const BULGU_TURLERI = {
+  negatif:       "Negatif değer",
+  gelecek:       "Gelecek dönem",
+  devrede_degil: "Varlık devrede değil",
+  sicrama:       "Ani sıçrama",
+  dusuk:         "Ani düşüş",
+  atlanan:       "Atlanmış dönem",
+  oran:          "kWh/m³ oranı sapmış",
+  denge:         "Faydalı enerji yakıttan büyük",
+};
+
+/* Ek doğrulama kuralları (6.8).
+   Hesap çekirdeğini gerektiren kurallar buraya KAYIT OLUR; model.js hesap.js'e
+   bağımlı olmaz, döngüsel içe aktarma doğmaz. */
+const ekKurallar = [];
+function kuralEkle(fn) { ekKurallar.push(fn); }
+
 function medyan(liste) {
   if (!liste.length) return null;
   const s = [...liste].sort((a, b) => a - b), o = s.length >> 1;
@@ -5954,24 +6021,24 @@ function dogrula(noktaKod, yil, ay, v) {
   if (!n) return [{ seviye: ENGEL, mesaj: "Ölçüm noktası tanımlı değil" }];
   if (v === null || v === undefined || v === "") return bulgular;
 
-  if (v < 0) bulgular.push({ seviye: ENGEL, mesaj: "Negatif değer girilemez" });
+  if (v < 0) bulgular.push({ seviye: ENGEL, mesaj: "Negatif değer girilemez" , tur: "negatif" });
 
   const bug = new Date();
   if (yil * 12 + ay > bug.getFullYear() * 12 + bug.getMonth() + 1)
-    bulgular.push({ seviye: UYAR, mesaj: "Bu dönem gelecekte" });
+    bulgular.push({ seviye: UYAR, mesaj: "Bu dönem gelecekte" , tur: "gelecek" });
 
   if (!devrede(n.varlik, yil, ay)) {
     const va = varlik(n.varlik);
-    bulgular.push({ seviye: UYAR,
+    bulgular.push({ seviye: UYAR, tur: "devrede_degil",
       mesaj: `${va?.ad || n.varlik} bu dönemde devrede görünmüyor${va?.devreden_cikis ? ` (${va.devreden_cikis} sonrası)` : ""}` });
   }
 
   const m = gecmisMedyan(noktaKod, yil, ay);
   if (m !== null && v > 0) {
     if (v > m * 3)
-      bulgular.push({ seviye: UYAR, mesaj: `Son 12 ayın medyanının 3 katından büyük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
+      bulgular.push({ seviye: UYAR, tur: "sicrama", mesaj: `Son 12 ayın medyanının 3 katından büyük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
     else if (v < m / 3)
-      bulgular.push({ seviye: UYAR, mesaj: `Son 12 ayın medyanının üçte birinden küçük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
+      bulgular.push({ seviye: UYAR, tur: "dusuk", mesaj: `Son 12 ayın medyanının üçte birinden küçük (medyan ${Math.round(m).toLocaleString("tr-TR")})` });
   }
 
   // Atlanan ay: bir önceki dönem boş ama daha öncesi dolu
@@ -5979,7 +6046,7 @@ function dogrula(noktaKod, yil, ay, v) {
   if (deger(noktaKod, o.yil, o.ay) === null) {
     const oo = donemKaydir(yil, ay, -2);
     if (deger(noktaKod, oo.yil, oo.ay) !== null)
-      bulgular.push({ seviye: UYAR, mesaj: "Bir önceki dönem boş — atlanmış olabilir" });
+      bulgular.push({ seviye: UYAR, tur: "atlanan", mesaj: "Bir önceki dönem boş — atlanmış olabilir" });
   }
 
   // Doğalgaz kWh ↔ m³ tutarlılığı (K-04)
@@ -5993,9 +6060,15 @@ function dogrula(noktaKod, yil, ay, v) {
       const k = katsayi(n.enerji_turu, "m³", "kWh", yil, ay);
       const bek = k ? k.katsayi : 10.92;
       if (Math.abs(oran - bek) / bek > 0.05)
-        bulgular.push({ seviye: UYAR,
+        bulgular.push({ seviye: UYAR, tur: "oran",
           mesaj: `kWh/m³ oranı ${oran.toFixed(2)} — beklenen ${bek.toFixed(2)} (%5'ten fazla sapma)` });
     }
+  }
+
+  for (const fn of ekKurallar) {
+    let b = null;
+    try { b = fn(noktaKod, yil, ay, v); } catch (e) { b = null; }
+    if (b) bulgular.push(...(Array.isArray(b) ? b : [b]));
   }
   return bulgular;
 }
@@ -6084,6 +6157,8 @@ function formulCoz(formul, yil, ay, cozucu = null) {
   __x.katsayi = katsayi;
   __x.cevir = cevir;
   __x.ENGEL = ENGEL;
+  __x.BULGU_TURLERI = BULGU_TURLERI;
+  __x.kuralEkle = kuralEkle;
   __x.dogrula = dogrula;
   __x.formulCoz = formulCoz;
 };
@@ -6092,7 +6167,7 @@ __f["js/hesap.js"] = function(__x) {
    Hiçbir ekran kendi hesabını yapmaz; hepsi buradan okur.
    El Kitabı: 7.1, 8.1-8.7, K-24 (rol filtresi), İ-1, İ-3 */
 const { durum, deger, degerKayit } = __req("js/veri.js");
-const { nokta, varlik, altAgac, varlikNoktalari, cevir, katsayi, formulCoz, ROLLER, enerjiBirimiMi } = __req("js/model.js");
+const { nokta, varlik, altAgac, varlikNoktalari, cevir, katsayi, formulCoz, kuralEkle, UYAR, ROLLER, enerjiBirimiMi } = __req("js/model.js");
 /** Özel toplam kodları — EnPI tanımlarında @ ile kullanılır */
 const OZEL = {
   "@TOPLAM_ENERJI_KWH": { ad:"Toplam Enerji (kWh)",       birim:"kWh" },
@@ -6872,6 +6947,54 @@ function veriKalitesi(donemler) {
   }
   return { girildi, duzeltildi, tahmin, toplam:girildi + duzeltildi + tahmin };
 }
+
+
+/* ============================================================ 6.8 kuralı
+   ENERJİ DENGESİ: bir dönüşüm ekipmanının faydalı enerjisi yakıtından
+   büyük olamaz. Bu, S13'te gerçek veride görüldü (2025 buhar kilogramları
+   fazla yazılmış). Kural giriş anında da, içe aktarmada da çalışır ki
+   aynı hata bir daha sessizce girmesin.
+   `engel` DEĞİL `uyar` seviyesindedir: yakıt ile üretim farklı sırayla
+   girilebilir, yarı dolu bir dönem geçici olarak dengesiz görünür.       */
+kuralEkle((noktaKod, yil, ay, v) => {
+  const n = nokta(noktaKod);
+  if (!n) return null;
+  const cikti = n.rol === "ara_enerji" || n.rol === "tesis_ici_uretim";
+  const yakitMi = n.rol === "satin_alinan";
+  if (!cikti && !yakitMi) return null;
+
+  const nk = donusumNoktalari(n.varlik);
+  if (!nk.yakit) return null;
+
+  const kwh = p => { if (!p) return 0;
+    const d = noktaDeger(p.kod, yil, ay);
+    return Number.isFinite(d.deger) ? d.deger : 0; };
+
+  // Doğrulanan değerin kWh karşılığı (kg girilmişse katsayıyla çevrilir)
+  const c = cevir(v, n.birim, "kWh", n.enerji_turu, yil, ay);
+  if (c.eksik || !Number.isFinite(c.deger)) return null;
+  const vKwh = c.deger;
+
+  // Bu nokta hangi kalemin kaynağı? (kg noktası, kWh noktasının formülünde geçer)
+  const kaynagiMi = p => p && (p.kod === noktaKod ||
+    formulBilesenleri(p.formul).kodlar.includes(noktaKod));
+
+  let yakit = yakitMi && (nk.yakit.kod === noktaKod) ? vKwh : kwh(nk.yakit);
+  const faydali =
+      (kaynagiMi(nk.elk)   ? vKwh : kwh(nk.elk)) +
+      (kaynagiMi(nk.buhar) ? vKwh : kwh(nk.buhar)) +
+      (kaynagiMi(nk.ssu)   ? vKwh : kwh(nk.ssu));
+
+  if (!yakit || !faydali) return null;
+  if (faydali <= yakit * 1.02) return null;
+  const va = varlik(n.varlik);
+  return { seviye: UYAR, tur: "denge",
+    mesaj: `${va?.ad || n.varlik}: faydalı enerji yakıttan büyük ` +
+      `(${Math.round(faydali).toLocaleString("tr-TR")} > ` +
+      `${Math.round(yakit).toLocaleString("tr-TR")} kWh, verim %` +
+      `${(faydali / yakit * 100).toFixed(0)}). Verim %100'ü aşamaz — ` +
+      "ölçümlerden biri hatalı (6.8, K-25)." };
+});
 
   __x.OZEL = OZEL;
   __x.noktaDeger = noktaDeger;

@@ -4,11 +4,13 @@
 import { el, $, bosalt, say, yuzde, uyari, bildir, tablo, bosDurum,
          donemAd, donemKisa, donemAraligi } from "../ortak.js";
 import * as V from "../veri.js";
-import { nokta, varlik, dogrula, ENGEL, devrede } from "../model.js";
+import { nokta, varlik, dogrula, ENGEL, BULGU_TURLERI, devrede } from "../model.js";
 import { katman } from "../hesaplanan.js";
 import { oranCubugu } from "../grafik.js";
 
 let sekme = "bulgu";
+
+let suzgec = null;        // bulgu türü süzgeci
 
 export function ekranDenetim(k) {
   k.append(el("div.sayfa-basi", {},
@@ -58,7 +60,7 @@ function denetle(ar) {
         if (yoksayilan[anahtar]) continue;
         bulgular.push({ anahtar, kod:n.kod, ad:n.ad, varlik:varlik(n.varlik)?.ad || "",
           yil:d.yil, ay:d.ay, donem:donemAd(d.yil, d.ay), deger:v,
-          seviye:b.seviye, mesaj:b.mesaj });
+          seviye:b.seviye, mesaj:b.mesaj, tur:b.tur || "diger" });
       }
     }
   }
@@ -99,6 +101,8 @@ function cizBulgular(k, r) {
   }
   if (r.bulgular.length) {
     k.append(el("h2", { metin:"Doğrulama bulguları" }));
+    turOzeti(k, r);
+    const suzulmus = suzgec ? r.bulgular.filter(b => b.tur === suzgec) : r.bulgular;
     k.append(tablo([
       { ad:"Dönem", anahtar:"donem" },
       { ad:"Ölçüm noktası", deger:b => el("span", {}, b.ad,
@@ -114,9 +118,9 @@ function cizBulgular(k, r) {
           el("button.dugme.kucuk", { metin:"Sorun değil",
             title:"Bilinçli — bir daha uyarma (kaydı kalır)",
             onclick:() => yoksay(b) })) },
-    ], r.bulgular.slice(0, 200)));
-    if (r.bulgular.length > 200)
-      k.append(el("p.kucuk.sessiz", { metin:`İlk 200 bulgu gösteriliyor (toplam ${say(r.bulgular.length)}).` }));
+    ], suzulmus.slice(0, 200)));
+    if (suzulmus.length > 200)
+      k.append(el("p.kucuk.sessiz", { metin:`İlk 200 bulgu gösteriliyor (toplam ${say(suzulmus.length)}).` }));
   }
 
   if (r.uretilemeyen.length) {
@@ -135,6 +139,47 @@ function cizBulgular(k, r) {
     `${n} bulgu "sorun değil" olarak işaretlendi. `,
     el("button.dugme.kucuk", { metin:"İşaretleri temizle",
       onclick:() => { V.durum.ayarlar.yoksayilan_bulgular = {}; V.degisti("denetim"); yenile(); } })));
+}
+
+/**
+ * Bulguları TÜRE GÖRE toplar. Yüzlerce satırlık düz bir liste, bir SINIF
+ * hatayı gizler: gerçek veride "faydalı enerji yakıttan büyük" bulgusu
+ * 786 uyarının arasında kaybolmuştu (S13).
+ */
+function turOzeti(k, r) {
+  const grup = new Map();
+  for (const b of r.bulgular) {
+    const g = grup.get(b.tur) || { tur:b.tur, say:0, nokta:new Set(), ilk:null, son:null,
+                                   seviye:b.seviye };
+    g.say++; g.nokta.add(b.kod);
+    const kod = b.yil * 12 + b.ay;
+    if (g.ilk === null || kod < g.ilk.k) g.ilk = { k:kod, ad:b.donem };
+    if (g.son === null || kod > g.son.k) g.son = { k:kod, ad:b.donem };
+    if (b.seviye === ENGEL) g.seviye = ENGEL;
+    grup.set(b.tur, g);
+  }
+  const satirlar = [...grup.values()].sort((a, b) => b.say - a.say);
+  k.append(el("p.kucuk.sessiz", { metin:
+    "Bulgular türe göre toplanır; bir satıra tıklayınca aşağıdaki liste " +
+    "yalnız o türü gösterir. Tek tek bakmadan önce buraya bakın." }));
+  k.append(tablo([
+    { ad:"Bulgu türü", deger:g => el("span", {},
+        el("span.rozet" + (g.seviye === ENGEL ? ".kritik" : ".dikkat"),
+           { metin:g.seviye === ENGEL ? "engel" : "uyarı" }),
+        " " + (BULGU_TURLERI[g.tur] || g.tur)) },
+    { ad:"Bulgu", sayi:true, anahtar:"say" },
+    { ad:"Ölçüm noktası", sayi:true, deger:g => g.nokta.size },
+    { ad:"Aralık", deger:g => g.ilk.ad === g.son.ad ? g.ilk.ad : `${g.ilk.ad} – ${g.son.ad}` },
+    { ad:"", deger:g => el("button.dugme.kucuk" + (suzgec === g.tur ? ".ana" : ""), {
+        metin: suzgec === g.tur ? "✓ seçili" : "Yalnız bunu göster",
+        onclick:() => { suzgec = suzgec === g.tur ? null : g.tur; yenile(); } }) },
+  ], satirlar, { satirOzellik:g => ({ stil: suzgec === g.tur
+      ? "background:var(--yuzey-2)" : "" }) }));
+  if (suzgec)
+    k.append(el("p.kucuk", { stil:{ marginBottom:"8px" } },
+      `Süzgeç açık: ${BULGU_TURLERI[suzgec] || suzgec}. `,
+      el("button.dugme.kucuk", { metin:"Süzgeci kaldır",
+        onclick:() => { suzgec = null; yenile(); } })));
 }
 
 function yoksay(b) {

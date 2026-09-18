@@ -434,11 +434,15 @@ function tutarsizlikUyarisi(k, imkansiz, hepsi) {
     t2 + (r.s?.imkansiz ? r.s.faydali - r.s.yakit : 0), 0);
   k.append(uyari("ciddi",
     el("b", { metin:`${imkansiz.length} ekipmanda faydalı enerji yakıttan büyük: ${ad}. ` }),
-    (eksik > 0 ? `${secilenYil} yılında en az ${say(eksik, 0)} kWh yakıt ölçülmemiş ya da ` +
-      "başka bir ekipmana yazılmış görünüyor. " : "") +
+    (eksik > 0 ? `${secilenYil} yılında en az ${say(eksik, 0)} kWh'lik bir tutarsızlık var. ` : "") +
     "Verim %100'ü aşamaz; bu sayılar performans olarak okunamaz. " +
-    "En olası neden, istasyon sayacındaki gazın ekipmanlara doğru dağıtılmamış olmasıdır " +
-    "(A-05). Veri düzeltilene kadar bu ekipmanların verim değişimi yorumlanmamalıdır."));
+    "Kullanıcı teyidine göre nedeni **buhar kilogramlarının fazla yazılmış olmasıdır** " +
+    "(S13); ölçüm düzeltilene kadar bu ekipmanların verim değişimi yorumlanmamalıdır. " +
+    "Aynı bulgunun bütün dönemlerdeki listesi Veri Denetimi ekranında " +
+    "\u201cFaydalı enerji yakıttan büyük\u201d süzgecindedir.",
+    el("div", { stil:{ marginTop:"7px" } },
+      el("button.dugme.kucuk", { metin:"→ Veri Denetimi'nde listele",
+        onclick:() => { location.hash = "e4"; } }))));
 }
 
 /* ------------------- hiçbir ekipmana atanmamış yakıt (6.7, A-05) */
