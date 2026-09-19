@@ -234,3 +234,62 @@ tbody tr:hover{background:var(--yuzey-2)}
   .rapor{max-width:none}
   .koken{display:none!important}
 }
+
+/* ============================================================== IZGARA
+   Excel benzeri veri tablosu (9.3). Satır = dönem, sütun = ölçüm noktası. */
+.izgara-sar{
+  overflow:auto;max-height:calc(100vh - 300px);
+  border:1px solid var(--cerceve);border-radius:8px;background:var(--yuzey);
+}
+table.izgara{border-collapse:separate;border-spacing:0;font-size:12px;white-space:nowrap}
+table.izgara th,table.izgara td{
+  border-right:1px solid var(--kilavuz);border-bottom:1px solid var(--kilavuz);
+  padding:0;margin:0;
+}
+table.izgara thead th{
+  position:sticky;background:var(--yuzey-2);z-index:3;
+  font-weight:600;color:var(--ink-2);text-align:left;padding:4px 7px;
+  border-bottom:1px solid var(--cerceve);
+  /* ölçüm noktası adları olduğu gibi okunur; büyük harfe çevrilmez */
+  text-transform:none;letter-spacing:0;font-size:11px;
+}
+table.izgara thead tr:nth-child(1) th{top:0}
+table.izgara thead tr:nth-child(2) th{top:24px}
+table.izgara th.grup{text-align:center;color:var(--ink-mut);font-weight:500}
+table.izgara th.nokta{
+  max-width:150px;min-width:96px;white-space:normal;line-height:1.25;
+  cursor:help;vertical-align:bottom;
+}
+table.izgara th.birim{color:var(--ink-mut);font-weight:400}
+/* donem sutunlari solda sabit */
+table.izgara .d1{position:sticky;left:0;z-index:2;background:var(--yuzey);min-width:52px}
+table.izgara .d2{position:sticky;left:52px;z-index:2;background:var(--yuzey);min-width:62px;
+  border-right:1px solid var(--cerceve)}
+table.izgara thead .d1,table.izgara thead .d2{z-index:4;background:var(--yuzey-2)}
+table.izgara tbody th{font-weight:500;color:var(--ink-2);padding:3px 7px;text-align:left;
+  text-transform:none;letter-spacing:0;font-size:12px}
+table.izgara td.hucre{
+  text-align:right;padding:3px 7px;min-width:96px;font-variant-numeric:tabular-nums;
+  cursor:cell;outline:none;
+}
+table.izgara td.hucre:focus{box-shadow:inset 0 0 0 2px var(--s1)}
+table.izgara td.hucre.bos{color:var(--ink-mut)}
+table.izgara td.turetilmis{background:var(--yuzey-2);color:var(--ink-2);cursor:not-allowed}
+table.izgara td.uyar{background:var(--uyari-zemin,rgba(214,158,46,.16))}
+table.izgara td.engel{background:var(--kritik-zemin,rgba(197,48,48,.16));font-weight:600}
+table.izgara td.tahmin{box-shadow:inset 3px 0 0 var(--uyari)}
+table.izgara td.duzeltildi{box-shadow:inset 3px 0 0 var(--s1)}
+table.izgara tbody tr:hover td.hucre{background-color:color-mix(in srgb,var(--s1) 7%,transparent)}
+table.izgara input.duzen{
+  width:100%;border:0;outline:none;background:var(--yuzey);color:var(--ink);
+  font:inherit;text-align:right;padding:3px 7px;font-variant-numeric:tabular-nums;
+}
+/* açılır pencere HER ZAMAN en üstte (kullanıcı isteği) */
+.ipucu{
+  position:fixed;z-index:9999;pointer-events:none;max-width:330px;
+  background:var(--yuzey);color:var(--ink);border:1px solid var(--cerceve);
+  border-radius:7px;padding:8px 11px;font-size:12px;line-height:1.45;
+  box-shadow:0 6px 24px rgba(0,0,0,.22);display:none;white-space:normal;
+}
+.ipucu b{display:block;margin-bottom:3px}
+.ipucu .satir{margin-top:4px;padding-top:4px;border-top:1px solid var(--kilavuz)}

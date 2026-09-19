@@ -19,8 +19,8 @@ export function ekranGes(k) {
     el("p", { metin:"Güneş santralleri ayrı tesistir: ürettiği elektrik fabrikada tüketilmez, şebekeye basılır ve faturada mahsup edilir." })));
 
   if (!ar) return k.append(bosDurum("Henüz veri yok",
-    "Önce Veri Aktarma ekranından verinizi alın.",
-    el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    "Önce Veri ekranının Aktar sekmesinden verinizi alın.",
+    el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
 
   const tesisler = H.ayriTesisler();
   if (!tesisler.length) return k.append(bosDurum("Ayrı tesis tanımlı değil",

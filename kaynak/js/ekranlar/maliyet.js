@@ -19,8 +19,8 @@ export function ekranMaliyet(k) {
     el("p", { metin:"Maliyet artışının ne kadarı fiyattan, ne kadarı tüketimden geliyor — enerji yönetiminin başarısı yalnızca ikincisiyle ölçülür." })));
 
   if (!ar) return k.append(bosDurum("Henüz veri yok",
-    "Önce Veri Aktarma ekranından verinizi alın.",
-    el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    "Önce Veri ekranının Aktar sekmesinden verinizi alın.",
+    el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
 
   const kalemler = H.faturaKalemleri();
   if (!kalemler.length) return k.append(bosDurum("Maliyet noktası tanımlı değil",

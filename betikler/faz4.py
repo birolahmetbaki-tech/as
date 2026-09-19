@@ -5,7 +5,7 @@ import base64, pathlib, sys
 from playwright.sync_api import sync_playwright
 KOK=pathlib.Path(__file__).resolve().parent.parent
 D=KOK/"cikti"/"enerji-yonetim.html"
-XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/77d1f4e3-veri.xlsx")
+XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/24858116-veri.xlsx")
 SS=pathlib.Path("/tmp/claude-0/-home-user-as/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/scratchpad/ss")
 SS.mkdir(parents=True,exist_ok=True)
 gecti=kaldi=0
@@ -28,7 +28,7 @@ def main():
         s.goto(D.as_uri()); s.wait_for_timeout(900)
 
         print("=== BOŞ DURUM (veri yokken) ===")
-        for no,bekle in [(9,"Dönüşüm Verimliliği"),(10,"Maliyet"),(11,"GES")]:
+        for no,bekle in [(7,"Dönüşüm Verimliliği"),(8,"Maliyet"),(9,"GES")]:
             b=s.evaluate(f"""()=>{{const u=__req("js/uygulama.js"); u.git({no});
               return {{h1:document.querySelector("#icerik h1")?.innerText||"",
                        bos:document.querySelector("#icerik .bos h3")?.innerText||""}};}}""")
@@ -36,7 +36,7 @@ def main():
                f'{b["h1"]} · {b["bos"]}')
 
         print("\n=== VERİ AKTARIMI ===")
-        s.evaluate('__req("js/uygulama.js").git(3)'); s.wait_for_timeout(400)
+        s.evaluate('location.hash="e2/aktar"'); s.wait_for_timeout(700)
         s.evaluate("""async (b)=>{const h=Uint8Array.from(atob(b),c=>c.charCodeAt(0));
           const dt=new DataTransfer(); dt.items.add(new File([h],"veri.xlsx"));
           const g=document.querySelector('#icerik input[type=file][accept=".xlsx"]');
@@ -151,8 +151,8 @@ def main():
 
         # ------------------------------------------------------- ekran çizimi
         print("\n=== EKRANLAR ÇİZİLİYOR ===")
-        for no,ad,bekle in [(9,"verimlilik","Dönüşüm Verimliliği"),
-                            (10,"maliyet","Maliyet"),(11,"ges","GES")]:
+        for no,ad,bekle in [(7,"verimlilik","Dönüşüm Verimliliği"),
+                            (8,"maliyet","Maliyet"),(9,"ges","GES")]:
             s.evaluate(f'__req("js/uygulama.js").git({no})'); s.wait_for_timeout(2200)
             r=s.evaluate("""()=>{
               // mini çubuklar aria-hidden; gerçek grafikler role="img"
@@ -192,7 +192,7 @@ def main():
            f'{(kk["duzeltilmis"]-kk["olculen"])*100:.1f} puan')
 
         print("\n=== EKRAN 9 · METİNDE VAKANIN ADI GEÇİYOR ===")
-        s.evaluate('__req("js/uygulama.js").git(9)'); s.wait_for_timeout(1800)
+        s.evaluate('__req("js/uygulama.js").git(7)'); s.wait_for_timeout(1800)
         m9=s.evaluate('document.querySelector("#icerik").innerText')
         ok("Türbin kartı var", "Türbin" in m9)
         ok("Verim düşüşü uyarısı gösteriliyor", "puan düştü" in m9)
@@ -222,7 +222,7 @@ def main():
            yakin(dg["atanmamis"],15536149,3), f'{dg["atanmamis"]:,.0f} kWh (%{dg["oran"]*100:.1f})')
         ok("Motorin ekipman yakıtı olarak sayılmıyor (kg, kWh değil)",
            all(a["enerji_turu"]!="ELK" for a in tz["atan"]))
-        m9b=s.evaluate("""()=>{__req("js/uygulama.js").git(9); return null;}""")
+        m9b=s.evaluate("""()=>{__req("js/uygulama.js").git(7); return null;}""")
         s.wait_for_timeout(1800)
         m9c=s.evaluate('document.querySelector("#icerik").innerText')
         ok("İmkânsız verim ekranda ciddi uyarı olarak duruyor",
@@ -231,7 +231,7 @@ def main():
         ok("Tutarsız ekipman karşılaştırmadan çıkarıldı", "verisi tutarlı" in m9c)
 
         print("\n=== EKRAN 10 · AYRIŞTIRMA METNİ ===")
-        s.evaluate('__req("js/uygulama.js").git(10)'); s.wait_for_timeout(1800)
+        s.evaluate('__req("js/uygulama.js").git(8)'); s.wait_for_timeout(1800)
         m10=s.evaluate('document.querySelector("#icerik").innerText')
         ok("Fiyat etkisi gösteriliyor", "Fiyat etkisi" in m10)
         ok("Hacim etkisi gösteriliyor", "Hacim etkisi" in m10)
@@ -239,14 +239,14 @@ def main():
         ok("GES mahsubu özet içinde", "GES mahsubu" in m10)
 
         print("\n=== EKRAN 11 · K-03 KURALI EKRANDA YAZILI ===")
-        s.evaluate('__req("js/uygulama.js").git(11)'); s.wait_for_timeout(1800)
+        s.evaluate('__req("js/uygulama.js").git(9)'); s.wait_for_timeout(1800)
         m11=s.evaluate('document.querySelector("#icerik").innerText')
         ok("K-03 uyarısı ekranda", "EnPI'sine girmez" in m11 or "girmez" in m11)
         ok("Her iki santral listelendi", "Yozgat" in m11 and "Adana" in m11)
 
         print("\n=== KOYU TEMA ===")
         s.evaluate('document.documentElement.dataset.tema="koyu"')
-        for no in (9,10,11):
+        for no in (7,8,9):
             s.evaluate(f'__req("js/uygulama.js").git({no})'); s.wait_for_timeout(1400)
             s.screenshot(path=str(SS/f"f4-{no:02d}-koyu.png"), full_page=True)
         ok("Koyu temada çiziliyor", s.locator("#icerik svg").count()>0)

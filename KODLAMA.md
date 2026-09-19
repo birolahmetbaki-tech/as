@@ -51,6 +51,31 @@ yalnızca kaynağın nasıl derlendiğini ve sınandığını anlatır.
 "neden" sorusu cevaplanabiliyor ve tespitler artık sahibi ile termini olan
 aksiyonlara bağlanıyor.
 
+## Veri ızgarası — `js/ekranlar/izgara.js` (K-30)
+
+Veri Girişi + Veri Aktarma + Veri Denetimi **tek ekranda** birleşti
+(Ekran 2 · Veri, dört sekme); ekran sayısı **15 → 13** indi ve bütün
+numaralar, bağlantılar ve el kitabı atıfları buna göre kaydı.
+
+Tablo sekmesi kaynak Excel'in kendisi gibi çalışır:
+
+- satır = dönem · sütun = ölçüm noktası · hücre = değer
+- `+ Dönem (satır)` yeni bir dönem açar; **boş kalsa bile tabloda durur**
+  (`ayarlar.ek_donemler`)
+- `+ Ölçüm noktası (sütun)` Tanımlar'daki formu ödünç alır — tanım tek yerde
+- tıkla/Enter/rakam ile düzenleme · Enter alta, Tab sağa, ok tuşları gezinir,
+  Delete siler (sıfır yazmaz — İ-3), Escape vazgeçer
+- girilen değer yine `dogrula()`dan geçer; `engel` varsa **yazılmaz**
+- sütunlar varlığa göre gruplanır, yıl/ay solda ve başlık üstte sabit kalır
+
+Sorunlu hücre renklenir (sarı = uyarı, kırmızı = engel, gri = hesaplanan,
+sol kenar çizgisi = tahmin/düzeltildi) ve **fare üstüne gelince nedeni açılır
+pencerede** yazar. Pencere `.ipucu` sınıfıyla `position:fixed` ve
+**`z-index:9999`** — modal kaplamasının (50) üstünde, yani her zaman en üstte.
+
+Doğrulama yalnız **dolu** hücreler için çalıştırılır ve bir haritada toplanır;
+5.600 hücrelik tabloda tek geçişte biter.
+
 ## İzlenebilirlik (E-4) — `js/koken.js`
 
 Her türetilmiş sayının yanındaki `?` düğmesi, o sayının **formülünü, kuralını,
@@ -150,6 +175,7 @@ python3 betikler/faz3.py     # grafik ekranları
 python3 betikler/faz4.py     # Faz 4 ekranları + 8.8 vakasının altın sayıları
 python3 betikler/faz5.py     # Faz 5 ekranları + izlenebilirlik + hedef motoru
 python3 betikler/kabul13.py  # El Kitabı Bölüm 13'ün HER satırı + cevaplanan sorular
+python3 betikler/izgara.py   # birleşik Veri ekranı ve veri ızgarası (K-30)
 ```
 
 `kabul.py`, gerçek 2024 Haziran verisiyle programın **altın sayıları** üretip
@@ -193,7 +219,7 @@ değişimi Şubat 2025. **72 kontrol, hepsi geçiyor.**
 (55 sütun eşlemesi, 4.541 değer, 7 ret, 96 enerji dönemi), sekiz yılın bütün
 altın sayıları, 2024 Haziran nokta kontrolü, hesap motorunun sekiz çıktısı ve
 on iki davranış kuralı (negatif engeli, kWh/m³ sapma uyarısı, 12 nokta kuralı,
-katman yeniden üretimi, yedek gidiş-dönüşü). **96 kontrol, hepsi geçiyor.**
+katman yeniden üretimi, yedek gidiş-dönüşü). **114 kontrol, hepsi geçiyor.**
 
 ### Cevaplanan açık sorular (2026-09-18)
 
@@ -245,6 +271,12 @@ Bu doğrulama üç belge hatası buldu: aktarılan değer sayısı 4.534 değil 
 (beklenen sayı 7 reddedilen hücreyi iki kez düşmüş), 13.2'nin maliyet sütunu
 brüt olduğu hâlde programın `Toplam Maliyet`'i net (K-24), ve 13.5'teki içe
 aktarma satırı 9.4'le çelişiyordu. Üçü de el kitabında düzeltildi.
+
+`izgara.py` birleşik Veri ekranını sınar: 13 ekranlık menü, dört sekme,
+ızgaranın satır/sütun/grup yapısı, hücre düzenleme ve klavye gezinmesi,
+kural dışı değerin yazılmaması, yeni satır ve yeni sütun açma, hesaplanan
+sütunların salt okunurluğu, hücre renkleri ve açılır pencerenin en üstte
+durması. **33 kontrol, hepsi geçiyor.**
 
 > **Baz çizgi sayıları neden değişti?** El Kitabı 8.8/13.4'teki eski değerler
 > (`a = 0,4254 · b = 6.774.643 · R² = 0,40`) Excel'in kendi `Toplam Üretim`

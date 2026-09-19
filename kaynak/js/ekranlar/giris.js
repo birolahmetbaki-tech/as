@@ -22,12 +22,19 @@ const MODLAR = [
 ];
 
 export function ekranGiris(k) {
-  if (!donem) donem = sonDonem();
-
   k.append(el("div.sayfa-basi", {},
     el("h1", { metin:"Aylık Veri Girişi" }),
-    el("p", { metin:"Bir ayın bütün ölçüm noktası değerlerini girin. Geçen ay ve geçen yılın aynı ayı yan yana gösterilir — en iyi hata yakalama aracı budur." })));
+    el("p", { metin:"Bir ayın bütün ölçüm noktası değerlerini girin." })));
+  girisGovde(k);
+}
 
+/**
+ * Başlıksız gövde — birleşik Veri ekranı bunu çağırır (9.3).
+ * Izgara sekmesi tek sayfalık girişi karşıladığı için burada yalnız
+ * TEK DÖNEM odaklı yöntemler kalır: kategori formu ve toplu yapıştırma.
+ */
+export function girisGovde(k) {
+  if (!donem) donem = sonDonem();
   donemSecici(k);
 
   const s = el("div.sekmeler", {});
@@ -41,7 +48,11 @@ export function ekranGiris(k) {
   if (mod === "tablo" || mod === "form") ozetSeridi(k);
 }
 
-const yenile = () => { const k = bosalt($("#icerik")); ekranGiris(k); };
+let yenileFn = null;
+/** Birleşik Veri ekranı kendi yeniden çizimini buraya takar (9.3) */
+export function yenileyiciKur(fn) { yenileFn = fn; }
+const yenile = (...a) => { if (yenileFn) return yenileFn(...a);
+  const k = bosalt($("#icerik")); ekranGiris(k); };
 
 function sonDonem() {
   const a = V.veriAraligi();
@@ -279,7 +290,7 @@ function modDosya(k) {
   k.append(bosDurum("Dosya yükleme Veri Aktarma ekranında",
     "Toplu ve geçmiş veri aktarımı, sütun eşlemesi ve önizlemesiyle birlikte Ekran 3'te yapılır.",
     el("button.dugme.ana", { metin:"Veri Aktarma ekranına git",
-      onclick:() => { location.hash = "e3"; } })));
+      onclick:() => { location.hash = "e2"; } })));
 }
 
 /* -------------------------------------------------- canlı özet şeridi */

@@ -14,8 +14,8 @@ let ar2 = null;
 export function ekranDenge(k) {
   const ar = V.veriAraligi();
   if (!ar) { k.append(el("div.sayfa-basi", {}, el("h1", { metin:"Enerji Dengesi" })));
-    k.append(bosDurum("Henüz veri yok", "Önce Veri Aktarma ekranından verinizi alın.",
-      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    k.append(bosDurum("Henüz veri yok", "Önce Veri ekranının Aktar sekmesinden verinizi alın.",
+      el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
     return; }
   if (!ar2) {
     const son = sonEnerjiDonemi() || ar.son;          // GES'e değil, enerji verisine göre

@@ -8,9 +8,7 @@ import BASLANGIC from "./baslangic.js";
 
 import { ekranTanimlar } from "./ekranlar/tanimlar.js";
 import { ekranAyarlar }  from "./ekranlar/ayarlar.js";
-import { ekranAktarma }  from "./ekranlar/aktarma.js";
-import { ekranGiris }    from "./ekranlar/giris.js";
-import { ekranDenetim }  from "./ekranlar/denetim.js";
+import { ekranVeri, veriSekmesi } from "./ekranlar/veri.js";
 import { ekranHesaplanan } from "./ekranlar/hesaplanan.js";
 import { ekranPanel }    from "./ekranlar/panel.js";
 import { ekranTuketim }  from "./ekranlar/tuketim.js";
@@ -29,37 +27,37 @@ const YAKINDA = (no, ad, faz, aciklama) => ({
       el("p.kucuk.sessiz", { metin:"El Kitabı Bölüm 12 · Geliştirme yol haritası" }))),
 });
 
+/* 13 ekran (K-22, K-30). Eski 2·Giriş + 3·Aktarma + 4·Denetim tek ekranda
+   birleşti; sonraki ekranlar bir bir yukarı kaydı. */
 export const EKRANLAR = [
   { grup:"ÖZET" },
   { no:1, ad:"Gösterge Paneli", hazir:true, ciz:ekranPanel },
   { grup:"VERİ" },
-  { no:2, ad:"Veri Girişi", hazir:true, ciz:ekranGiris },
-  { no:3, ad:"Veri Aktarma", hazir:true, ciz:ekranAktarma },
-  { no:4, ad:"Veri Denetimi", hazir:true, ciz:ekranDenetim },
-  { no:5, ad:"Hesaplanan Değerler", hazir:true, ciz:ekranHesaplanan },
+  { no:2, ad:"Veri", hazir:true, ciz:ekranVeri },
+  { no:3, ad:"Hesaplanan Değerler", hazir:true, ciz:ekranHesaplanan },
   { grup:"ANALİZ" },
-  { no:6, ad:"Enerji Dengesi", hazir:true, ciz:ekranDenge },
-  { no:7, ad:"Tüketim Analizi", hazir:true, ciz:ekranTuketim },
-  { no:8, ad:"Performans (EnPI)", hazir:true, ciz:ekranPerformans },
-  { no:9,  ad:"Dönüşüm Verimliliği", hazir:true, ciz:ekranVerimlilik },
-  { no:10, ad:"Maliyet",             hazir:true, ciz:ekranMaliyet },
-  { no:11, ad:"GES",                 hazir:true, ciz:ekranGes },
+  { no:4, ad:"Enerji Dengesi", hazir:true, ciz:ekranDenge },
+  { no:5, ad:"Tüketim Analizi", hazir:true, ciz:ekranTuketim },
+  { no:6, ad:"Performans (EnPI)", hazir:true, ciz:ekranPerformans },
+  { no:7, ad:"Dönüşüm Verimliliği", hazir:true, ciz:ekranVerimlilik },
+  { no:8, ad:"Maliyet",             hazir:true, ciz:ekranMaliyet },
+  { no:9, ad:"GES",                 hazir:true, ciz:ekranGes },
   { grup:"YÖNETİM" },
-  { no:12, ad:"Hedefler ve Aksiyonlar", hazir:true, ciz:ekranHedefler },
-  { no:13, ad:"Raporlar", hazir:true, ciz:ekranRaporlar },
+  { no:10, ad:"Hedefler ve Aksiyonlar", hazir:true, ciz:ekranHedefler },
+  { no:11, ad:"Raporlar", hazir:true, ciz:ekranRaporlar },
   { grup:"SİSTEM" },
-  { no:14, ad:"Tanımlar",             hazir:true, ciz:ekranTanimlar },
-  { no:15, ad:"Ayarlar ve Yedekleme", hazir:true, ciz:ekranAyarlar  },
+  { no:12, ad:"Tanımlar",             hazir:true, ciz:ekranTanimlar },
+  { no:13, ad:"Ayarlar ve Yedekleme", hazir:true, ciz:ekranAyarlar  },
 ];
 
-export const durumu = { ekran: 14, donem: bugun() };
+export const durumu = { ekran: 12, donem: bugun() };
 
 /* ------------------------------------------------------------- menü */
 function menuCiz() {
   const m = bosalt($("#menu"));
   m.append(el("div.marka", {},
     el("b", { metin:"Enerji Yönetim" }),
-    el("span", { metin:"Faz 5 · Yönetme" })));
+    el("span", { metin:"13 ekran · tek dosya" })));
   for (const e of EKRANLAR) {
     if (e.grup) { m.append(el("div.menu-grup", { metin:e.grup })); continue; }
     m.append(el("button.menu-og", {
@@ -106,9 +104,10 @@ function seritCiz() {
 /* ------------------------------------------------------------- çizim */
 const ekran = () => EKRANLAR.find(e => e.no === durumu.ekran);
 
-export function git(no) {
+export function git(no, sekme = null) {
   durumu.ekran = no;
-  location.hash = "e" + no;
+  if (no === 2 && sekme) veriSekmesi(sekme);
+  location.hash = "e" + no + (sekme ? "/" + sekme : "");
   menuCiz(); seritCiz(); ciz();
 }
 
@@ -139,15 +138,18 @@ export async function baslat() {
   otomatikUret();                      // K-23: açılışta + her değişimde
   katmanDinle(() => seritCiz());
 
-  const h = /^#e(\d+)$/.exec(location.hash);
+  const h = /^#e(\d+)(?:\/([a-z]+))?$/.exec(location.hash);
   durumu.ekran = h ? +h[1] : 1;
+  if (h && h[2]) veriSekmesi(h[2]);
   if (!EKRANLAR.some(e => e.no === durumu.ekran)) durumu.ekran = 1;
 
   menuCiz(); seritCiz(); ciz();
 
   window.addEventListener("hashchange", () => {
-    const m = /^#e(\d+)$/.exec(location.hash);
-    if (m && +m[1] !== durumu.ekran) git(+m[1]);
+    const m = /^#e(\d+)(?:\/([a-z]+))?$/.exec(location.hash);
+    if (!m) return;
+    if (m[2]) veriSekmesi(m[2]);
+    if (+m[1] !== durumu.ekran || m[2]) git(+m[1], m[2] || null);
   });
 
   // Yedek alınmadan çıkılıyorsa uyar (5.2)

@@ -16,8 +16,8 @@ let f = null;   // filtre durumu
 export function ekranTuketim(k) {
   const ar = V.veriAraligi();
   if (!ar) { k.append(el("div.sayfa-basi", {}, el("h1", { metin:"Tüketim Analizi" })));
-    k.append(bosDurum("Henüz veri yok", "Önce Veri Aktarma ekranından verinizi alın.",
-      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    k.append(bosDurum("Henüz veri yok", "Önce Veri ekranının Aktar sekmesinden verinizi alın.",
+      el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
     return; }
 
   if (!f) {

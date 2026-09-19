@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 
 KOK   = pathlib.Path(__file__).resolve().parent.parent
 DOSYA = KOK / "cikti" / "enerji-yonetim.html"
-XLSX  = pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/77d1f4e3-veri.xlsx")
+XLSX  = pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/24858116-veri.xlsx")
 SS    = pathlib.Path("/tmp/claude-0/-home-user-as/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/scratchpad/ss")
 SS.mkdir(parents=True, exist_ok=True)
 
@@ -44,7 +44,7 @@ def main():
         s.goto(DOSYA.as_uri()); s.wait_for_timeout(900)
 
         print("=== EXCEL AKTARIMI ===")
-        s.evaluate('__req("js/uygulama.js").git(3)'); s.wait_for_timeout(400)
+        s.evaluate('location.hash="e2/aktar"'); s.wait_for_timeout(700)
         s.evaluate("""async (b64) => {
           const ham = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
           const dt = new DataTransfer(); dt.items.add(new File([ham], "veri.xlsx"));
@@ -115,7 +115,7 @@ def main():
             else: kaldi += 1
 
         print("\n=== EKRAN GEÇİŞLERİ ===")
-        for no, ad in [(2,"giris"),(4,"denetim"),(5,"hesaplanan"),(14,"tanimlar")]:
+        for no, ad in [(2,"veri"),(3,"hesaplanan"),(12,"tanimlar")]:
             s.evaluate(f'__req("js/uygulama.js").git({no})'); s.wait_for_timeout(900)
             b = s.locator("#icerik h1, #icerik h3").first.inner_text()
             print(f"  Ekran {no:2} → {b}")

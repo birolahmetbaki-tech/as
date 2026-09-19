@@ -4,7 +4,7 @@ import base64, json, pathlib, sys
 from playwright.sync_api import sync_playwright
 KOK=pathlib.Path(__file__).resolve().parent.parent
 D=KOK/"cikti"/"enerji-yonetim.html"
-XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/77d1f4e3-veri.xlsx")
+XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/24858116-veri.xlsx")
 SS=pathlib.Path("/tmp/claude-0/-home-user-as/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/scratchpad/ss")
 SS.mkdir(parents=True,exist_ok=True)
 gecti=kaldi=0
@@ -31,7 +31,7 @@ def main():
         s.screenshot(path=str(SS/"f3-00-bos.png"))
 
         print("\n=== VERİ AKTARIMI ===")
-        s.evaluate('__req("js/uygulama.js").git(3)'); s.wait_for_timeout(400)
+        s.evaluate('location.hash="e2/aktar"'); s.wait_for_timeout(700)
         s.evaluate("""async (b)=>{const h=Uint8Array.from(atob(b),c=>c.charCodeAt(0));
           const dt=new DataTransfer(); dt.items.add(new File([h],"veri.xlsx"));
           const g=document.querySelector('#icerik input[type=file][accept=".xlsx"]');
@@ -43,8 +43,8 @@ def main():
         n=s.evaluate('__req("js/veri.js").durum.degerler.length')
         ok("Veri aktarıldı", n>4000, f"{n:,} değer")
 
-        for no,ad,bekle in [(1,"panel","Gösterge Paneli"),(7,"tuketim","Tüketim Analizi"),
-                            (6,"denge","Enerji Dengesi")]:
+        for no,ad,bekle in [(1,"panel","Gösterge Paneli"),(5,"tuketim","Tüketim Analizi"),
+                            (4,"denge","Enerji Dengesi")]:
             print(f"\n=== EKRAN {no} · {bekle} ===")
             s.evaluate(f'__req("js/uygulama.js").git({no})'); s.wait_for_timeout(1600)
             baslik=s.locator("#icerik h1").first.inner_text()
@@ -85,7 +85,7 @@ def main():
 
         print("\n=== KOYU TEMA ===")
         s.evaluate('document.documentElement.dataset.tema="koyu"')
-        s.evaluate('__req("js/uygulama.js").git(6)'); s.wait_for_timeout(1500)
+        s.evaluate('__req("js/uygulama.js").git(4)'); s.wait_for_timeout(1500)
         s.screenshot(path=str(SS/"f3-06b-koyu.png"), full_page=True)
         ok("Koyu temada çiziliyor", s.locator("#icerik svg").count()>0)
         t.close()

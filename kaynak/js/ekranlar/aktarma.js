@@ -14,14 +14,22 @@ let oturum = null;   // { dosyaAdi, sayfalar, secili, baslikSatiri, esleme, oniz
 export function ekranAktarma(k) {
   k.append(el("div.sayfa-basi", {},
     el("h1", { metin:"Veri Aktarma" }),
-    el("p", { metin:"Excel dosyanızı içeri alın, yedek alın veya yedekten geri yükleyin. Verinin sisteme giriş ve çıkış kapısı." })));
+    el("p", { metin:"Verinin sisteme giriş ve çıkış kapısı." })));
+  aktarmaGovde(k);
+}
 
+/** Başlıksız gövde — birleşik Veri ekranı bunu çağırır (9.3) */
+export function aktarmaGovde(k) {
   if (!oturum) { iceAktarBaslangic(k); yedekBolumu(k); }
   else if (!oturum.onizleme) eslemeEkrani(k);
   else onizlemeEkrani(k);
 }
 
-const yenile = () => { const k = bosalt($("#icerik")); ekranAktarma(k); };
+let yenileFn = null;
+/** Birleşik Veri ekranı kendi yeniden çizimini buraya takar (9.3) */
+export function yenileyiciKur(fn) { yenileFn = fn; }
+const yenile = (...a) => { if (yenileFn) return yenileFn(...a);
+  const k = bosalt($("#icerik")); ekranAktarma(k); };
 
 /* ------------------------------------------------------- 1 · dosya seç */
 function iceAktarBaslangic(k) {

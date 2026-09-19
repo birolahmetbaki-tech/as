@@ -19,8 +19,8 @@ let ar2 = null;
 export function ekranPerformans(k) {
   const ar = V.veriAraligi();
   if (!ar) { k.append(el("div.sayfa-basi", {}, el("h1", { metin:"Performans (EnPI)" })));
-    k.append(bosDurum("Henüz veri yok", "Önce Veri Aktarma ekranından verinizi alın.",
-      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    k.append(bosDurum("Henüz veri yok", "Önce Veri ekranının Aktar sekmesinden verinizi alın.",
+      el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
     return; }
   if (!ar2) { const son = sonEnerjiDonemi() || ar.son;
     ar2 = { bas:{ yil:son.yil, ay:1 }, son:{ yil:son.yil, ay:son.ay } }; }

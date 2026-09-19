@@ -190,7 +190,10 @@ function cizNoktalar(g) {
   ciz();
 }
 
-function noktaDuzenle(kod) {
+/** Ölçüm noktası formu — Veri ızgarası "yeni sütun" için ödünç alır (tek tanım yeri) */
+export function noktaFormu(sonra = null) { noktaDuzenle(null, sonra); }
+
+function noktaDuzenle(kod, sonra = null) {
   const n = kod ? { ...nokta(kod) } : { kod:"", ad:"", varlik:durum.varliklar[0]?.kod,
     enerji_turu:null, birim:"kWh", rol:"satin_alinan", toplama_dahil:false,
     veri_tipi:"olculen", formul:"", aktif:true, not:"" };
@@ -246,7 +249,9 @@ function noktaDuzenle(kod) {
         excel_sutun:eski ? eski.excel_sutun ?? null : null,
         not:gNot.value.trim() };
       if (yeni) durum.olcum_noktalari.push(nesne); else Object.assign(eski, nesne);
-      degisti("nokta"); yenile(); bildir("Kaydedildi");
+      degisti("nokta");
+      if (sonra) sonra(nesne); else yenile();
+      bildir("Kaydedildi");
     };
     const veriVar = kod && durum.degerler.some(d => d.n === kod);
     if (turDegisti && veriVar)

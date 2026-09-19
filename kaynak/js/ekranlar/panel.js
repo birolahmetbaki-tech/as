@@ -18,9 +18,9 @@ export function ekranPanel(k) {
   if (!ar) {
     k.append(el("div.sayfa-basi", {}, el("h1", { metin:"Gösterge Paneli" })));
     k.append(bosDurum("Henüz veri yok",
-      "Panel, girdiğiniz veriden beslenir. Excel dosyanızı Veri Aktarma ekranından alın; " +
+      "Panel, girdiğiniz veriden beslenir. Excel dosyanızı Veri ekranının Aktar sekmesinden alın; " +
       "panel anında dolar.",
-      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+      el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
     return;
   }
   if (!donem || !V.durum.degerler.some(d => d.y === donem.yil && d.a === donem.ay))

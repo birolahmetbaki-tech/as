@@ -15,12 +15,16 @@ let suzgec = null;        // bulgu türü süzgeci
 export function ekranDenetim(k) {
   k.append(el("div.sayfa-basi", {},
     el("h1", { metin:"Veri Denetimi" }),
-    el("p", { metin:"Bütün veri setinin sağlığı. Analiz ekranlarındaki sayılara güvenmeden önce buraya bakın." })));
+    el("p", { metin:"Bütün veri setinin sağlığı." })));
+  denetimGovde(k);
+}
 
+/** Başlıksız gövde — birleşik Veri ekranı bunu çağırır (9.3) */
+export function denetimGovde(k) {
   const ar = V.veriAraligi();
   if (!ar) { k.append(bosDurum("Henüz veri yok",
-    "Veri Aktarma ekranından Excel dosyanızı alın veya Veri Girişi ekranından elle girin.",
-    el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    "Veri ekranının Aktar sekmesinden Excel dosyanızı alın veya Veri Girişi ekranından elle girin.",
+    el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
     return; }
 
   const rapor = denetle(ar);
@@ -37,7 +41,11 @@ export function ekranDenetim(k) {
   ({ bulgu:cizBulgular, harita:cizHarita, kapsam:cizKapsam }[sekme])(k, rapor);
 }
 
-const yenile = () => { const k = bosalt($("#icerik")); ekranDenetim(k); };
+let yenileFn = null;
+/** Birleşik Veri ekranı kendi yeniden çizimini buraya takar (9.3) */
+export function yenileyiciKur(fn) { yenileFn = fn; }
+const yenile = (...a) => { if (yenileFn) return yenileFn(...a);
+  const k = bosalt($("#icerik")); ekranDenetim(k); };
 
 /* -------------------------------------------------------------- denetim */
 function denetle(ar) {
@@ -113,8 +121,8 @@ function cizBulgular(k, r) {
              { metin:b.seviye === ENGEL ? "engel" : "uyarı" }),
           " " + b.mesaj) },
       { ad:"", deger:b => el("div.satir", { stil:{ gap:"4px" } },
-          el("button.dugme.kucuk", { metin:"Düzelt", title:"Bu hücrenin giriş ekranına git",
-            onclick:() => { location.hash = "e2"; bildir(`${b.donem} · ${b.ad}`); } }),
+          el("button.dugme.kucuk", { metin:"Düzelt", title:"Bu hücreyi tabloda aç",
+            onclick:() => { location.hash = "e2/tablo"; bildir(`${b.donem} · ${b.ad}`); } }),
           el("button.dugme.kucuk", { metin:"Sorun değil",
             title:"Bilinçli — bir daha uyarma (kaydı kalır)",
             onclick:() => yoksay(b) })) },

@@ -9,7 +9,7 @@ import base64, pathlib, sys
 from playwright.sync_api import sync_playwright
 KOK=pathlib.Path(__file__).resolve().parent.parent
 D=KOK/"cikti"/"enerji-yonetim.html"
-XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/77d1f4e3-veri.xlsx")
+XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/24858116-veri.xlsx")
 gecti=kaldi=0
 def ok(ad,kosul,ek=""):
     global gecti,kaldi
@@ -45,10 +45,10 @@ def main():
           const t=document.querySelector("#icerik").innerText;
           return {bos:!!document.querySelector("#icerik .bos"), metin:t};}""")
         ok("Tarayıcı deposu boş → boş durum ne yapılacağını anlatır (E-5)",
-           b["bos"] and "Veri Aktarma" in b["metin"])
+           b["bos"] and "Veri" in b["metin"])
 
         print("\n=== 13.1 · AKTARIM KONTROLÜ ===")
-        s.evaluate('__req("js/uygulama.js").git(3)'); s.wait_for_timeout(400)
+        s.evaluate('location.hash="e2/aktar"'); s.wait_for_timeout(700)
         s.evaluate("""async (b)=>{const h=Uint8Array.from(atob(b),c=>c.charCodeAt(0));
           const dt=new DataTransfer(); dt.items.add(new File([h],"veri.xlsx"));
           const g=document.querySelector('#icerik input[type=file][accept=".xlsx"]');
@@ -89,15 +89,18 @@ def main():
           return {toplam:d.length, donem:don.size, ilk:ar.ilk, son:ar.son,
                   enerjiDonem:enerji.length,
                   enerjiIlk:enerji[0], enerjiSon:enerji[enerji.length-1],
-                  motorin:d.filter(x=>x.n==="MOTORIN_KG"||x.n==="MOT_FATURA_TL").length};}""")
-        ok("Aktarılan ham değer 4.541", a["toplam"]==4541, f'{a["toplam"]:,}')
+                  motorin:d.filter(x=>x.n==="MOTORIN_KG"||x.n==="MOT_FATURA_TL").length,
+                  motorinSifirDisi:d.filter(x=>(x.n==="MOTORIN_KG"||x.n==="MOT_FATURA_TL")&&x.v!==0).length};}""")
+        ok("Aktarılan ham değer 5.097", a["toplam"]==5097, f'{a["toplam"]:,}')
         ok("Dolu dönem 99 (GES verisi 2026-03'e uzanır)", a["donem"]==99, str(a["donem"]))
         ok("İlk dönem 2018 Ocak", (a["ilk"]["yil"],a["ilk"]["ay"])==(2018,1))
         ok("Son dönem 2026 Mart", (a["son"]["yil"],a["son"]["ay"])==(2026,3))
         ok("Enerji verisi olan dönem 96 (2018-01 → 2025-12)",
            a["enerjiDonem"]==96 and (a["enerjiIlk"]["yil"],a["enerjiIlk"]["ay"])==(2018,1)
            and (a["enerjiSon"]["yil"],a["enerjiSon"]["ay"])==(2025,12), str(a["enerjiDonem"]))
-        ok("Motorin verisi boş (nokta tanımlı, değer yok)", a["motorin"]==0, str(a["motorin"]))
+        ok("Motorin kayıtları var ama hepsi sıfır (toplamları değiştirmez)",
+           a["motorin"]==192 and a["motorinSifirDisi"]==0,
+           f'{a["motorin"]} kayıt · sıfırdan farklı {a["motorinSifirDisi"]}')
 
         print("\n=== 13.2 · ALTIN SAYILAR — YILLIK TOPLAMLAR ===")
         y=s.evaluate("""()=>{const H=__req("js/hesap.js"), O=__req("js/ortak.js"), HL=__req("js/hesaplanan.js");
@@ -164,7 +167,7 @@ def main():
 
         print("\n=== K-29 · REDDEDİLEN HÜCRENİN ELLE DÜZELTİLMESİ (S10) ===")
         # Yeniden aktarma: onizlemedeki metin hucresi elle duzeltilir
-        s.evaluate('__req("js/uygulama.js").git(3)'); s.wait_for_timeout(500)
+        s.evaluate('location.hash="e2/aktar"'); s.wait_for_timeout(700)
         s.evaluate("""async (b)=>{const h=Uint8Array.from(atob(b),c=>c.charCodeAt(0));
           const dt=new DataTransfer(); dt.items.add(new File([h],"veri.xlsx"));
           const g=document.querySelector('#icerik input[type=file][accept=".xlsx"]');
@@ -203,7 +206,7 @@ def main():
                   agustos:H.noktaDeger("TOPLAM_URETIM",2024,8).deger,
                   uretim:u, enpi:u?e/u:null, toplamUretim:tu,
                   enpi2025:HL.yillik?null:null};}""")
-        ok("Düzeltilen değer aktarıldı (4.542)", d10["toplam"]==4542, str(d10["toplam"]))
+        ok("Düzeltilen değer aktarıldı (5.098)", d10["toplam"]==5098, str(d10["toplam"]))
         ok("Kalite 'düzeltildi' olarak işaretlendi (İ-4)", d10["kalite"]=="duzeltildi", str(d10["kalite"]))
         ok("Kaynak metin notta duruyor (E-4)", "286609,,4" in (d10["not"] or ""), str(d10["not"])[:60])
         ok("2024 Ağustos toplam üretimi 6.852.439 kg", yakin(d10["agustos"],6852439,2),

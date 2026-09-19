@@ -36,8 +36,8 @@ export function ekranRaporlar(k) {
     el("p", { metin:"Ekranda görüleni kâğıda taşır. Her rapor yazdırılabilir ve veri kalitesi notu taşır." })));
 
   if (!ar) return k.append(bosDurum("Henüz veri yok",
-    "Rapor, girdiğiniz veriden üretilir. Önce Veri Aktarma ekranından verinizi alın.",
-    el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    "Rapor, girdiğiniz veriden üretilir. Önce Veri ekranının Aktar sekmesinden verinizi alın.",
+    el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
 
   const se = sonEnerjiDonemi() || ar.son;
   if (!secim.donem) secim.donem = { yil:se.yil, ay:se.ay };

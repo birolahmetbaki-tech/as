@@ -5,7 +5,7 @@ import base64, pathlib, sys
 from playwright.sync_api import sync_playwright
 KOK=pathlib.Path(__file__).resolve().parent.parent
 D=KOK/"cikti"/"enerji-yonetim.html"
-XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/77d1f4e3-veri.xlsx")
+XLSX=pathlib.Path("/root/.claude/uploads/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/24858116-veri.xlsx")
 SS=pathlib.Path("/tmp/claude-0/-home-user-as/1d3f4c77-e05d-5dd1-847a-74272b6fcb19/scratchpad/ss")
 SS.mkdir(parents=True,exist_ok=True)
 gecti=kaldi=0
@@ -27,8 +27,8 @@ def main():
         s.goto(D.as_uri()); s.wait_for_timeout(900)
 
         print("=== BOŞ DURUM ===")
-        for no,bekle,bosBekle in [(12,"Hedefler ve Aksiyonlar","Henüz hedef yok"),
-                                  (13,"Raporlar","Henüz veri yok")]:
+        for no,bekle,bosBekle in [(10,"Hedefler ve Aksiyonlar","Henüz hedef yok"),
+                                  (11,"Raporlar","Henüz veri yok")]:
             b=s.evaluate(f"""()=>{{__req("js/uygulama.js").git({no});
               return {{h1:document.querySelector("#icerik h1")?.innerText||"",
                        metin:document.querySelector("#icerik").innerText}};}}""")
@@ -36,7 +36,7 @@ def main():
             ok(f"Ekran {no} boş durumu öğretici", bosBekle in b["metin"])
 
         print("\n=== VERİ AKTARIMI ===")
-        s.evaluate('__req("js/uygulama.js").git(3)'); s.wait_for_timeout(400)
+        s.evaluate('location.hash="e2/aktar"'); s.wait_for_timeout(700)
         s.evaluate("""async (b)=>{const h=Uint8Array.from(atob(b),c=>c.charCodeAt(0));
           const dt=new DataTransfer(); dt.items.add(new File([h],"veri.xlsx"));
           const g=document.querySelector('#icerik input[type=file][accept=".xlsx"]');
@@ -149,7 +149,7 @@ def main():
         ok("Gerçekleşen yalnız kapananlardan", yakin(ao["gerceklesenTL"],250000,1),
            f'{ao["gerceklesenTL"]:,.0f}')
 
-        s.evaluate('__req("js/uygulama.js").git(12)'); s.wait_for_timeout(1800)
+        s.evaluate('__req("js/uygulama.js").git(10)'); s.wait_for_timeout(1800)
         m12=s.evaluate('document.querySelector("#icerik").innerText')
         ok("Ekran 12 hedefleri çiziyor", "2025 enerji bütçesi" in m12)
         ok("Mutlak tüketim hedefi uyarısı var (K-21)",
@@ -164,14 +164,14 @@ def main():
         s.screenshot(path=str(SS/"f5-12-hedefler.png"), full_page=True)
 
         print("\n=== ANALİZDEN EYLEME KÖPRÜSÜ (9.13) ===")
-        s.evaluate('__req("js/uygulama.js").git(7)'); s.wait_for_timeout(1500)
+        s.evaluate('__req("js/uygulama.js").git(5)'); s.wait_for_timeout(1500)
         s.evaluate("""()=>{const b=[...document.querySelectorAll("#icerik .sekme")]
           .find(x=>x.textContent.includes("Pareto")); b&&b.click();}""")
         s.wait_for_timeout(1800)
         c7=s.evaluate("""()=>[...document.querySelectorAll("#icerik button")]
           .filter(b=>b.textContent.includes("Aksiyon aç")).length""")
         ok("Ekran 7 (Pareto) tespitten aksiyon açabiliyor", c7>=1, f"{c7} düğme")
-        s.evaluate('__req("js/uygulama.js").git(9)'); s.wait_for_timeout(1800)
+        s.evaluate('__req("js/uygulama.js").git(7)'); s.wait_for_timeout(1800)
         c9=s.evaluate("""()=>[...document.querySelectorAll("#icerik button")]
           .filter(b=>b.textContent.includes("Aksiyon aç")).length""")
         ok("Ekran 9 (Dönüşüm Verimliliği) tespitten aksiyon açabiliyor", c9>=1, f"{c9} düğme")
@@ -202,7 +202,7 @@ def main():
         ok("CUSUM yıl sonu = +14.605.848 kWh", yakin(nc["son"],14605848,3), f'{nc["son"]:,.0f}')
         ok("CUSUM Şubat 2025'te işaret değiştiriyor", nc["ilkPozitif"]==2,
            f'Ocak {nc["ocak"]:,.0f} → ilk pozitif ay {nc["ilkPozitif"]}')
-        s.evaluate('__req("js/uygulama.js").git(8)'); s.wait_for_timeout(2500)
+        s.evaluate('__req("js/uygulama.js").git(6)'); s.wait_for_timeout(2500)
         c8=s.evaluate("""()=>[...document.querySelectorAll("#icerik button")]
           .filter(b=>b.textContent.includes("aksiyon aç")).length""")
         ok("Ekran 8 CUSUM kırılımından aksiyon açabiliyor", c8>=1, f"{c8} düğme")
@@ -211,7 +211,7 @@ def main():
 
         # --------------------------------------------- raporlar
         print("\n=== 9.14 · RAPORLAR ===")
-        s.evaluate('__req("js/uygulama.js").git(13)'); s.wait_for_timeout(2000)
+        s.evaluate('__req("js/uygulama.js").git(11)'); s.wait_for_timeout(2000)
         r1=s.evaluate("""()=>({metin:document.querySelector("#icerik").innerText,
           koken:document.querySelectorAll("#icerik button.koken").length,
           rapor:!!document.querySelector("#icerik .rapor")})""")
@@ -263,7 +263,7 @@ def main():
         s.wait_for_timeout(1200)
         ok("Tahmin sayısı başta 0", vk["once"]["tahmin"]==0, str(vk["once"]["tahmin"]))
         ok("Tahmin işaretlenince sayı artıyor", vk["sonra"]["tahmin"]==1, str(vk["sonra"]["tahmin"]))
-        s.evaluate('__req("js/uygulama.js").git(13)'); s.wait_for_timeout(2000)
+        s.evaluate('__req("js/uygulama.js").git(11)'); s.wait_for_timeout(2000)
         r5=s.evaluate('document.querySelector("#icerik").innerText')
         ok("Rapor tahmin edilmiş değeri açıkça yazıyor", "TAHMİN" in r5 or "tahmin edilmiştir" in r5)
 

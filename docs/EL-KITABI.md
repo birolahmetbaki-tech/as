@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Sürüm** | 1.4 — Faz 1–5 kodlandı · bütün açık sorular kapandı |
+| **Sürüm** | 1.5 — 13 ekran · veri ızgarası (K-30) |
 | **Durum** | **Yol haritasının beş fazı da bitti.** 15 ekranın hepsi çalışıyor. |
 | **Son güncelleme** | 2026-09-17 |
 | **Mimari** | Tek HTML dosyası, tarayıcıda çalışır, sunucu yok (K-09) |
@@ -184,7 +184,7 @@ buhar enerjisi %6,7 azalıyor.
 Türbinin 2024 → 2025 verim düşüşü **6,9 puan** ölçülüyor; bunun **1,7 puanı**
 bu varsayım değişiminden, kalan **5,2 puanı** gerçek performanstan gelir.
 Program iki katsayıyı da **tarihli** tutar (6.6, İ-5), her ay kendi dönemindeki
-katsayıyla hesaplanır ve Ekran 9 farkı açıkça ayrıştırır. Hangi entalpinin doğru
+katsayıyla hesaplanır ve Ekran 7 farkı açıkça ayrıştırır. Hangi entalpinin doğru
 olduğu **A-08**'e bağlıdır ve kullanıcı teyidi bekler.
 
 **S13 · Buhar kilogramları fazla yazılmış**
@@ -221,7 +221,7 @@ Ayrı bir konu olarak İstasyon 1'deki 14.397.746 kWh gaz **A-05 cevabıyla
 açıklanmıştır**: sıcak su kazanı ve üretimde doğrudan gaz kullanılıyor, ikisinde
 de sayaç yok.
 
-> Program bu sayıları gizlemez; **performans olarak da sunmaz.** Ekran 9
+> Program bu sayıları gizlemez; **performans olarak da sunmaz.** Ekran 7
 > imkânsız verimi kırmızı uyarıyla işaretler, o ekipmanı yıllar arası
 > karşılaştırmadan çıkarır, nedenini yazar ve Veri Denetimi'ndeki listeye
 > bağlantı verir. Doğru kilogramlar girildiğinde bütün verimler kendiliğinden
@@ -304,14 +304,15 @@ numaralara atıf yapar.
 | **K-19** | Baz çizgi (EnB) | **Kullanıcı tanımlı, birden çok baz çizgi.** Sistem baz çizgi dayatmaz; istenildiği kadar tanımlanır ve aralarında geçiş yapılır. | Farklı amaçlar farklı referans ister (denetim için son tam yıl, hedef için en iyi yıl, istatistik için çok yıllı). |
 | **K-20** | Raporlar | Üç rapor: **aylık enerji raporu**, **yönetim gözden geçirme raporu** (ISO 50001 md. 9.3), **serbest rapor oluşturucu**. | Kullanıcı seçimi. ENVER yıllık bildirim özeti ileriye bırakıldı. |
 | **K-21** | Hedefler | Dört hedef türü birden: **EnPI**, **tüketim (kWh)**, **maliyet (TL)**, **tasarruf (baz çizgiye göre %)**. | Farklı muhataplar farklı hedef diliyle konuşur; dördü de aynı motordan beslenir. |
-| **K-22** | Ekran listesi | **15 ekran** (Özet 1 · Veri 4 · Analiz 6 · Yönetim 2 · Sistem 2). | Bkz. 9.1 navigasyon haritası. K-23 ile bir ekran eklendi. |
+| **K-22** | Ekran listesi | **13 ekran** (Özet 1 · Veri 2 · Analiz 6 · Yönetim 2 · Sistem 2). | Bkz. 9.1 navigasyon haritası. K-23 ile bir ekran eklenmiş, K-30 ile üç ekran bire indirilmiştir. |
 | **K-24** | Motorin ve toplamların genelleştirilmesi | **Motorin toplam enerjiye ve toplam enerji maliyetine dahil edilir.** Dahası kural sabit listeden **rol filtresine** çevrilir: toplam enerji = rolü `satin_alinan` olan bütün noktalar; toplam maliyet = rolü `maliyet` olan bütün noktalar. | Bugün motorin sıfır, ama ileride tüketim olabilir; Excel onu her iki formülün de dışında bırakmış. Sabit liste yazılsaydı yeni yakıt eklendiğinde formülün güncellenmesi gerekir ve bir gün unutulurdu. Rol filtresi bunu yapısal olarak imkânsız kılar. |
-| **K-23** | Hesaplanan değerler katmanı | Hesaplanan bütün değerler **ayrı bir katmanda toplanır**; ekranlar veriyi buradan çeker. Katman **açılışta ve her veri değişiminde** baştan üretilir, kullanıcıya **görünür** (Ekran 5) ve **iki sayfalı Excel** olarak dışa aktarılır (`Ham Veri` + `Hesaplanan`). Yedek dosyasına **yazılmaz**; yazılırsa bile geri yüklemede yok sayılıp yeniden üretilir. | Kullanıcı isteği. Tek bir hesap katmanı, bütün ekranların aynı sayıyı göstermesini yapısal olarak garanti eder (İ-2) ve hesabı denetlenebilir kılar (E-4). Yedeğe yazılmaması, formül değişince bayat değerin geri gelmesini önler. |
+| **K-23** | Hesaplanan değerler katmanı | Hesaplanan bütün değerler **ayrı bir katmanda toplanır**; ekranlar veriyi buradan çeker. Katman **açılışta ve her veri değişiminde** baştan üretilir, kullanıcıya **görünür** (Ekran 3) ve **iki sayfalı Excel** olarak dışa aktarılır (`Ham Veri` + `Hesaplanan`). Yedek dosyasına **yazılmaz**; yazılırsa bile geri yüklemede yok sayılıp yeniden üretilir. | Kullanıcı isteği. Tek bir hesap katmanı, bütün ekranların aynı sayıyı göstermesini yapısal olarak garanti eder (İ-2) ve hesabı denetlenebilir kılar (E-4). Yedeğe yazılmaması, formül değişince bayat değerin geri gelmesini önler. |
 | **K-25** | İmkânsız verim | Bir dönüşüm ekipmanının faydalı enerjisi yakıtından büyükse (verim >%102) bu sonuç **performans sayılmaz**: sayı gizlenmez, kırmızı işaretlenir, nedeni yazılır ve o ekipman **yıllar arası karşılaştırmadan çıkarılır**. | Gerçek veride görüldü (S13: Kazan-1 %137, Kazan-2 %145). Sayıyı saklamak denetlenebilirliği (E-4), performans saymak ise kararı bozar. İkisi arasındaki tek dürüst yol, göstermek ama saymamaktır (İ-3). |
 | **K-26** | Yıllar arası verim karşılaştırması | Karşılaştırma **tek bir birleşik verim yüzdesiyle yapılmaz**. Yalnız iki dönemde de çalışan ve verisi tutarlı ekipmanlar, **ekipman ekipman** karşılaştırılır; toplanan büyüklük yüzde değil **kaçınılabilir yakıttır (kWh)**. Ekipman kümesi değiştiyse bu ayrıca uyarı olarak söylenir. | Birleşik yüzde karışıma bağlıdır: 2025'te yük türbine kayınca ve gaz motorları durunca, hiçbir ekipmanın verimi değişmese bile karma toplam oynar — gerçek veride bozulma **iyileşme gibi** göründü. kWh cinsinden kaçınılabilir yakıt toplanabilir ve karışımdan bağımsızdır. |
 | **K-27** | Fatura ↔ tüketim bağı | Rolü `maliyet` olan her nokta, faturalandırdığı tüketim noktalarını `fatura_tuketim` alanında taşır. Birim fiyat ve fiyat/hacim ayrıştırması **faturanın kendi biriminde** yapılır (elektrik kWh, doğalgaz m³); karşılaştırmalı birim fiyat grafiği için TL/kWh'e çevrilir. | Ayrıştırma çevrilmiş birimde yapılırsa dönüşüm katsayısının hatası fiyat ve hacim etkilerine karışır. Alan boşsa tutar yine toplanır ama birim fiyat **üretilmez** (İ-3). |
 | **K-28** | İzlenebilirlik düğmesi | Her türetilmiş sayının yanında bir `?` durur; açılan pencere sayının **formülünü, kuralını, katkıda bulunan ölçüm noktalarını ham değerleriyle, kullanılan tarihli katsayıları ve veri kalitesi işaretlerini** gösterir. Köken ağacı hesaplanan noktalardan ham veriye kadar iner. | E-4'ün somut hâli. ISO 50001 denetiminde sorulan ilk soru "bu sayı nereden geliyor?"dur; cevabı bir ekran gezintisi değil, tek tık olmalıdır. Aynı pencere, S12 gibi katsayı değişimlerini de kendiliğinden görünür kılar. |
 | **K-29** | Reddedilen hücrenin elle düzeltilmesi | İçe aktarma önizlemesinde reddedilen her hücre **tek tıkla düzeltilebilir**. Girilen değer yine doğrulamadan geçer; kaydın kalitesi `düzeltildi` olur ve notuna **kaynak dosyadaki ham metin** yazılır. Kaynak dosya bozuk kalabilir. | Gerçek veride ortaya çıktı (S10): tek bir bozuk hücre 2024 EnPI'sini, baz çizgiyi ve 2025 kıyasını kaydırıyordu. Kullanıcıyı "Excel'i düzelt ve baştan aktar" döngüsüne sokmak, düzeltmenin hiç yapılmaması demektir. Ham metnin notta kalması, düzeltmenin denetlenebilir olmasını sağlar (E-4, İ-4). |
+| **K-30** | Veri ekranlarının birleştirilmesi ve veri ızgarası | Veri Girişi, Veri Aktarma ve Veri Denetimi **tek ekranda** toplanır (Ekran 2 · Veri), dört sekme hâlinde. Asıl giriş yüzeyi **kaynak Excel'in kendisi gibi bir ızgaradır**: satır = dönem, sütun = ölçüm noktası, hücre = değer. Yeni veri için yeni satır (dönem) veya yeni sütun (ölçüm noktası) açılır. Sorunlu hücre **renklenir**; fare üstüne gelince nedeni **açılır pencerede** yazar ve pencere **her zaman en üstte** durur. Ekran sayısı 15'ten 13'e iner. | Kullanıcı isteği. Bir değeri düzeltmek için üç ekran arasında gidip gelmek gerekiyordu: hatayı Denetim'de görüyor, Giriş'te düzeltiyor, Aktarma'da yeniden alıyordu. Kullanıcı verisini zaten satır-sütun-hücre olarak düşünüyor; program da öyle göstermelidir. Renk ve açılır pencere, uyarıyı **sayının bulunduğu yere** taşır (E-2). |
 
 ---
 
@@ -398,7 +399,7 @@ dosya boyutunu belirgin küçültür. **Türetilmiş hiçbir değer dosyada yer 
 > formül veya katsayı değiştikten sonra eski yedeği geri yüklemek **bayat
 > sonuçları** geri getirirdi. Dosyada yalnızca ham veri olduğu için yedek
 > hangi program sürümüyle açılırsa açılsın **o sürümün doğru sonuçlarını**
-> üretir. Katmanı görmek veya dışa aktarmak isteyen Ekran 5'i kullanır.
+> üretir. Katmanı görmek veya dışa aktarmak isteyen Ekran 3'i kullanır.
 
 `sema_surumu` alanı, ileride veri yapısı değişirse eski yedeklerin otomatik
 dönüştürülmesini sağlar. Bir yedek dosyası **hiçbir zaman** okunamaz hale
@@ -713,7 +714,7 @@ Excel'deki 6 sütunu onun 6 ölçüm noktasıdır:
 |---|---|
 | `kod` | Benzersiz kod |
 | `baslik`, `aciklama` | Ne yapılacak |
-| `baglam` | `{kaynak, varlik?, donem?}` — hangi tespitten doğdu (örn. "Ekran 9 · Dönüşüm Verimliliği") |
+| `baglam` | `{kaynak, varlik?, donem?}` — hangi tespitten doğdu (örn. "Ekran 7 · Dönüşüm Verimliliği") |
 | `sorumlu`, `termin` | Kim, ne zaman (`YYYY-AA-GG`) |
 | `durum` | `acik` / `devam` / `kapandi` / `iptal` |
 | `beklenen`, `gerceklesen` | `{deger, birim}` — tasarruf; boş bırakılabilir (İ-3) |
@@ -1156,7 +1157,7 @@ sapmanın **yaklaşık %38'idir**.
 > entalpi varsayımını 600'den 560 kcal/kg'a düşürmüş; aynı buhar kilogramı daha
 > az kWh olarak raporlanıyor. Gerçek performans düşüşü **5,2 puan**, yıllık kayıp
 > yaklaşık **4,2 milyon kWh**'dir. Program iki katsayıyı da tarihli tutar ve bu
-> ayrımı Ekran 9'da yazar; hangi entalpinin doğru olduğu **A-08**'e bağlıdır.
+> ayrımı Ekran 7'da yazar; hangi entalpinin doğru olduğu **A-08**'e bağlıdır.
 > Bulgunun yönü değişmez, büyüklüğü değişir.
 
 > ⚠ **Aynı dönemin kazan verimleri güvenilir değil (S13).** 2025'te kazanların
@@ -1221,23 +1222,21 @@ Sol tarafta sabit menü, beş grup:
 ┌─ ÖZET ──────────────────┐
 │  1  Gösterge Paneli     │   ← açılış ekranı
 ├─ VERİ ──────────────────┤
-│  2  Veri Girişi         │
-│  3  Veri Aktarma        │
-│  4  Veri Denetimi       │
-│  5  Hesaplanan Değerler │   ← hesap katmanının aynası (K-23)
+│  2  Veri                │   ← sekmeli: Tablo · Aylık form ·
+│  3  Hesaplanan Değerler │      Aktar · Denetim   (K-30)
 ├─ ANALİZ ────────────────┤
-│  6  Enerji Dengesi      │
-│  7  Tüketim Analizi     │
-│  8  Performans (EnPI)   │
-│  9  Dönüşüm Verimliliği │
-│ 10  Maliyet             │
-│ 11  GES                 │
+│  4  Enerji Dengesi      │
+│  5  Tüketim Analizi     │
+│  6  Performans (EnPI)   │
+│  7  Dönüşüm Verimliliği │
+│  8  Maliyet             │
+│  9  GES                 │
 ├─ YÖNETİM ───────────────┤
-│ 12  Hedefler ve Aksiyon │
-│ 13  Raporlar            │
+│ 10  Hedefler ve Aksiyon │
+│ 11  Raporlar            │
 ├─ SİSTEM ────────────────┤
-│ 14  Tanımlar            │   ← sekmeli: varlık ağacı, ölçüm
-│ 15  Ayarlar ve Yedek    │      noktaları, enerji türleri,
+│ 12  Tanımlar            │   ← sekmeli: varlık ağacı, ölçüm
+│ 13  Ayarlar ve Yedek    │      noktaları, enerji türleri,
 └─────────────────────────┘      katsayılar, EnPI, baz çizgi
 ```
 
@@ -1314,205 +1313,91 @@ hedefe kalan süre göstergesi · hava durumu/derece-gün bağlamı.
 
 ---
 
-### 9.3 · Ekran 2 — Aylık Veri Girişi
-
-> **En çok kullanılacak ekran budur.** Tasarımın ölçüsü: bir ayın bütün
-> verisini en az tuşla, en az hatayla girebilmek.
+### 9.3 · Ekran 2 — Veri (K-30)
 
 #### Amaç
-Bir ayın bütün ölçüm noktası değerlerini hızlı ve hatasız girmek; girerken
-hatayı **anında** yakalamak.
+**Veriye dokunan her iş tek ekranda.** Giriş, aktarma ve denetim ayrı ekranlar
+olduğunda kullanıcı bir değeri düzeltmek için üç ekran arasında gidip geliyordu.
+Üçü birleşti; ekran sayısı 15'ten **13**'e indi.
 
-#### Dört giriş yöntemi (K-14)
+Dört sekme:
 
-Üstte ay seçici, altında dört sekme:
+| Sekme | Ne için |
+|---|---|
+| **Tablo** | Bütün veri; kaynak Excel'in kendisi gibi ızgara. Asıl giriş yüzeyi. |
+| **Aylık form** | Tek bir dönemi kategori kategori doldurmak; toplu yapıştırma |
+| **Aktar** | `.xlsx` içe aktarma · yedek alma ve geri yükleme |
+| **Denetim** | Bütün veri setinin sağlığı, doğrulama bulguları, eksik veri haritası |
 
-| Mod | Ne zaman kullanılır | Nasıl çalışır |
-|---|---|---|
-| **A · Tablo** (varsayılan) | Aylık rutin giriş | Excel benzeri tek sayfa; bütün noktalar gruplanmış listede, tek sütun giriş. Tab ile ilerlenir. |
-| **B · Kategori formu** | Tek bir alanı doldururken | Elektrik / Doğalgaz / Üretim / Kojenerasyon / Kazan / Yardımcı / GES sekmeleri |
-| **C · Toplu yapıştırma** | Excel'den aktarırken | Excel'den kopyalanan hücre bloğu yapıştırılır; sistem eşleştirip önizler |
-| **D · Dosya yükleme** | Toplu/geçmiş veri | `.xlsx` sürükle-bırak → Ekran 3'e yönlendirir |
+#### Bölüm 1 — Tablo (veri ızgarası)
 
-#### Kullanıcının göreceği bilgiler
+**Satır = dönem · sütun = ölçüm noktası · hücre = değer.** Kaynak dosyanın
+yapısı birebir korunur; kullanıcı kendi Excel'inde nasıl çalışıyorsa öyle
+çalışır.
 
-Tablo modunda her satır:
+| Davranış | Kural |
+|---|---|
+| Hücreye tıkla / Enter / rakam yaz | Düzenleme kutusu açılır |
+| Enter | Yazar ve **bir alt satıra** geçer |
+| Tab / Shift+Tab | Yazar ve **sağa / sola** geçer |
+| Ok tuşları | Hücreler arasında gezinir |
+| Delete | Değeri **siler** (sıfır yazmaz — İ-3) |
+| Escape | Vazgeçer |
+| `+ Dönem (satır)` | Yeni dönem satırı açar; **boş kalsa bile tabloda durur** |
+| `+ Ölçüm noktası (sütun)` | Tanımlar ekranındaki formu açar; yeni sütun hemen görünür |
 
-```
-Ölçüm noktası              Birim   Geçen ay    Geçen yıl    [ GİRİŞ ]   Δ%    Son 12 ay
-─────────────────────────────────────────────────────────────────────────────────────
-▸ ELEKTRİK
-  Şebekeden çekilen         kWh    1.421.220   1.502.800   [        ]   —    ▁▂▄▃▅▆▄▃
-  Elektrik faturası          TL    4.604.030   3.905.600   [        ]   —    ▁▂▃▄▅▆▇█
-▸ DOĞALGAZ
-  İstasyon 1 (Gaz Motoru)    m³       86.680      92.140   [        ]   —    ▅▄▃▂▁▂▃▄
-  İstasyon 1 (Gaz Motoru)   kWh      946.382   1.006.030   [        ]   —    ▅▄▃▂▁▂▃▄  ⚠
-```
+Girilen değer **yine doğrulamadan geçer** (6.8). `engel` seviyesindeki bir
+bulgu varsa değer **yazılmaz** ve nedeni söylenir; `uyar` seviyesindekiler
+yazılır ama hücre renklenir.
 
-- **Geçen ay** ve **geçen yılın aynı ayı** yan yana — en iyi hata yakalama aracı.
-- **Δ%** girdikçe anında hesaplanır; eşik aşılırsa satır sarıya döner.
-- **Son 12 ay mini grafiği** (sparkline) her satırda.
-- **⚠** işareti: doğrulama uyarısı; üstüne gelince nedeni yazar.
-- Varlık ağacına göre gruplanmış, gruplar katlanabilir.
-- Devre dışı varlıkların noktaları **soluk** gösterilir (S6).
+**Hücre renkleri ve işaretleri:**
 
-**Ekranın altında canlı özet şeridi** — girdikçe güncellenir:
+| Görünüm | Anlamı |
+|---|---|
+| Sarı zemin | En az bir `uyar` bulgusu var |
+| Kırmızı zemin | `engel` bulgusu var (eski bir yedekten gelmiş olabilir) |
+| Gri zemin | **Hesaplanan sütun** — elle girilmez (İ-1) |
+| Sol kenarda çizgi | Kalite `tahmin` (turuncu) ya da `düzeltildi` (mavi) — İ-4 |
 
-```
-Toplam doğalgaz: 10.377.180 kWh  ·  Toplam enerji: 11.798.400 kWh
-Üretim: 8.042.310 kg  ·  EnPI: 1,467 kWh/kg  (baz çizgi: 1,340 → %9,5 üzerinde ⚠)
-```
+**Fare hücrenin üstüne gelince açılır pencere** bulgunun ne olduğunu,
+hangi kuraldan geldiğini ve kaydın notunu yazar. Hesaplanan hücrede formülü
+ve üretilemediyse nedenini gösterir. **Pencere her zaman en üstte durur**
+(`z-index` bütün kaplamaların üzerinde) — bir uyarıyı okumak için hiçbir şeyi
+kapatmak gerekmez.
 
-Bu şerit girişin **anlamını** anında gösterir; ay sonunda sürpriz olmaz.
+Sütunlar **varlığa göre gruplanır** (üst başlık satırı), yıl ve ay sütunları
+solda **sabit kalır**, başlık satırı yukarıda sabit kalır. Yıl süzgeci, sütun
+kümesi (yalnız girilebilir / hesaplananlar dahil) ve sütun araması vardır.
+Seçili yılda kayıt yoksa ekran **çıkış yolunu gösterir**: "Bütün yılları göster".
 
-#### Kullanıcının gireceği veriler
-Seçilen aya ait bütün ölçüm noktası değerleri. Türetilmiş noktalar
-(toplamlar, buhar kWh, EnPI) **girilemez** — gri gösterilir, hesaplanmış
-oldukları belirtilir.
+#### Bölüm 2 — Aylık form
+Tek dönem odaklı kategori formu ve Excel'den toplu yapıştırma (K-14).
+Geçen ay ve geçen yılın aynı ayı yan yana gösterilir.
 
-#### Sistemin hesaplayacağı değerler
-Türetilmiş noktalar anlık · Δ% karşılaştırmaları · doğrulama uyarıları ·
-alt şeritteki canlı özet · doğalgaz kWh/m³ tutarlılık oranı (K-04).
+#### Bölüm 3 — Aktar
+Sürükle-bırak `.xlsx`; sütun eşleme önerisi (K-15); **önizleme zorunlu**;
+**ya bütün geçerli satırlar ya hiçbiri**; reddedilen hücre **tek tıkla
+düzeltilebilir** (K-29). Yedek alma ve geri yükleme de buradadır.
 
-#### Kullanılacak grafikler ve tablolar
-Ana tablo (giriş) · satır içi mini grafikler · canlı özet şeridi.
-Büyük grafik yoktur: bu ekran **giriş** ekranıdır, analiz ekranı değildir (E-1).
+#### Bölüm 4 — Denetim
+Doluluk, boş hücre, şüpheli değer ve üretilemeyen değer göstergeleri;
+**bulgular türe göre gruplanır ve süzülür**; eksik veri haritası; ölçüm kapsamı.
 
-#### Yapılabilecek analizler
-- Giriş anında sapma tespiti (geçen ay / geçen yıl karşılaştırması).
-- Doğalgaz m³ ↔ kWh tutarlılık denetimi (K-04): oran ≈ 10,92 beklenir;
-  saparsa uyarı.
-- Alt toplam / üst toplam tutarlılığı (S3).
-- Eksik nokta uyarısı: "Bu ay 7 ölçüm noktası boş."
+> Yüzlerce satırlık düz bir liste bir **sınıf** hatayı gizler — gerçek veride
+> "faydalı enerji yakıttan büyük" bulgusu 786 uyarının arasında kaybolmuştu
+> (S13). Gruplama bunu kendi satırına çıkardı.
 
 #### ISO 50001 ile ilişkisi
-Madde 9.1.1 *İzleme ve ölçme* — verinin toplanma noktası. Girişteki doğrulama
-ve uyarı kayıtları, verinin güvenilirliğine dair kanıt üretir.
+Madde 9.1 izleme ve ölçme · madde 7.5 dokümante edilmiş bilgi ·
+madde 6.6 enerji verisi toplama. Veri kalitesi bu ekranda görünür olur.
 
 #### İleride eklenebilecekler
-Klavye kısayolları ve hızlı giriş modu · sık girilen noktalar için "favori"
-listesi · otomatik veri toplama geldiğinde bu ekran **doğrulama** ekranına
-dönüşür (girilen yerine gelen değer onaylanır) · çoklu ay girişi ·
-fotoğraftan sayaç okuma.
+Hücre aralığı seçip toplu yapıştırma · sütun sıralamasını sürükleyerek
+değiştirme · geri al (undo) · hücre bazlı not.
 
 ---
 
-### 9.4 · Ekran 3 — Veri Aktarma
-
-#### Amaç
-Mevcut Excel verisini sisteme almak; yedek alıp geri yüklemek. Verinin
-sisteme giriş ve çıkış kapısı.
-
-#### Bölüm 1 — Excel içe aktarma (K-15)
-
-**Kullanıcının göreceği bilgiler:**
-sürükle-bırak alanı · şablon indirme bağlantısı · sütun eşleştirme tablosu ·
-**önizleme**.
-
-**Zorunlu davranışlar:**
-
-| Kural | Gerekçe |
-|---|---|
-| **Önizleme zorunlu** — kaç satır geçerli, kaç satır hatalı, hangi satır neden | Kör aktarma veri bozar |
-| **Ya hep ya hiç** — ya bütün geçerli satırlar yazılır ya hiçbiri | Yarım yüklenmiş dosya en kötü veri durumudur |
-| **Aktarmadan önce otomatik güvenlik yedeği** indirilir | Geri dönüş garantisi (5.2) |
-| **Bölüm 6.8'deki bütün doğrulama kuralları burada da çalışır** | İçe aktarma, denetimden kaçış yolu olamaz |
-| Üzerine yazma **açıkça sorulur**: "142 dönem zaten dolu. Ne yapılsın?" | Sessiz veri kaybı olmaz |
-| Eşleşmeyen sütun **atlanmaz, sorulur** | "Bu sütun hangi ölçüm noktası?" |
-
-**Sütun eşleştirme:** Sistem Excel başlıklarını ölçüm noktası adlarıyla
-otomatik eşleştirmeye çalışır; eşleşmeyenleri kullanıcıya sorar ve verilen
-cevabı **hatırlar** (sonraki aktarımda tekrar sormaz).
-
-#### Bölüm 2 — Yedekleme ve geri yükleme (K-10)
-
-| İşlem | Davranış |
-|---|---|
-| **Yedek al** | `enerji-veri-YYYY-AA-GG.json` indirilir. Tanımlar + bütün değerler + katsayılar + EnPI + hedefler + aksiyonlar tek dosyada |
-| **Geri yükle** | Dosya seçilir → **önizleme**: "Bu yedek 2018-01 → 2025-12 arası 8.640 değer içeriyor. Mevcut veriniz silinecek." → onay |
-| **Son yedek bilgisi** | "Son yedek: 12 gün önce" — 7 günden eskiyse uyarı rengi |
-| **Dosyaya doğrudan yazma** (Chrome/Edge, K-11) | Bir kez dosya seçilir; sonrasında otomatik yazılır. İsteğe bağlı, varsayılan kapalı |
-
-#### Sistemin hesaplayacağı değerler
-Aktarım istatistikleri (satır/dönem/nokta sayısı, çakışma sayısı) · yedek
-dosyası boyutu · son yedekten bu yana geçen gün.
-
-#### ISO 50001 ile ilişkisi
-Madde 7.5 *Dokümante edilmiş bilgi* — verinin korunması ve kontrolü.
-Aktarım kayıtları verinin kaynağına dair iz bırakır.
-
-#### İleride eklenebilecekler
-Otomatik periyodik yedek hatırlatması · birden çok yedek sürümünün yönetimi ·
-CSV desteği · bulut yedeği (isteğe bağlı) · seçili dönem aralığını dışa aktarma.
-
----
-
-### 9.5 · Ekran 4 — Veri Denetimi
-
-#### Amaç
-**"Verim sağlam mı?"** — Bütün veri setinin sağlığını tek ekranda göstermek.
-Analiz ekranlarına güvenmeden önce bakılacak yer.
-
-#### Kullanıcının göreceği bilgiler
-
-**Bulgular önce TÜRE GÖRE toplanır**, sonra tek tek listelenir. Her tür satırı
-bulgu sayısını, kaç ölçüm noktasını ve hangi dönem aralığını kapsadığını yazar;
-tıklanınca aşağıdaki liste yalnız o türü gösterir. Yüzlerce satırlık düz bir
-liste, bir **sınıf** hatayı gizler — gerçek veride "faydalı enerji yakıttan
-büyük" bulgusu 786 uyarının arasında kaybolmuştu (S13).
-
-**Üstte dört sağlık göstergesi:**
-
-| Gösterge | Örnek |
-|---|---|
-| Doluluk | 96 / 96 ay · %100 |
-| Eksik değer | 7 ölçüm noktası × 3 dönem boş |
-| Şüpheli değer | 4 değer eşik dışı |
-| Tutarsızlık | 12 dönemde alt toplam > üst toplam |
-
-**Eksik veri haritası** — ölçüm noktası (satır) × ay (sütun) matrisi;
-dolu / boş / şüpheli hücreler. Bir bakışta hangi dönemde hangi noktanın
-eksik olduğu görülür. GM-1'in 2025'te durduğu (S6) burada apaçık görünür.
-
-**Bulgular listesi** — her satır: ölçüm noktası, dönem, sorun, değer,
-önerilen işlem, **[Düzelt]** bağlantısı (giriş ekranının o hücresine gider).
-
-#### Kullanıcının gireceği veriler
-Doğrudan giriş yoktur. Bir bulgu için **not** yazılabilir veya
-**"bilinçli, sorun değil"** olarak işaretlenebilir — o bulgu bir daha uyarmaz
-ama kaydı kalır (İ-4).
-
-#### Sistemin hesaplayacağı değerler
-Bölüm 6.8'deki bütün doğrulama kuralları bütün veri seti üzerinde ·
-doluluk oranları · ölçüm kapsamı (6.7) · hiyerarşi tutarlılığı (S3) ·
-doğalgaz kWh/m³ oran sapması (K-04).
-
-#### Kullanılacak grafikler ve tablolar
-
-| # | Grafik | Form | Renk |
-|---|---|---|---|
-| G1 | Eksik veri haritası | Hücre matrisi | Durum renkleri + ikon (renk tek başına anlam taşımaz) |
-| G2 | Ölçüm kapsamı zaman içinde | Sütun | Tek slot (1) |
-| T1 | Bulgular | Tablo | Durum ikonları |
-
-#### Yapılabilecek analizler
-- Hangi dönemlerde veri kalitesi düşük — o dönemlerin analizlerine ne kadar
-  güvenilebilir?
-- Ölçüm kapsamının zaman içindeki değişimi: yeni alt sayaçlar kapsamı artırdı mı?
-- Sistematik boşluklar: bir varlık gerçekten durmuş mu, yoksa veri mi girilmemiş?
-
-#### ISO 50001 ile ilişkisi
-Madde 9.1.1 — kuruluş, izleme ve ölçme sonuçlarının **geçerli** olmasını
-sağlamalıdır. Bu ekran o geçerliliğin kanıtıdır. Denetimde "verinizin
-doğruluğunu nasıl güvence altına alıyorsunuz?" sorusunun cevabıdır.
-
-#### İleride eklenebilecekler
-Eksik değer için tahmin önerisi (işaretlenerek, İ-4) · veri kalitesi skoru ve
-zaman içindeki trendi · otomatik veri geldiğinde haberleşme kesintisi tespiti.
-
----
-
-### 9.6 · Ekran 5 — Hesaplanan Değerler
+### 9.4 · Ekran 3 — Hesaplanan Değerler
 
 #### Amaç
 **"Sistem bu veriden ne üretti?"** — Hesaplanan bütün değerleri tek yerde,
@@ -1598,7 +1483,7 @@ hâlinin dondurulup saklanması (denetim fotoğrafı) · hesap süresi profillem
 
 ---
 
-### 9.7 · Ekran 6 — Enerji Dengesi
+### 9.5 · Ekran 4 — Enerji Dengesi
 
 #### Amaç
 **"Enerji nereye gidiyor?"** — Satın alınan enerjinin tesise girişinden
@@ -1647,7 +1532,7 @@ alt sayaç yatırımının geri dönüş hesabı.
 
 ---
 
-### 9.8 · Ekran 7 — Tüketim Analizi
+### 9.6 · Ekran 5 — Tüketim Analizi
 
 #### Amaç
 **"Nereye bakmalıyım?"** — Tüketimi farklı kırılımlarda inceleyip en büyük
@@ -1695,7 +1580,7 @@ normalizasyonu · anomali işaretleme.
 
 ---
 
-### 9.9 · Ekran 8 — Performans (EnPI ve Baz Çizgi)
+### 9.7 · Ekran 6 — Performans (EnPI ve Baz Çizgi)
 
 > **Platformun kalbi bu ekrandır.** "Ne kadar enerji harcadık?" sorusundan
 > "**enerji performansımız iyileşti mi, ne zaman, ne kadar?**" sorusuna geçiş
@@ -1770,7 +1655,7 @@ baz çizginin dönemsel olarak yeniden kurulması (rebaselining) ve gerekçesi.
 
 ---
 
-### 9.10 · Ekran 9 — Dönüşüm Verimliliği
+### 9.8 · Ekran 7 — Dönüşüm Verimliliği
 
 #### Amaç
 **"Dönüşüm ekipmanım sağlıklı mı?"** — Kojenerasyon ve kazanların yakıtı ne
@@ -1830,7 +1715,7 @@ bakım kaydıyla ilişkilendirme · kısmi yük verimi eğrisi.
 
 ---
 
-### 9.11 · Ekran 10 — Maliyet
+### 9.9 · Ekran 8 — Maliyet
 
 #### Amaç
 **"Para nereye gidiyor ve maliyet neden arttı?"** — Maliyet artışının ne
@@ -1899,7 +1784,7 @@ enerji türlerinin maliyet payı.
   yönetiminin başarısızlığı gibi görünür.
 - GES'in gerçek mali katkısı.
 - Enerji türleri arasında maliyet kayması (yakıt değiştirme kararı).
-- Tasarrufun parasal karşılığı (Ekran 8'deki sapma × birim fiyat).
+- Tasarrufun parasal karşılığı (Ekran 6'deki sapma × birim fiyat).
 
 #### ISO 50001 ile ilişkisi
 Standart maliyeti zorunlu tutmaz, ancak madde 9.3 yönetimin gözden geçirmesi
@@ -1912,7 +1797,7 @@ bütçe planlama ve tahmin · maliyetin bölümlere dağıtılması.
 
 ---
 
-### 9.12 · Ekran 11 — GES
+### 9.10 · Ekran 9 — GES
 
 #### Amaç
 **"Santraller ne üretti, ne kazandırdı?"** — Yozgat ve Adana GES'lerini
@@ -1958,7 +1843,7 @@ inverter/string kırılımı.
 
 ---
 
-### 9.13 · Ekran 12 — Hedefler ve Aksiyonlar
+### 9.11 · Ekran 10 — Hedefler ve Aksiyonlar
 
 #### Amaç
 Hedefleri tanımlamak, durumlarını izlemek ve tespit edilen sapmaların
@@ -2019,7 +1904,7 @@ gerçekleşen tasarrufun IPMVP yöntemiyle doğrulanması · hatırlatmalar.
 
 ---
 
-### 9.14 · Ekran 13 — Raporlar (K-20)
+### 9.12 · Ekran 11 — Raporlar (K-20)
 
 #### Amaç
 Ekranda görüleni **kâğıda ve toplantıya** taşımak. Enerji yöneticisinin
@@ -2060,7 +1945,7 @@ zamanlanmış rapor üretimi.
 
 ---
 
-### 9.15 · Ekran 14 — Tanımlar
+### 9.13 · Ekran 12 — Tanımlar
 
 #### Amaç
 Sistemin **iskeletini** kurmak ve değiştirmek. Altı sekmeli tek ekran.
@@ -2114,7 +1999,7 @@ merkezi) · ölçüm noktası için hedef ve eşik tanımı.
 
 ---
 
-### 9.16 · Ekran 15 — Ayarlar ve Yedekleme
+### 9.14 · Ekran 13 — Ayarlar ve Yedekleme
 
 #### Amaç
 Sistem ayarları ve **verinin güvenliği**. Tek HTML mimarisinde (K-09) bu ekran
@@ -2236,9 +2121,9 @@ kazan ayağıdır.
 
 | # | Soru | **Cevap** | Programa yansıması |
 |---|---|---|---|
-| **A-05** | İstasyon–makine tutarsızlığı (S3, S13) neden kaynaklanıyor? | ✔ **İstasyon 1**: gaz motorları + **sıcak su kazanı** + **üretimde doğrudan gaz** — son ikisinde **sayaç yok**. **İstasyon 2**: buhar kazanları + **baca yakıcıları** — baca yakıcılarında **sayaç yok**. | Üç tüketici varlık olarak tanımlandı (`Sıcak Su Kazanı`, `Üretimde Doğrudan Gaz`, `Baca Yakıcıları`) ve `olcumsuz_besleyen` alanıyla istasyonlarına bağlandı. Ekran 9 artık "bilinmiyor" demiyor, **adlarını sayıyor**. |
+| **A-05** | İstasyon–makine tutarsızlığı (S3, S13) neden kaynaklanıyor? | ✔ **İstasyon 1**: gaz motorları + **sıcak su kazanı** + **üretimde doğrudan gaz** — son ikisinde **sayaç yok**. **İstasyon 2**: buhar kazanları + **baca yakıcıları** — baca yakıcılarında **sayaç yok**. | Üç tüketici varlık olarak tanımlandı (`Sıcak Su Kazanı`, `Üretimde Doğrudan Gaz`, `Baca Yakıcıları`) ve `olcumsuz_besleyen` alanıyla istasyonlarına bağlandı. Ekran 7 artık "bilinmiyor" demiyor, **adlarını sayıyor**. |
 | **A-06** | Hat çekirdek dağıtım oranları sabit mi? | ✔ **Sabit, doğru.** | Oranlar korundu; `veri_tipi = dagitilmis` kalır, ekranlarda "ölçüm değil" rozetiyle görünür. **Kapandı.** |
-| **A-08** | 2025'teki entalpi değişimi (600 → 560) hangisi doğru? | ✔ **İkisi de kendi döneminde doğru.** | Tarihli katsayı yapısı korunur; her ay kendi katsayısıyla hesaplanır ve Ekran 9 farkı puan puan ayrıştırır (S12). **Kapandı.** |
+| **A-08** | 2025'teki entalpi değişimi (600 → 560) hangisi doğru? | ✔ **İkisi de kendi döneminde doğru.** | Tarihli katsayı yapısı korunur; her ay kendi katsayısıyla hesaplanır ve Ekran 7 farkı puan puan ayrıştırır (S12). **Kapandı.** |
 | **A-10** | Başlangıç varlık ağacı nasıl kurulsun? | ✔ **Kullanıcı elle düzenleyecek.** | Ağaca dokunulmadı. Tanımlar ekranından serbestçe değiştirilir; geçmiş veri yerinde kalır (İ-7). **Kapandı.** |
 | **A-11** | GES'in TL değeri mahsup ve satış olarak ayrışabilir mi? | ✔ **Ayrı girilebilir.** | Her santral için **iki gelir noktası**: `… Mahsubu` ve `… Şebekeye Satışı`. Geçmiş tek kalem veriler mahsup noktasında durur ve o noktanın notunda "ikisinin toplamıdır" yazar. **Kapandı.** |
 | **A-12** | Motorin kg → kWh katsayısı ne olacak? | ✔ **11,9 kWh/kg.** | 2018-01'den geçerli tarihli katsayı olarak tanımlandı. Motorin verisi girildiği anda toplam enerjiye ve maliyete girer (K-24). **Kapandı.** |
@@ -2275,8 +2160,8 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 |---|---|---|
 | 1.1 | İskelet: tek HTML, menü, tema, yönlendirme | Ekranlar arası geçiş çalışıyor |
 | 1.2 | Veri katmanı: IndexedDB + `.json` dışa/içe aktarma (5.2) | Veri kaydediliyor, yedek alınıp geri yükleniyor |
-| 1.3 | **Ekran 14 — Tanımlar** (varlık ağacı, ölçüm noktaları, türler, katsayılar) | Sistem iskeleti kurulabiliyor |
-| 1.4 | **Ekran 15 — Ayarlar ve Yedekleme** | Veri güvenliği yerinde |
+| 1.3 | **Ekran 12 — Tanımlar** (varlık ağacı, ölçüm noktaları, türler, katsayılar) | Sistem iskeleti kurulabiliyor |
+| 1.4 | **Ekran 13 — Ayarlar ve Yedekleme** | Veri güvenliği yerinde |
 | 1.5 | Hesap çekirdeği (8.1): toplamlar, hiyerarşi, ortak birim | Sayılar üretiliyor |
 | 1.6 | **Hesaplanan değerler katmanı** (K-23): açılışta ve her değişimde yeniden üretim | Ekranların tek veri kaynağı hazır |
 
@@ -2286,9 +2171,9 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 |---|---|---|
 | 2.1 | **Ekran 2 — Veri Girişi** (dört yöntem, K-14) | Aylık veri girilebiliyor |
 | 2.2 | Doğrulama kuralları (6.8) | Hatalı giriş yakalanıyor |
-| 2.3 | **Ekran 3 — Veri Aktarma** (`.xlsx`, K-15) | 96 aylık geçmiş içeri alınabiliyor |
-| 2.4 | **Ekran 4 — Veri Denetimi** | Veri sağlığı görülebiliyor |
-| 2.5 | **Ekran 5 — Hesaplanan Değerler** + Excel/CSV dışa aktarma | Hesap camdan kutu; sonuçlar dışarı alınabiliyor |
+| 2.3 | **Ekran 2 — Veri Aktarma** (`.xlsx`, K-15) | 96 aylık geçmiş içeri alınabiliyor |
+| 2.4 | **Ekran 2 — Veri Denetimi** | Veri sağlığı görülebiliyor |
+| 2.5 | **Ekran 3 — Hesaplanan Değerler** + Excel/CSV dışa aktarma | Hesap camdan kutu; sonuçlar dışarı alınabiliyor |
 
 > **Faz 2 sonunda Excel'e ihtiyaç kalmaz.** Bu, projenin asıl eşiğidir.
 
@@ -2298,25 +2183,25 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 |---|---|
 | 3.1 | SVG grafik motoru (5.7): sütun, çizgi, yığılmış, ısı haritası, dağılım |
 | 3.2 | **Ekran 1 — Gösterge Paneli** |
-| 3.3 | **Ekran 7 — Tüketim Analizi** |
-| 3.4 | **Ekran 6 — Enerji Dengesi** (Sankey) |
+| 3.3 | **Ekran 5 — Tüketim Analizi** |
+| 3.4 | **Ekran 4 — Enerji Dengesi** (Sankey) |
 
 ### Faz 4 — Anlama (ISO 50001'in ölçüm motoru) ✔ bitti
 
 | Adım | İçerik | Durum |
 |---|---|---|
 | 4.1 | Baz çizgi ve regresyon (8.3), R² uyarıları | ✔ |
-| 4.2 | **Ekran 8 — Performans**: normalize EnPI, CUSUM | ✔ |
-| 4.3 | **Ekran 9 — Dönüşüm Verimliliği** | ✔ · S12 ve S13'ü bulan ekran |
-| 4.4 | **Ekran 10 — Maliyet**: fiyat/hacim ayrıştırması (8.7) | ✔ |
-| 4.5 | **Ekran 11 — GES** | ✔ |
+| 4.2 | **Ekran 6 — Performans**: normalize EnPI, CUSUM | ✔ |
+| 4.3 | **Ekran 7 — Dönüşüm Verimliliği** | ✔ · S12 ve S13'ü bulan ekran |
+| 4.4 | **Ekran 8 — Maliyet**: fiyat/hacim ayrıştırması (8.7) | ✔ |
+| 4.5 | **Ekran 9 — GES** | ✔ |
 
 ### Faz 5 — Yönetme ✔ bitti
 
 | Adım | İçerik | Durum |
 |---|---|---|
-| 5.1 | **Ekran 12 — Hedefler ve Aksiyonlar** | ✔ · dört hedef türü, ölçer, gecikme takibi |
-| 5.2 | **Ekran 13 — Raporlar** (K-20) | ✔ · üç rapor, yazdırma dostu, veri kalitesi notlu |
+| 5.1 | **Ekran 10 — Hedefler ve Aksiyonlar** | ✔ · dört hedef türü, ölçer, gecikme takibi |
+| 5.2 | **Ekran 11 — Raporlar** (K-20) | ✔ · üç rapor, yazdırma dostu, veri kalitesi notlu |
 | 5.3 | İzlenebilirlik (E-4): her sayıdan ham veriye iniş | ✔ · `?` düğmesi + köken ağacı |
 
 > **Not:** Faz 1–2 bittiğinde elinizde Excel'in yerini alan çalışan bir program
@@ -2343,11 +2228,17 @@ yarıda kalsa bile ortada kullanılabilir bir program olur.
 | Son dönem (herhangi bir kayıt) | 2026 Mart |
 | Aktarılmayan sütunlar | BX–DD (K-02) |
 | Hat-4 başlığı | "Hat-3" değil **"Hat-4"** (S7) |
-| Motorin noktaları | **Tanımlı ve toplamlara dahil** (K-24); veri boş, yıllık toplamlar **değişmiyor** |
+| Motorin noktaları | **Tanımlı ve toplamlara dahil** (K-24). Kaynak dosyada 192 kayıt var ama **hepsi sıfır**; 11,9 kWh/kg katsayısıyla çarpılınca yıllık toplamlar **değişmiyor** |
 | Reddedilen değer | **7** — 6 negatif doğalgaz (S11) + 1 metin hücre (S10) |
 | Otomatik eşleşen sütun | **55** (K-15) |
-| Aktarılan ham değer | **4.541** (düzeltme yapılmadan) |
-| S10 hücresi düzeltilirse | **4.542** · o değerin kalitesi `düzeltildi` (K-29) |
+| Aktarılan ham değer | **5.097** (düzeltme yapılmadan) |
+| S10 hücresi düzeltilirse | **5.098** · o değerin kalitesi `düzeltildi` (K-29) |
+
+> **Not:** Kaynak dosyanın 2026-09 sürümünde başlık satırı 1'e alındı ve boş
+> hücrelerin çoğu **açık sıfır** olarak yazıldı; bu yüzden aktarılan değer
+> sayısı 4.541'den **5.097**'ye çıktı. Sıfırlar hiçbir toplamı değiştirmez
+> (13.2'deki altın sayılar aynı kaldı) ama artık "boş" ile "sıfır" ayrımı
+> veride görünür — bu, İ-3'ün istediği ayrımdır.
 
 ### 13.2 Altın sayılar — yıllık toplamlar
 
@@ -2433,7 +2324,7 @@ brüt maliyet **863.964.489 TL** · **net maliyet 838.241.020 TL**
 | Regresyonda 12'den az veri noktası | Regresyon **kurulmaz** (8.3) |
 | R² < 0,5 | Model kurulur, **açık uyarı** gösterilir |
 | Tarayıcı deposu boş, yedek yok | Boş durum ekranı **ne yapılacağını anlatır** (E-5) |
-| Bir ham değer değiştirildi | Hesaplanan değerler katmanı **anında** yeniden üretilir; Ekran 5 ve bütün ekranlar yeni sayıyı gösterir (K-23) |
+| Bir ham değer değiştirildi | Hesaplanan değerler katmanı **anında** yeniden üretilir; Ekran 3 ve bütün ekranlar yeni sayıyı gösterir (K-23) |
 | Katsayı değiştirildi | Katmanın tamamı yeniden üretilir; hiçbir ekranda eski değer kalmaz |
 | Eski bir yedek geri yüklendi | Katman **sıfırdan üretilir**; yedekteki hesaplanmış değer (varsa) yok sayılır (K-23) |
 | Yedek 7 günden eski | Üst şeritte **uyarı** (5.2) |
@@ -2475,13 +2366,14 @@ bulunmadan hiçbiri düzeltilmez ve bulunan cevap buraya yazılır.
 | 0.9 | 2026-09-17 | **Faz 3 kodlandı.** SVG grafik motoru (kütüphanesiz), Gösterge Paneli, Tüketim Analizi, Enerji Dengesi. Ölçüm kapsamının iki ekranda farklı hesaplandığı fark edildi ve tek tanıma indirildi (İ-2): `hesap.js › elektrikKapsami()`; payda şebeke + kojenerasyon elektriğidir. Varsayılan dönem aralıkları veri aralığının sonuna değil, enerji verisinin bulunduğu son döneme göre seçiliyor (GES kayıtları 2026-03'e uzandığı için). |
 | 0.8 | 2026-09-17 | **Faz 2 kodlandı.** Gerçek Excel aktarımında kaynak veride iki hata bulundu ve belgeye işlendi: **S10** (2024 Ağustos çikolata hücresi metin — Excel sessizce atlamış, 2024 EnPI'si yanlış) ve **S11** (6 negatif doğalgaz değeri). Yeni bölüm 2.5. Kabul kriterlerindeki 2024 üretim beklentisi, programın doğru davranışına göre düzeltildi (13.1, 13.2). |
 | 0.7 | 2026-09-17 | **Bölüm bölüm gözden geçirme tamamlandı.** D-01: 2.4'teki Bölüm 7 atfı Bölüm 8 olarak düzeltildi. **D-02 (K-24): motorin toplam enerjiye ve toplam maliyete dahil edildi** ve kural sabit listeden **rol filtresine** genelleştirildi; eksik değer/katsayı kenar durum kuralı yazıldı; A-07 kapandı, A-12 açıldı. D-03: 6.5'te tablo dışına düşmüş satır tabloya alındı. D-04: geçersiz `(S-2.3)` atfı düzeltildi. |
-| 1.0 | 2026-09-17 | **Faz 4 kodlandı.** Ekran 9 (Dönüşüm Verimliliği), Ekran 10 (Maliyet, fiyat/hacim ayrıştırması) ve Ekran 11 (GES) yazıldı. Gerçek veride iki yeni bulgu: **S12** (buhar entalpi varsayımı 2025'te 600 → 560 kcal/kg) ve **S13** (2025 kazan verimleri %100'ü aşıyor, gazın %12,9'u ekipmana atanmamış). Bunlara karşılık **K-25** (imkânsız verim performans sayılmaz), **K-26** (yıllar arası karşılaştırma birleşik yüzdeyle değil, ekipman bazında kaçınılabilir yakıtla) ve **K-27** (fatura ↔ tüketim bağı) kararları eklendi. A-05 ve A-08 somutlaştırıldı. 8.8 vakası S12/S13 çekinceleriyle güncellendi. 80 kabul sınaması geçiyor.
-| 1.1 | 2026-09-17 | **Faz 5 kodlandı — yol haritası tamamlandı.** Ekran 12 (Hedefler ve Aksiyonlar), Ekran 13 (Raporlar: aylık · yönetim gözden geçirme · serbest) ve izlenebilirlik (E-4) yazıldı; **K-28** eklendi, `hedef` ve `aksiyon` şemaları 6.3'e girdi. **Düzeltme:** 8.8 ve 13.4'teki baz çizgi sayıları, Excel'in kendi `Toplam Üretim` sütunuyla kurulmuş 36 noktalı bir regresyondan geliyordu; program S10 yüzünden 2024 Ağustos'u kullanamadığı için doğru model **35 nokta** üzerinden `a = 0,5025 · b = 6.021.966 · R² = 0,43`tür. Buna bağlı normalize EnPI (1,107 → **1,119**), CUSUM yıl sonu (13,3 → **14,6 milyon kWh**) ve türbin payı (%42 → **%38**) güncellendi. Bulgunun yönü değişmedi. 218 kabul sınaması geçiyor.
+| 1.0 | 2026-09-17 | **Faz 4 kodlandı.** Ekran 7 (Dönüşüm Verimliliği), Ekran 8 (Maliyet, fiyat/hacim ayrıştırması) ve Ekran 9 (GES) yazıldı. Gerçek veride iki yeni bulgu: **S12** (buhar entalpi varsayımı 2025'te 600 → 560 kcal/kg) ve **S13** (2025 kazan verimleri %100'ü aşıyor, gazın %12,9'u ekipmana atanmamış). Bunlara karşılık **K-25** (imkânsız verim performans sayılmaz), **K-26** (yıllar arası karşılaştırma birleşik yüzdeyle değil, ekipman bazında kaçınılabilir yakıtla) ve **K-27** (fatura ↔ tüketim bağı) kararları eklendi. A-05 ve A-08 somutlaştırıldı. 8.8 vakası S12/S13 çekinceleriyle güncellendi. 80 kabul sınaması geçiyor.
+| 1.1 | 2026-09-17 | **Faz 5 kodlandı — yol haritası tamamlandı.** Ekran 10 (Hedefler ve Aksiyonlar), Ekran 11 (Raporlar: aylık · yönetim gözden geçirme · serbest) ve izlenebilirlik (E-4) yazıldı; **K-28** eklendi, `hedef` ve `aksiyon` şemaları 6.3'e girdi. **Düzeltme:** 8.8 ve 13.4'teki baz çizgi sayıları, Excel'in kendi `Toplam Üretim` sütunuyla kurulmuş 36 noktalı bir regresyondan geliyordu; program S10 yüzünden 2024 Ağustos'u kullanamadığı için doğru model **35 nokta** üzerinden `a = 0,5025 · b = 6.021.966 · R² = 0,43`tür. Buna bağlı normalize EnPI (1,107 → **1,119**), CUSUM yıl sonu (13,3 → **14,6 milyon kWh**) ve türbin payı (%42 → **%38**) güncellendi. Bulgunun yönü değişmedi. 218 kabul sınaması geçiyor.
 | 1.2 | 2026-09-18 | **Bölüm 13'ün tamamı makineyle doğrulandı** (`betikler/kabul13.py`, 96 kontrol; toplam 314 kontrol geçiyor). Doğrulama üç belge hatası buldu: (1) **13.1** aktarılan ham değer 4.534 değil **4.541** — beklenen sayı reddedilen 7 hücreyi iki kez düşmüş; bağımsız bir XLSX sayımıyla teyit edildi. (2) **13.2**'nin maliyet sütunu **brüttür**; programın `Toplam Maliyet`'i tanım gereği GES mahsubu düşülmüş **nettir** (K-13, K-24) — sütun etiketlendi, 2025 için net 195.182.336 TL ve 8 yıl net toplamı 838.241.020 TL eklendi, 8 yıl üretim toplamı S10'a göre 834.377.214 kg olarak düzeltildi. (3) **13.5**'teki "1 satır hatalıysa hiçbiri yazılmaz" satırı 9.4'ün "ya bütün geçerli satırlar ya hiçbiri" kuralıyla çelişiyordu; 9.4 esas alınarak düzeltildi. 13.1'e otomatik eşleşen sütun sayısı ve dönem ayrımı (96 enerji / 99 kayıt) eklendi. **13.6 yeniden yazıldı:** tutmayan sayı bir hata değil, bir sorudur.
-| 1.3 | 2026-09-18 | **Sekiz açık sorunun hepsi cevaplandı; A-06, A-08, A-10, A-11, A-12 kapandı.** **S10 kapandı:** 2024 Ağustos çikolata üretimi **2.866.094 kg**; buna karşılık **K-29** eklendi — reddedilen hücre içe aktarma önizlemesinde tek tıkla düzeltilebiliyor, kalite `düzeltildi` ve kaynak metin notta kalıyor. Düzeltme el kitabının kendi tahminini birebir doğruladı: 2024 EnPI **1,1435**, 2025'teki ham bozulma **%+19,5**. Baz çizgi 36 noktaya çıktı (`a = 0,4986 · b = 6.061.618 · R² = 0,44`); normalize EnPI **1,118**, CUSUM yıl sonu **+14.518.939 kWh**, türbinin payı %38. **A-05:** İstasyon 1'i sıcak su kazanı ve üretim, İstasyon 2'yi baca yakıcıları besliyor; üçü de sayaçsız, üçü de varlık olarak tanımlandı ve Ekran 9 artık adlarını sayıyor. **A-11:** GES geliri santral başına mahsup ve satış olarak ayrıldı. **A-12:** motorin 11,9 kWh/kg. Kalan tek açık nokta S13'ün kazan ayağıdır: baca yakıcıları da hesaba katılınca kazanlardaki buhar fazlalığı açıklanmıyor, büyüyor. 333 kabul sınaması geçiyor. |
-| 1.4 | 2026-09-18 | **S13 kapandı — açık soru kalmadı.** Kullanıcı teyidi: dönüşüm ekipmanlarındaki imkânsız verimin nedeni **buhar kilogramlarının fazla yazılmasıdır**. Buna karşılık **6.8'e enerji dengesi kuralı** eklendi (faydalı enerji > yakıt ⇒ giriş anında uyarı; `hesap.js` kuralı `kuralEkle()` ile kaydeder, model.js hesap çekirdeğine bağımlı olmaz) ve **Veri Denetimi ekranı bulguları türe göre gruplayıp süzüyor** (9.5). Gruplama, sorunun 2025'le sınırlı olmadığını ortaya çıkardı: aynı bulgu 2023'te GM-1/GM-2'de, 2021–2022'de Kazan-2'de de var — toplam **214 bulgu · 21 ölçüm noktası · Ocak 2021 – Aralık 2025**. Türbinin hiçbir döneminde bulgu yok, bu da açıklamayla örtüşüyor.  333 kabul sınaması geçiyor. |
-| 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 5 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
+| 1.3 | 2026-09-18 | **Sekiz açık sorunun hepsi cevaplandı; A-06, A-08, A-10, A-11, A-12 kapandı.** **S10 kapandı:** 2024 Ağustos çikolata üretimi **2.866.094 kg**; buna karşılık **K-29** eklendi — reddedilen hücre içe aktarma önizlemesinde tek tıkla düzeltilebiliyor, kalite `düzeltildi` ve kaynak metin notta kalıyor. Düzeltme el kitabının kendi tahminini birebir doğruladı: 2024 EnPI **1,1435**, 2025'teki ham bozulma **%+19,5**. Baz çizgi 36 noktaya çıktı (`a = 0,4986 · b = 6.061.618 · R² = 0,44`); normalize EnPI **1,118**, CUSUM yıl sonu **+14.518.939 kWh**, türbinin payı %38. **A-05:** İstasyon 1'i sıcak su kazanı ve üretim, İstasyon 2'yi baca yakıcıları besliyor; üçü de sayaçsız, üçü de varlık olarak tanımlandı ve Ekran 7 artık adlarını sayıyor. **A-11:** GES geliri santral başına mahsup ve satış olarak ayrıldı. **A-12:** motorin 11,9 kWh/kg. Kalan tek açık nokta S13'ün kazan ayağıdır: baca yakıcıları da hesaba katılınca kazanlardaki buhar fazlalığı açıklanmıyor, büyüyor. 366 kabul sınaması geçiyor. |
+| 1.4 | 2026-09-18 | **S13 kapandı — açık soru kalmadı.** Kullanıcı teyidi: dönüşüm ekipmanlarındaki imkânsız verimin nedeni **buhar kilogramlarının fazla yazılmasıdır**. Buna karşılık **6.8'e enerji dengesi kuralı** eklendi (faydalı enerji > yakıt ⇒ giriş anında uyarı; `hesap.js` kuralı `kuralEkle()` ile kaydeder, model.js hesap çekirdeğine bağımlı olmaz) ve **Veri Denetimi ekranı bulguları türe göre gruplayıp süzüyor** (9.5). Gruplama, sorunun 2025'le sınırlı olmadığını ortaya çıkardı: aynı bulgu 2023'te GM-1/GM-2'de, 2021–2022'de Kazan-2'de de var — toplam **214 bulgu · 21 ölçüm noktası · Ocak 2021 – Aralık 2025**. Türbinin hiçbir döneminde bulgu yok, bu da açıklamayla örtüşüyor.  366 kabul sınaması geçiyor. |
+| 1.5 | 2026-09-19 | **K-30: Veri ekranları birleşti, veri ızgarası geldi.** Veri Girişi + Veri Aktarma + Veri Denetimi tek ekran oldu (Ekran 2 · Veri, dört sekme); ekran sayısı **15 → 13**, sonraki ekranlar bir bir yukarı kaydı ve bütün atıflar güncellendi. Yeni **Tablo** sekmesi kaynak Excel'in kendisi gibi çalışır: satır = dönem, sütun = ölçüm noktası, hücre = değer; `+ Dönem` yeni satır, `+ Ölçüm noktası` yeni sütun açar; Enter/Tab/ok tuşlarıyla gezinilir. **Sorunlu hücre renklenir ve fare üstüne gelince nedeni açılır pencerede yazar; pencere her zaman en üstte durur.** Kaynak dosyanın yeni sürümünde başlık satırı 1'e alındığı ve boşlukların çoğu açık sıfır yazıldığı için aktarılan değer sayısı 4.541 → **5.097** oldu; **altın sayıların hiçbiri değişmedi**. 13.1 buna göre güncellendi.  366 kabul sınaması geçiyor (17+36+14+80+72+114+33). |
+| 0.6 | 2026-09-17 | **K-23: hesaplanan değerler katmanı.** Hesaplanan bütün değerler ayrı bir katmanda toplanır; ekranlar veriyi buradan çeker; katman açılışta ve her veri değişiminde baştan üretilir. Kullanıcıya görünür ve dışa aktarılabilir hale getirildi: **yeni Ekran 3 — Hesaplanan Değerler**. İ-1 ilkesi buna göre yeniden yazıldı. Ekranlar 5–14 → 6–15 olarak yeniden numaralandı. Katmanın yedek dosyasına yazılmama gerekçesi 5.3'e eklendi. |
 | 0.5 | 2026-09-17 | **Gözden geçirme düzeltmeleri.** Bayat atıf giderildi; `price` tablosunun ilk sürümde kullanılmadığı netleşti; düşük R²'nin sabit yük tahminini de kapsadığı belirtildi; GES TL'sinin ayrıştırılamama ihtimali modellendi (A-11). **Yeni: Bölüm 12 geliştirme yol haritası** (5 faz) ve **Bölüm 13 kabul kriterleri** — Excel'den hesaplanmış altın sayılar, hesap motoru ve davranış kontrolleri. |
-| 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 5–14 tasarlandı.** K-19…K-22 kararları. |
+| 0.4 | 2026-09-17 | **Analiz motoru (8) yazıldı**: EnPI, iki seviyeli baz çizgi, normalize EnPI, CUSUM, dönüşüm verimliliği, fiyat/hacim ayrıştırması. **Gerçek veriyle doğrulama (8.8)**: 2025 bozulmasının kaynağı bulundu. **Ekran 3–14 tasarlandı.** K-19…K-22 kararları. |
 | 0.3 | 2026-09-17 | **Görsel dil ve grafik standartları (5.7)**: renk paleti, yasaklar (çift eksen dahil), zorunlu davranışlar, grafik tipleri. **Ekranlar bölümü başladı (9)**: tasarım ilkeleri, navigasyon haritası (14 ekran), Ekran 1–4 tam tasarımı (Gösterge Paneli, Veri Girişi, Veri Aktarma, Veri Denetimi). |
 | 0.2 | 2026-09-17 | **Teknik mimari belirlendi (Bölüm 5).** K-09…K-18 kararları: tek HTML dosyası, iki katmanlı veri saklama, Chrome/Edge, fatura tutarı girişi, GES mahsubunun ayrı kalem olması, dört yöntemli veri girişi, gömülü `.xlsx` okuyucu, saf SVG grafikler. Maliyet ve GES mahsup modeli (6.4b). A-01…A-04 kapatıldı. |

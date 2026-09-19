@@ -61,7 +61,7 @@ def main():
         print(json.dumps(r, ensure_ascii=False, indent=2))
 
         print("\n=== 4. EKRAN GECISLERI ===")
-        for no, ad in [(14,"tanimlar"),(15,"ayarlar"),(1,"panel-yakinda")]:
+        for no, ad in [(12,"tanimlar"),(13,"ayarlar"),(1,"panel-yakinda")]:
             s.evaluate(f'__req("js/uygulama.js").git({no})')
             s.wait_for_timeout(400)
             b = s.locator("#icerik h1, #icerik h3").first.inner_text()
@@ -69,7 +69,7 @@ def main():
             s.screenshot(path=str(SS/f"{no:02d}-{ad}.png"), full_page=False)
 
         print("\n=== 5. SEKMELER (Ekran 14) ===")
-        s.evaluate('__req("js/uygulama.js").git(14)'); s.wait_for_timeout(300)
+        s.evaluate('__req("js/uygulama.js").git(12)'); s.wait_for_timeout(300)
         for i, ad in enumerate(["agac","nokta","tur","kats","enpi","baz"]):
             s.locator("#icerik .sekme").nth(i).click(); s.wait_for_timeout(300)
             sec = s.locator('#icerik .sekme[aria-selected="true"]').inner_text()
@@ -78,7 +78,7 @@ def main():
 
         print("\n=== 6. KOYU TEMA ===")
         s.evaluate('document.documentElement.dataset.tema="koyu"')
-        s.evaluate('__req("js/uygulama.js").git(15)'); s.wait_for_timeout(400)
+        s.evaluate('__req("js/uygulama.js").git(13)'); s.wait_for_timeout(400)
         s.screenshot(path=str(SS/"15-koyu.png"))
         print("  ekran goruntusu alindi")
 

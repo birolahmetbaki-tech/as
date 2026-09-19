@@ -21,8 +21,8 @@ export function ekranVerimlilik(k) {
     el("p", { metin:"Kojenerasyon ve kazanlar yakıtı ne verimle faydalı enerjiye çeviriyor — ve bu verim değişti mi?" })));
 
   if (!ar) return k.append(bosDurum("Henüz veri yok",
-    "Önce Veri Aktarma ekranından verinizi alın.",
-    el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+    "Önce Veri ekranının Aktar sekmesinden verinizi alın.",
+    el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
 
   const varliklar = H.donusumVarliklari();
   if (!varliklar.length) return k.append(bosDurum("Dönüşüm varlığı tanımlı değil",
@@ -442,7 +442,7 @@ function tutarsizlikUyarisi(k, imkansiz, hepsi) {
     "\u201cFaydalı enerji yakıttan büyük\u201d süzgecindedir.",
     el("div", { stil:{ marginTop:"7px" } },
       el("button.dugme.kucuk", { metin:"→ Veri Denetimi'nde listele",
-        onclick:() => { location.hash = "e4"; } }))));
+        onclick:() => { location.hash = "e2/denetim"; } }))));
 }
 
 /* ------------------- hiçbir ekipmana atanmamış yakıt (6.7, A-05) */

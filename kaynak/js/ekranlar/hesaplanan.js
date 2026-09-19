@@ -19,7 +19,7 @@ export function ekranHesaplanan(k) {
   if (!katman.satirlar.length) {
     k.append(bosDurum("Hesaplanacak veri yok",
       "Önce Veri Aktarma veya Veri Girişi ekranından ham veri girin. Bu katman ham veriden otomatik üretilir; kendi başına bir kaydı yoktur.",
-      el("button.dugme.ana", { metin:"Veri Aktarma'ya git", onclick:() => { location.hash = "e3"; } })));
+      el("button.dugme.ana", { metin:"Veri ekranına git", onclick:() => { location.hash = "e2"; } })));
     return;
   }
 
